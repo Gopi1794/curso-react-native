@@ -1,0 +1,97 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 9999;
+}
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  /* Fondo tipo ondas */
+  background: radial-gradient(circle at top,
+    #ffd39a,
+    #f6b26b,
+    #ffffff 70%);
+}
+
+.card {
+  background: #e5e5e5;
+  border-radius: 16px;
+  padding: 30px 20px;
+  width: 260px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #fff;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.logo {
+  width: 140px;
+  margin: 20px auto;
+}
+
+.startButton {
+  background: #f7931e;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 25px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.startButton:hover {
+  background: #e6830f;
+}
+
+.languages {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.languages img {
+  width: 28px;
+  cursor: pointer;
+}
+
+/* Animaciones */
+.scaleIn {
+  animation: scaleIn 0.3s ease forwards;
+}
+
+.scaleOut {
+  animation: scaleOut 0.3s ease forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
