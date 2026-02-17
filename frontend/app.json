@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Tu App Food",
+    "slug": "tu-app-food",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.tucompany.tufoodapp",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "experiments": {
+      "tsconfigPaths": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "33784b9f-ca85-4f3c-b39a-5fe5939ef40a",
+          "mapsUserAgent": "TuNombreApp/1.0 (contacto@tuemail.com)"
+      }
+    }
+  }
+}

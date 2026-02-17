@@ -1,0 +1,268 @@
+:root {
+    --accent: #ff8700;
+    --bg: #fffaf5;
+}
+
+/* Global reset and font */
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: 'Poppins', Arial, sans-serif;
+    background: linear-gradient(180deg, #fff, #fff);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #222;
+}
+
+.sh-container {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 18px;
+}
+
+/* Header */
+.sh-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fff7f0, #fff);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    margin-bottom: 14px;
+}
+
+.sh-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px
+}
+
+.sh-header-left {
+    display: flex;
+    align-items: center
+}
+
+.sh-logo {
+    font-weight: 800;
+    color: var(--accent);
+    font-size: 18px
+}
+
+.sh-header-right {
+    margin-left: auto;
+    display: flex;
+    gap: 8px
+}
+
+.sh-icon-btn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer
+}
+
+.sh-header-search {
+    display: flex
+}
+
+/* Controls */
+.sh-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 8px
+}
+
+.sh-search {
+    padding: 8px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    font-size: 15px;
+    width: 100%
+}
+
+.sh-categories {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 6px 2px
+}
+
+.sh-cat-btn {
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1px solid #eee;
+    background: #fff;
+    cursor: pointer;
+    white-space: nowrap
+}
+
+.sh-cat-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent)
+}
+
+.sh-results {
+    margin-top: 12px
+}
+
+.sh-summary {
+    margin-bottom: 10px;
+    color: #333;
+    font-weight: 600
+}
+
+/* Promo carousel */
+.promo-section {
+    margin: 12px 0
+}
+
+.promo-carousel {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 12px 6px;
+    scroll-snap-type: x mandatory
+}
+
+.promo-item {
+    min-width: 280px;
+    height: 150px;
+    border-radius: 12px;
+    flex: 0 0 auto;
+    position: relative;
+    overflow: hidden;
+    scroll-snap-align: center;
+    background: #ddd;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06)
+}
+
+.promo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block
+}
+
+.promo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: #fafafa
+}
+
+.promo-title {
+    position: absolute;
+    left: 12px;
+    bottom: 10px;
+    color: #fff;
+    font-weight: 700;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4)
+}
+
+.promo-indicators {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 8px
+}
+
+.promo-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ddd;
+    border: none
+}
+
+/* Menu horizontal scroller */
+.menu-scroller {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 12px 6px
+}
+
+.menu-card {
+    min-width: 220px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    flex: 0 0 auto;
+    overflow: hidden
+}
+
+.menu-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block
+}
+
+.menu-img-placeholder {
+    height: 140px;
+    background: #f4f4f4
+}
+
+.menu-card-body {
+    padding: 10px
+}
+
+.menu-title {
+    font-weight: 700;
+    margin-bottom: 6px
+}
+
+.menu-desc {
+    font-size: 13px;
+    color: #666;
+    height: 36px;
+    overflow: hidden
+}
+
+.menu-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px
+}
+
+.menu-price {
+    font-weight: 700
+}
+
+.menu-add {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer
+}
+
+/* Small responsive tweaks */
+@media (max-width:600px) {
+    .sh-container {
+        padding: 12px
+    }
+
+    .promo-item {
+        min-width: 220px
+    }
+
+    .menu-card {
+        min-width: 180px
+    }
+}

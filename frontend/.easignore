@@ -1,0 +1,13 @@
+.android/
+android/.gradle/
+android/build/
+android/app/build/
+node_modules/
+.git/
+.expo/
+dist/
+*.log
+.DS_Store
+*.lock
+android/
+ios/

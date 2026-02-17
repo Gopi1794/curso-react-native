@@ -1,0 +1,76 @@
+{
+  "tickets": [
+    {
+      "id": 1,
+      "offer": "30% OFF",
+      "title": "Aros de cebolla",
+      "img": "ticket-1.webp",
+      "realImage": "ticket-1-1.png",
+      "validUntil": "31/09/2026",
+      "disclaimer": "Válido los martes.",
+      "backText": "Presentar este ticket al personal. No transferible. No acumulable con otras promociones.",
+      "code": "APP2X1-2026-CEBOLLA",
+      "color": "#FF6B6B"
+    },
+    {
+      "id": 2,
+      "offer": "35% OFF",
+      "title": "Hamburguesas con papas",
+      "img": "ticket-2.webp",
+      "realImage": "ticket-2-2.png",
+      "validUntil": "31/10/2026",
+      "disclaimer": "Válido solo los fines de semana.",
+      "backText": "Válido de viernes a domingo.",
+      "code": "35%OFF-2026-BURGER",
+      "color": "#4ECDC4"
+    },
+    {
+      "id": 3,
+      "offer": "2X1",
+      "title": "Mojitos",
+      "img": "ticket-3.webp",
+      "realImage": "ticket-3-3.png",
+      "validUntil": "31/12/2026",
+      "disclaimer": "Aplicable en pedidos mayores a $20.",
+      "backText": "Descuento aplicable para mayores de 18 años.",
+      "code": "2X1-2026-MOJITO",
+      "color": "#45B7D1"
+    },
+    {
+      "id": 4,
+      "offer": "40% OFF",
+      "title": "Cafés con Rebelvet",
+      "img": "ticket-4.webp",
+      "realImage": "ticket-4-4.png",
+      "validUntil": "31/12/2026",
+      "disclaimer": "Dos cafés con una porción de Rebelvet.",
+      "backText": "El cupón solo sirve para antes de las 12:00 p.m.",
+      "code": "40%OFF-2026-CAFE",
+      "color": "#96CEB4"
+    },
+    {
+      "id": 5,
+      "offer": "50% OFF",
+      "title": "Cafés con dos medialunas",
+      "img": "ticket-5.webp",
+      "realImage": "ticket-5-5.png",
+      "validUntil": "31/12/2026",
+      "disclaimer": "Café (solo) con dos medialunas.",
+      "backText": "El cupón solo sirve para antes de las 12:00 p.m.",
+      "code": "50%OFF-2026-CAFE",
+      "color": "#f3b01fff"
+    },
+    {
+      "id": 6,
+      "offer": "2X1",
+      "title": "Helados combinados",
+      "img": "ticket-6.webp",
+      "realImage": "ticket-6-6.png",
+      "validUntil": "31/12/2026",
+      "disclaimer": "Aplicable solo los lunes.",
+      "backText": "2x1 en helados combinados.",
+      "code": "2X1-2026-HELADO",
+      "color": "#FF9FF3"
+    }
+  ]
+}
