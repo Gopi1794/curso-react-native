@@ -1,0 +1,22 @@
+# Node
+node_modules/
+**/node_modules/
+
+# Ignore nested git dirs (avoid embedded-repo errors)
+frontend/.git/
+backend/.git/
+
+# Ignore common files
+.env
+.DS_Store
+nul
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build / output
+/dist
+/build
+
+# VSCode
+.vscode/
