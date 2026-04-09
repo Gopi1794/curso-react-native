@@ -1,14 +1,17 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { clearRestaurant } from '../../store/slices/restaurantSlice';
 
 export const Header = ({
     onTicketPress,
     onCartPress,
 }) => {
 
+    const dispatch = useAppDispatch();
     const cartItems = useAppSelector(state => state.cart.items);
+    const selectedRestaurant = useAppSelector(state => state.restaurant.selected);
 
     const totalItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
@@ -19,15 +22,39 @@ export const Header = ({
                     source={require("../../assets/img/logoApp.png")}
                     style={styles.logoImage}
                 />
-                <Text style={styles.logoText}>APPFOOD</Text>
+                <View>
+                    <Text style={styles.logoText}>APPFOOD</Text>
+                    {selectedRestaurant && (
+                        <TouchableOpacity
+                            onPress={() => dispatch(clearRestaurant())}
+                            style={styles.branchButton}
+                        >
+                            <Ionicons name="location" size={11} color="#fff" />
+                            <Text style={styles.branchText} numberOfLines={1}>
+                                {selectedRestaurant.nombre.replace('FoodApp - ', '')}
+                            </Text>
+                            <Ionicons name="chevron-down" size={11} color="rgba(255,255,255,0.7)" />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
 
             <View style={styles.icons}>
-                <TouchableOpacity onPress={onTicketPress} style={styles.headerButton}>
+                <TouchableOpacity
+                    onPress={onTicketPress}
+                    style={styles.headerButton}
+                    accessibilityLabel="Mis cupones"
+                    accessibilityRole="button"
+                >
                     <Ionicons name="ticket-outline" size={24} color="white" />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={onCartPress} style={styles.headerButton}>
+                <TouchableOpacity
+                    onPress={onCartPress}
+                    style={styles.headerButton}
+                    accessibilityLabel={totalItemsCount > 0 ? `Carrito, ${totalItemsCount} ${totalItemsCount === 1 ? 'item' : 'items'}` : 'Carrito vacío'}
+                    accessibilityRole="button"
+                >
                     <Ionicons name="cart-outline" size={24} color="white" />
                     {totalItemsCount > 0 && (
                         <View style={styles.cartBadge}>
@@ -63,12 +90,28 @@ const styles = StyleSheet.create({
         fontSize: 23,
         marginLeft: 8,
     },
+    branchButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 8,
+        marginTop: 1,
+    },
+    branchText: {
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.9)',
+        marginHorizontal: 3,
+        maxWidth: 140,
+    },
     icons: {
         flexDirection: "row",
         gap: 10,
     },
     headerButton: {
-        padding: 8,
+        padding: 10,
+        minWidth: 44,
+        minHeight: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
         position: 'relative',
     },
     cartBadge: {

@@ -5,16 +5,25 @@ const userSlice = createSlice({
     name: 'user',
     initialState: {
         userInfo: null,
+        token: null,
         isLoggedIn: false,
+        justRegistered: false,
         favorites: [],
     },
     reducers: {
         login: (state, action) => {
-            state.userInfo = action.payload;
+            const { token, justRegistered, ...userInfo } = action.payload;
+            state.userInfo = userInfo;
+            state.token = token || null;
             state.isLoggedIn = true;
+            state.justRegistered = justRegistered || false;
+        },
+        clearJustRegistered: (state) => {
+            state.justRegistered = false;
         },
         logout: (state) => {
             state.userInfo = null;
+            state.token = null;
             state.isLoggedIn = false;
             state.favorites = [];
         },
@@ -34,5 +43,5 @@ const userSlice = createSlice({
     },
 });
 
-export const { login, logout, addToFavorites, removeFromFavorites, updateUserProfile } = userSlice.actions;
+export const { login, logout, clearJustRegistered, addToFavorites, removeFromFavorites, updateUserProfile } = userSlice.actions;
 export default userSlice.reducer;

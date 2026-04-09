@@ -1,6 +1,6 @@
 // utils/imageMap.js
 
-const BASE_URL = "https://cdn.jsdelivr.net/gh/Gopi1794/restaurant-assets";
+const BASE_URL = "https://bbavirgboqyvqhxvuarp.supabase.co/storage/v1/object/public/bucketFoodApp";
 
 export const imageMap = {
     //Ensaladas Imagenes
@@ -324,14 +324,12 @@ export const imageMap = {
     imgPromo5_4: `${BASE_URL}/img/categories-promos/imgPromo5_4.webp`,
 
     imgPromo6: `${BASE_URL}/img/categories-promos/imgPromo6.webp`,
-    imgPromo6_0: `${BASE_URL}/img/categories-promos/imgPromo6_0.webp`,
     imgPromo6_1: `${BASE_URL}/img/categories-promos/imgPromo6_1.webp`,
     imgPromo6_2: `${BASE_URL}/img/categories-promos/imgPromo6_2.webp`,
     imgPromo6_3: `${BASE_URL}/img/categories-promos/imgPromo6_3.webp`,
     imgPromo6_4: `${BASE_URL}/img/categories-promos/imgPromo6_4.webp`,
 
     imgPromo7: `${BASE_URL}/img/categories-promos/imgPromo7.webp`,
-    imgPromo7_0: `${BASE_URL}/img/categories-promos/imgPromo7_0.webp`,
     imgPromo7_1: `${BASE_URL}/img/categories-promos/imgPromo7_1.webp`,
     imgPromo7_2: `${BASE_URL}/img/categories-promos/imgPromo7_2.webp`,
     imgPromo7_3: `${BASE_URL}/img/categories-promos/imgPromo7_3.webp`,
@@ -634,7 +632,7 @@ export const imageMap = {
     imgBebida9: `${BASE_URL}/img/categories-bebidas/imgBebida9.webp`,
     imgBebida10: `${BASE_URL}/img/categories-bebidas/imgBebida10.webp`,
 
-    //promo del dia 
+    //promo del dia
     imgPromoDia1: `${BASE_URL}/img/promodia/img-promodia1-1.webp`,
     imgPromoDia1_0: `${BASE_URL}/img/promodia/img-promodia1_0.webp`,
     imgPromoDia1_1: `${BASE_URL}/img/promodia/img-promodia1_1.webp`,
@@ -656,5 +654,10 @@ export const imageMap = {
     imgPromoDia3_3: `${BASE_URL}/img/promodia/img-promodia3_3.webp`,
     imgPromoDia3_4: `${BASE_URL}/img/promodia/img-promodia3_4.webp`,
 };
+
+// React Native Image requires { uri: '...' } for remote URLs, not plain strings
+Object.keys(imageMap).forEach(key => {
+    imageMap[key] = { uri: imageMap[key] };
+});
 
 export default imageMap;

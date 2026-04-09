@@ -6,10 +6,10 @@ import {
     StatusBar,
     FlatList,
     Dimensions,
-    Text
+    Text,
+    Animated,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
-
 // Componentes reutilizables
 import { HeaderSection } from '../components/HeaderSection';
 import { CategoryFilter } from '../components/CategoryFilter';
@@ -18,19 +18,123 @@ import MenuItem from '../components/MenuItem';
 import ListSugerencias from '../components/ListSugerencias';
 import WelcomePopup from '../components/WelcomePopup';
 
-// Datos
-import menuItemsData from '../assets/data/menuItems.json';
+// API
+import API from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { clearJustRegistered } from '../store/slices/userSlice';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+// Se obtiene del store de Redux (seleccionado en SelectRestaurantScreen)
+
+// Skeleton shimmer para mientras carga el menú
+const MenuItemSkeleton = () => {
+    const shimmer = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(shimmer, { toValue: 1, duration: 900, useNativeDriver: true }),
+                Animated.timing(shimmer, { toValue: 0, duration: 900, useNativeDriver: true }),
+            ])
+        ).start();
+    }, []);
+
+    const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+
+    return (
+        <Animated.View style={[skeletonStyles.card, { opacity }]}>
+            <View style={skeletonStyles.image} />
+            <View style={skeletonStyles.titleLine} />
+            <View style={skeletonStyles.priceLine} />
+            <View style={skeletonStyles.button} />
+        </Animated.View>
+    );
+};
+
+const skeletonStyles = StyleSheet.create({
+    card: {
+        width: 105,
+        height: 131,
+        marginRight: 22,
+        backgroundColor: 'rgba(217, 217, 217, 1)',
+        borderRadius: 25,
+        alignItems: 'center',
+        paddingTop: 8,
+        marginTop: 50,
+    },
+    image: {
+        width: 90,
+        height: 70,
+        borderRadius: 15,
+        backgroundColor: '#C8C8C8',
+        marginBottom: 8,
+    },
+    titleLine: {
+        width: 70,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#C8C8C8',
+        marginBottom: 6,
+    },
+    priceLine: {
+        width: 45,
+        height: 10,
+        borderRadius: 4,
+        backgroundColor: '#C8C8C8',
+        marginBottom: 8,
+    },
+    button: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#D8D8D8',
+    },
+});
+
+// Mapea campos de la API al shape que esperan los componentes
+const mapMenuItem = (item) => ({
+    id:              item.id,
+    name:            item.nombre,
+    price:           `$${parseFloat(item.precio).toFixed(2)}`,
+    imageKey:        item.imagen_key,
+    category:        item.categoria,
+    descriptionText: item.descripcion,
+    ingredientText:  item.ingredientes || [],
+    ingredientesDetalle: item.ingredientes_detalle || [],
+    disponible:      item.disponible,
+});
+
 export const ScreenHome = ({ navigation }) => {
+    const dispatch = useAppDispatch();
+    const justRegistered = useAppSelector((state) => state.user.justRegistered);
+    const selectedRestaurant = useAppSelector((state) => state.restaurant.selected);
     const promoFlatListRef = useRef(null);
     const menuItemsFlatListRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("TODOS");
     const [activePromoIndex, setActivePromoIndex] = useState(1);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-    const [menuItems, setMenuItems] = useState(menuItemsData);
+    const [menuItems, setMenuItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!selectedRestaurant) return;
+        const fetchMenu = async () => {
+            try {
+                const response = await API.restaurants.getMenu(selectedRestaurant.id);
+                if (response.success) {
+                    setMenuItems(response.items.map(mapMenuItem));
+                }
+            } catch (err) {
+                console.error('Error cargando menú:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchMenu();
+    }, [selectedRestaurant]);
 
     // Categorías
     const categories = [
@@ -175,14 +279,25 @@ export const ScreenHome = ({ navigation }) => {
         return null;
     }, [searchQuery, filteredMenuItems.length]);
 
-    // Mostrar popup de bienvenida
+    // Mostrar popup de bienvenida solo después de un login exitoso
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setShowWelcomePopup(true);
-        }, 1500);
-
-        return () => clearTimeout(timer);
+        const checkWelcome = async () => {
+            const show = await AsyncStorage.getItem('showWelcomePopup');
+            if (show === 'true') {
+                await AsyncStorage.removeItem('showWelcomePopup');
+                setShowWelcomePopup(true);
+            }
+        };
+        checkWelcome();
     }, []);
+
+    // Mostrar popup de bienvenida al registrarse
+    useEffect(() => {
+        if (justRegistered) {
+            setShowWelcomePopup(true);
+            dispatch(clearJustRegistered());
+        }
+    }, [justRegistered]);
 
     return (
         <View style={{ flex: 1 }}>
@@ -198,10 +313,9 @@ export const ScreenHome = ({ navigation }) => {
             <HeaderSection
                 onTicketPress={navigateToTicket}
                 onCartPress={navigateToCart}
-                cartItemsCount={2}
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
-                onClearSearch={handleClearSearch} // ✅ Nueva prop
+                onClearSearch={handleClearSearch}
             />
 
             {/* Contenido desplazable */}
@@ -232,6 +346,11 @@ export const ScreenHome = ({ navigation }) => {
                     )}
 
                     {/* Lista de items del menú */}
+                    {loading && (
+                        <View style={{ flexDirection: 'row', paddingHorizontal: 15, marginTop: 10 }}>
+                            {[1, 2, 3].map(i => <MenuItemSkeleton key={i} />)}
+                        </View>
+                    )}
                     <FlatList
                         ref={menuItemsFlatListRef}
                         data={filteredMenuItems}
@@ -265,7 +384,10 @@ export const ScreenHome = ({ navigation }) => {
 
                         {/* Sección de sugerencias */}
                         <View style={styles.sugerenciasWrapper}>
-                            <ListSugerencias />
+                            <ListSugerencias
+                                navigation={navigation}
+                                menuItems={menuItems}
+                            />
                         </View>
                     </>
                 )}

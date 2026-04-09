@@ -1,4 +1,5 @@
-// backend/server-pg.js - VERSIÓN POSTGRESQL REAL
+// ARCHIVO LEGACY — no usar. El servidor activo es src/index.js
+// ADVERTENCIA: este archivo contiene credenciales hardcodeadas y no debe commitearse ni ejecutarse.
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');

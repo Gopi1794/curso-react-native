@@ -6,13 +6,15 @@ import {
     ScrollView,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView,
     StatusBar,
     Alert,
     Dimensions,
     FlatList,
     TextInput,
-    Animated
+    Animated,
+    Modal,
+    Switch,
+    PanResponder,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -24,13 +26,18 @@ import { BackButton } from '../components/common/BackButton';
 import { ShareButton } from '../components/common/ShareButton';
 import { ActionButton } from '../components/ActionButton';
 
-// Datos y Redux
-import menuItemsData from '../assets/data/menuItems.json';
+// Datos, API y Redux
+import api from '../services/api';
 import { imageMap } from '../assets/utils/imageMap';
+const toUri = (val) => {
+    if (typeof val === 'string') return val;
+    if (val && val.uri) return val.uri;
+    return null;
+};
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { addToFavorites, removeFromFavorites } from '../store/slices/userSlice';
 import { addToCart } from '../store/slices/cartSlice';
-import { showSuccessMessage, showFavoriteMessage } from '../components/FlashMessageWrapper';
+import { showSuccessMessage, showErrorMessage, showFavoriteMessage } from '../components/FlashMessageWrapper';
 import { ActionBar } from '../components/common/ActionBar';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -39,25 +46,23 @@ const heartLikeAnimation = require('../assets/animations/like.json');
 const statAnimate = require('../assets/animations/statAnimate.json');
 const clockAnimate = require('../assets/animations/clock.json');
 
-// Datos de ejemplo para comentarios
-const sampleComments = [
-    {
-        id: 1,
-        user: 'María González',
-        rating: 5,
-        comment: '¡Increíble! La mejor hamburguesa que he probado. Los ingredientes son frescos y el pan está perfecto.',
-        date: 'Hace 2 días',
-        avatar: '👩'
-    },
-    {
-        id: 2,
-        user: 'Carlos Rodríguez',
-        rating: 4,
-        comment: 'Muy buena relación calidad-precio. La porción es generosa y el sabor excelente.',
-        date: 'Hace 1 semana',
-        avatar: '👨'
-    }
-];
+// Helper para formatear fecha relativa
+const timeAgo = (dateStr) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Ahora mismo';
+    if (diffMins < 60) return `Hace ${diffMins} min`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Hace ${diffHours}h`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks < 5) return `Hace ${diffWeeks} semana${diffWeeks > 1 ? 's' : ''}`;
+    const diffMonths = Math.floor(diffDays / 30);
+    return `Hace ${diffMonths} mes${diffMonths > 1 ? 'es' : ''}`;
+};
 
 const FoodDetailScreen = ({ route }) => {
     const navigation = useNavigation();
@@ -65,15 +70,34 @@ const FoodDetailScreen = ({ route }) => {
 
     const dispatch = useAppDispatch();
     const favorites = useAppSelector(state => state.user.favorites);
+    const userInfo = useAppSelector(state => state.user.userInfo);
 
     const [isFavorite, setIsFavorite] = useState(false);
     const [quantity, setQuantity] = useState(1);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [comments, setComments] = useState(sampleComments);
+    const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [userRating, setUserRating] = useState(0);
     const [showAllComments, setShowAllComments] = useState(false);
+    const [ratingPromedio, setRatingPromedio] = useState(0);
+    const [totalResenas, setTotalResenas] = useState(0);
+    const [loadingComments, setLoadingComments] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [carouselImages, setCarouselImages] = useState([]);
+    const [selectedIngredients, setSelectedIngredients] = useState(
+        () => new Set(foodItem.ingredientText || [])
+    );
+
+    // Mapa de ingredientes removibles (desde ingredientes_detalle del backend)
+    const removibleMap = React.useMemo(() => {
+        const map = {};
+        (foodItem.ingredientesDetalle || []).forEach(ing => {
+            map[ing.nombre] = ing.es_removible;
+        });
+        return map;
+    }, [foodItem.ingredientesDetalle]);
+    const [showIngredientSheet, setShowIngredientSheet] = useState(false);
+    const sheetAnim = useRef(new Animated.Value(0)).current;
 
     const heartAnimationRef = useRef(null);
     const flatListRef = useRef(null);
@@ -163,6 +187,34 @@ const FoodDetailScreen = ({ route }) => {
         }
     }, [isFavorite]);
 
+    // Cargar comentarios desde la API
+    const fetchComments = async () => {
+        try {
+            const data = await api.comentarios.getByMenuItem(foodItem.id);
+            if (data.success) {
+                setComments(data.comentarios.map(c => ({
+                    id: c.id,
+                    userId: c.usuario_id,
+                    user: `${c.nombre} ${c.apellido}`,
+                    rating: c.rating,
+                    comment: c.comentario,
+                    date: timeAgo(c.fecha_creacion),
+                    avatar: c.nombre.charAt(0).toUpperCase()
+                })));
+                setRatingPromedio(data.rating_promedio);
+                setTotalResenas(data.total_resenas);
+            }
+        } catch (error) {
+            console.error('Error cargando comentarios:', error);
+        } finally {
+            setLoadingComments(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchComments();
+    }, [foodItem.id]);
+
     // ✅ FUNCIONES PARA EL CARRUSEL
     const handleNextImage = () => {
         if (currentImageIndex < carouselImages.length - 1) {
@@ -217,9 +269,10 @@ const FoodDetailScreen = ({ route }) => {
                 name: foodItem.name,
                 price: foodItem.price,
                 imageKey: mainImageKey,
-                image: imageMap[mainImageKey],
+                image: { uri: toUri(imageMap[mainImageKey]) },
                 descriptionText: foodItem.descriptionText,
                 ingredientText: foodItem.ingredientText,
+                ingredientesDetalle: foodItem.ingredientesDetalle,
                 addedDate: new Date().toISOString()
             };
             dispatch(addToFavorites(favoriteItem));
@@ -228,42 +281,94 @@ const FoodDetailScreen = ({ route }) => {
         setIsFavorite(!isFavorite);
     };
 
+    const handleToggleIngredient = (ingredient) => {
+        // Solo permitir toggle si el ingrediente es removible
+        if (removibleMap[ingredient] === false) return;
+        setSelectedIngredients(prev => {
+            const next = new Set(prev);
+            next.has(ingredient) ? next.delete(ingredient) : next.add(ingredient);
+            return next;
+        });
+    };
+
+    const openIngredientSheet = () => {
+        setShowIngredientSheet(true);
+        Animated.spring(sheetAnim, {
+            toValue: 1,
+            tension: 65,
+            friction: 11,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const closeIngredientSheet = () => {
+        Animated.timing(sheetAnim, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+        }).start(() => setShowIngredientSheet(false));
+    };
+
+    const removedCount = (foodItem.ingredientText || []).filter(i => !selectedIngredients.has(i)).length;
+
     const handleAddToCart = (selectedQuantity = quantity) => {
         const mainImageKey = Array.isArray(foodItem.imageKey)
             ? foodItem.imageKey[0]
             : foodItem.imageKey;
+
+        const allIngredients = foodItem.ingredientText || [];
+        const removedIngredients = allIngredients.filter(i => !selectedIngredients.has(i));
 
         const cartItem = {
             id: foodItem.id,
             name: foodItem.name,
             price: parseFloat(foodItem.price.replace('$', '')),
             image: imageMap[mainImageKey],
-            quantity: selectedQuantity, // Usar la cantidad pasada como parámetro
-            description: foodItem.descriptionText
+            quantity: selectedQuantity,
+            description: foodItem.descriptionText,
+            removedIngredients,
         };
 
         dispatch(addToCart(cartItem));
         showSuccessMessage('¡Agregado al carrito!', `${foodItem.name} se ha añadido al carrito`);
-        setQuantity(1); // Resetear a 1 después de agregar
+        setQuantity(1);
     };
 
     // ✅ FUNCIONES PARA COMENTARIOS
-    const handleAddComment = () => {
-        if (newComment.trim() && userRating > 0) {
-            const newCommentObj = {
-                id: comments.length + 1,
-                user: 'Tú',
-                rating: userRating,
-                comment: newComment,
-                date: 'Ahora mismo',
-                avatar: '😊'
-            };
-            setComments([newCommentObj, ...comments]);
-            setNewComment('');
-            setUserRating(0);
-            Alert.alert('¡Gracias!', 'Tu comentario ha sido publicado');
-        } else {
-            Alert.alert('Error', 'Por favor agrega un comentario y una calificación');
+    const handleAddComment = async () => {
+        if (!newComment.trim() || userRating < 1) {
+            showErrorMessage('Faltan datos', 'Agrega un comentario y una calificación');
+            return;
+        }
+        setSubmitting(true);
+        try {
+            const data = await api.comentarios.create(foodItem.id, userRating, newComment.trim());
+            if (data.success) {
+                setNewComment('');
+                setUserRating(0);
+                showSuccessMessage('¡Gracias!', 'Tu comentario ha sido publicado');
+                fetchComments();
+            } else {
+                showErrorMessage('Error', data.message || 'No se pudo publicar el comentario');
+            }
+        } catch (error) {
+            showErrorMessage('Error', 'No se pudo conectar con el servidor');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteComment = async () => {
+        try {
+            const data = await api.comentarios.remove(foodItem.id);
+            if (data.success) {
+                showSuccessMessage('Eliminado', 'Tu comentario fue borrado');
+                fetchComments();
+            } else {
+                showErrorMessage('Error', data.message || 'No se pudo eliminar');
+            }
+        } catch (error) {
+            showErrorMessage('Error', 'No se pudo conectar con el servidor');
         }
     };
 
@@ -292,7 +397,7 @@ const FoodDetailScreen = ({ route }) => {
     const renderImageItem = ({ item }) => (
         <View style={styles.carouselItem}>
             <Image
-                source={imageMap[item.imageKey]}
+                source={{ uri: toUri(imageMap[item.imageKey]) }}
                 style={styles.carouselImage}
                 resizeMode="cover"
             />
@@ -300,17 +405,28 @@ const FoodDetailScreen = ({ route }) => {
     );
 
     // Renderizar comentarios
+    const isOwnComment = (comment) => userInfo && comment.userId == userInfo.id;
+
     const renderComment = ({ item }) => (
         <View style={styles.commentCard}>
             <View style={styles.commentHeader}>
                 <View style={styles.userInfo}>
                     <Text style={styles.userAvatar}>{item.avatar}</Text>
                     <View>
-                        <Text style={styles.userName}>{item.user}</Text>
+                        <Text style={styles.userName}>
+                            {item.user}{isOwnComment(item) ? ' (Tú)' : ''}
+                        </Text>
                         {renderStars(item.rating, false, 14)}
                     </View>
                 </View>
-                <Text style={styles.commentDate}>{item.date}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={styles.commentDate}>{item.date}</Text>
+                    {isOwnComment(item) && (
+                        <TouchableOpacity onPress={handleDeleteComment} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                            <Feather name="trash-2" size={16} color="#e74c3c" />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
             <Text style={styles.commentText}>{item.comment}</Text>
         </View>
@@ -319,8 +435,8 @@ const FoodDetailScreen = ({ route }) => {
     const displayedComments = showAllComments ? comments : comments.slice(0, 2);
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="auto-content" translucent backgroundColor="#ff800097" />
+        <View style={styles.container}>
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
             {/* Header con componentes Common */}
             <View style={styles.header}>
@@ -408,8 +524,10 @@ const FoodDetailScreen = ({ route }) => {
                     {/* Rating y Estadísticas */}
                     <View style={styles.ratingSection}>
                         <View style={styles.ratingContainer}>
-                            {renderStars(4.8, false, 20)}
-                            <Text style={styles.ratingText}>4.8 (128 reseñas)</Text>
+                            {renderStars(ratingPromedio, false, 20)}
+                            <Text style={styles.ratingText}>
+                                {ratingPromedio > 0 ? `${ratingPromedio} (${totalResenas} reseña${totalResenas !== 1 ? 's' : ''})` : 'Sin reseñas aún'}
+                            </Text>
                         </View>
                         <View style={styles.statsContainer}>
                             <View style={styles.statItem}>
@@ -439,18 +557,24 @@ const FoodDetailScreen = ({ route }) => {
                         <Text style={styles.descriptionText}>{foodItem.descriptionText}</Text>
                     </View>
 
-                    {/* Ingredientes */}
-                    {foodItem.ingredientText && Array.isArray(foodItem.ingredientText) && (
-                        <View style={styles.ingredientsSection}>
-                            <Text style={styles.sectionTitle}>Ingredientes</Text>
-                            <View style={styles.ingredientsGrid}>
-                                {foodItem.ingredientText.map((ingredient, index) => (
-                                    <View key={index} style={styles.ingredientChip}>
-                                        <Text style={styles.ingredientText}>{ingredient}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
+                    {/* Botón de personalización */}
+                    {foodItem.ingredientText && foodItem.ingredientText.length > 0 && (
+                        <TouchableOpacity
+                            style={[styles.customizeButton, removedCount > 0 && styles.customizeButtonActive]}
+                            onPress={openIngredientSheet}
+                            activeOpacity={0.8}
+                        >
+                            <Feather name="sliders" size={18} color={removedCount > 0 ? 'white' : '#FF8000'} />
+                            <Text style={[styles.customizeButtonText, removedCount > 0 && styles.customizeButtonTextActive]}>
+                                Personalizar ingredientes
+                            </Text>
+                            {removedCount > 0 && (
+                                <View style={styles.customizeBadge}>
+                                    <Text style={styles.customizeBadgeText}>{removedCount} quitado{removedCount > 1 ? 's' : ''}</Text>
+                                </View>
+                            )}
+                            <Feather name="chevron-right" size={18} color={removedCount > 0 ? 'white' : '#FF8000'} />
+                        </TouchableOpacity>
                     )}
 
                     {/* Sección de Comentarios */}
@@ -519,7 +643,93 @@ const FoodDetailScreen = ({ route }) => {
                 buttonText="Añadir al carrito"
                 style={styles.actionBar}
             />
-        </SafeAreaView>
+
+            {/* Bottom Sheet — Personalizar ingredientes */}
+            <Modal
+                visible={showIngredientSheet}
+                transparent
+                animationType="none"
+                onRequestClose={closeIngredientSheet}
+            >
+                <TouchableOpacity
+                    style={styles.sheetOverlay}
+                    activeOpacity={1}
+                    onPress={closeIngredientSheet}
+                />
+                <Animated.View style={[
+                    styles.sheet,
+                    {
+                        transform: [{
+                            translateY: sheetAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [500, 0],
+                            })
+                        }]
+                    }
+                ]}>
+                    {/* Handle */}
+                    <View style={styles.sheetHandle} />
+
+                    {/* Header */}
+                    <View style={styles.sheetHeader}>
+                        <View>
+                            <Text style={styles.sheetTitle}>Personalizá tu pedido</Text>
+                            <Text style={styles.sheetSubtitle}>Desactivá lo que no querés</Text>
+                        </View>
+                        <TouchableOpacity onPress={closeIngredientSheet} style={styles.sheetClose}>
+                            <Feather name="x" size={20} color="#666" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Lista de ingredientes */}
+                    <ScrollView style={styles.sheetList} showsVerticalScrollIndicator={false}>
+                        {(foodItem.ingredientText || []).map((ingredient, index) => {
+                            const isOn = selectedIngredients.has(ingredient);
+                            const canRemove = removibleMap[ingredient] !== false;
+                            return (
+                                <View key={index} style={[styles.sheetRow, !canRemove && { opacity: 0.5 }]}>
+                                    <View style={styles.sheetRowLeft}>
+                                        <View style={[styles.sheetDot, !isOn && styles.sheetDotOff]} />
+                                        <View>
+                                            <Text style={[styles.sheetRowText, !isOn && styles.sheetRowTextOff]}>
+                                                {ingredient}
+                                            </Text>
+                                            {!canRemove && (
+                                                <Text style={{ fontSize: 11, color: '#999', marginTop: 1 }}>
+                                                    Base del plato
+                                                </Text>
+                                            )}
+                                        </View>
+                                    </View>
+                                    <Switch
+                                        value={isOn}
+                                        onValueChange={() => handleToggleIngredient(ingredient)}
+                                        disabled={!canRemove}
+                                        trackColor={{ false: '#e0e0e0', true: '#FFD0A0' }}
+                                        thumbColor={isOn ? '#FF8000' : '#bbb'}
+                                        ios_backgroundColor="#e0e0e0"
+                                    />
+                                </View>
+                            );
+                        })}
+                    </ScrollView>
+
+                    {/* Footer */}
+                    <View style={styles.sheetFooter}>
+                        {removedCount > 0 && (
+                            <Text style={styles.sheetRemovedText}>
+                                Sin: {(foodItem.ingredientText || []).filter(i => !selectedIngredients.has(i)).join(' · ')}
+                            </Text>
+                        )}
+                        <TouchableOpacity style={styles.sheetConfirm} onPress={closeIngredientSheet}>
+                            <Text style={styles.sheetConfirmText}>
+                                {removedCount > 0 ? `Listo · ${removedCount} quitado${removedCount > 1 ? 's' : ''}` : 'Listo'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            </Modal>
+        </View>
     );
 };
 
@@ -718,26 +928,172 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         fontFamily: 'Poppins-Regular',
     },
+    // Botón de personalización en el detalle
+    customizeButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 14,
+        paddingHorizontal: 18,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: '#FF8000',
+        backgroundColor: '#FFF3E8',
+        marginBottom: 24,
+    },
+    customizeButtonActive: {
+        backgroundColor: '#FF8000',
+        borderColor: '#FF8000',
+    },
+    customizeButtonText: {
+        flex: 1,
+        fontSize: 14,
+        fontFamily: 'Poppins-SemiBold',
+        color: '#FF8000',
+    },
+    customizeButtonTextActive: {
+        color: 'white',
+    },
+    customizeBadge: {
+        backgroundColor: 'rgba(255,255,255,0.3)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    customizeBadgeText: {
+        color: 'white',
+        fontSize: 11,
+        fontFamily: 'Poppins-SemiBold',
+    },
+    // Bottom Sheet
+    sheetOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+    },
+    sheet: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingBottom: 32,
+        maxHeight: '75%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        elevation: 20,
+    },
+    sheetHandle: {
+        width: 40,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: '#ddd',
+        alignSelf: 'center',
+        marginTop: 12,
+        marginBottom: 4,
+    },
+    sheetHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        paddingHorizontal: 24,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    sheetTitle: {
+        fontSize: 18,
+        fontFamily: 'Poppins-Bold',
+        color: '#1a1a1a',
+    },
+    sheetSubtitle: {
+        fontSize: 13,
+        fontFamily: 'Poppins-Regular',
+        color: '#999',
+        marginTop: 2,
+    },
+    sheetClose: {
+        padding: 6,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 20,
+    },
+    sheetList: {
+        paddingHorizontal: 24,
+        paddingTop: 8,
+    },
+    sheetRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f5f5f5',
+    },
+    sheetRowLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    sheetDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#FF8000',
+        marginRight: 12,
+    },
+    sheetDotOff: {
+        backgroundColor: '#ddd',
+    },
+    sheetRowText: {
+        fontSize: 15,
+        fontFamily: 'Poppins-Regular',
+        color: '#1a1a1a',
+    },
+    sheetRowTextOff: {
+        color: '#bbb',
+        textDecorationLine: 'line-through',
+    },
+    sheetFooter: {
+        paddingHorizontal: 24,
+        paddingTop: 16,
+    },
+    sheetRemovedText: {
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        color: '#FF6B6B',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    sheetConfirm: {
+        backgroundColor: '#FF8000',
+        borderRadius: 20,
+        paddingVertical: 16,
+        alignItems: 'center',
+        shadowColor: '#FF8000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    sheetConfirmText: {
+        color: 'white',
+        fontSize: 16,
+        fontFamily: 'Poppins-Bold',
+    },
+    // Estilos legacy (mantenidos por compatibilidad)
     ingredientsSection: {
         marginBottom: 24,
     },
-    ingredientsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    ingredientChip: {
-        backgroundColor: '#f8f8f8',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-    },
-    ingredientText: {
-        fontSize: 14,
-        color: '#666',
-        fontFamily: 'Poppins-Regular',
+    ingredientRow: { flexDirection: 'row' },
+    ingredientRowRemoved: {},
+    checkbox: {},
+    checkboxSelected: {},
+    ingredientRowText: { flex: 1 },
+    ingredientRowTextRemoved: {},
+    removedBadge: {},
+    removedBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontFamily: 'Poppins-SemiBold',
     },
     // Comentarios
     commentsSection: {

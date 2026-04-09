@@ -1,22 +1,49 @@
-# Node
+# ── Variables de entorno (NUNCA commitear) ────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Dependencias ──────────────────────────────────────────
 node_modules/
 **/node_modules/
 
-# Ignore nested git dirs (avoid embedded-repo errors)
-frontend/.git/
-backend/.git/
+# ── Backend ───────────────────────────────────────────────
+backend/node_modules/
 
-# Ignore common files
-.env
-.DS_Store
-nul
+# ── Frontend / Expo ───────────────────────────────────────
+frontend/.expo/
+frontend/dist/
+frontend/.expo-shared/
+
+# ── Logs ─────────────────────────────────────────────────
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build / output
-/dist
-/build
+# ── OS ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
 
-# VSCode
-.vscode/
+# ── Editores ─────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+
+# ── Archivos basura Windows ─────────────────────────────
+nul
+nultaskkill
+desktop.ini
+
+# ── Builds ──────────────────────────────────────────────
+*.tsbuildinfo
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# ── Backups ─────────────────────────────────────────────
+*.backup
+*.orig.*

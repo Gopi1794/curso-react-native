@@ -2,6 +2,8 @@
   "expo": {
     "name": "Tu App Food",
     "slug": "tu-app-food",
+    "scheme": "tu-app-food",
+    "owner": "gabriel1238",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,7 +13,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -31,7 +32,8 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "tsconfigPaths": false
@@ -39,7 +41,7 @@
     "extra": {
       "eas": {
         "projectId": "33784b9f-ca85-4f3c-b39a-5fe5939ef40a",
-          "mapsUserAgent": "TuNombreApp/1.0 (contacto@tuemail.com)"
+        "mapsUserAgent": "TuNombreApp/1.0 (contacto@tuemail.com)"
       }
     }
   }

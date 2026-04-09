@@ -10,6 +10,7 @@ import {
     Dimensions
 } from 'react-native';
 import Lottie from 'lottie-react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -36,7 +37,7 @@ const WelcomePopup = ({ showWelcomePopup, setShowWelcomePopup }) => {
 
             const timer = setTimeout(() => {
                 handleClose();
-            }, 12000000);
+            }, 5000);
 
             return () => clearTimeout(timer);
         } else {
@@ -103,7 +104,7 @@ const WelcomePopup = ({ showWelcomePopup, setShowWelcomePopup }) => {
                         />
 
                         <Text style={styles.welcomeText}>¡Bienvenido!</Text>
-                        <Text style={styles.emoji}>🥳</Text>
+                        <Ionicons name="happy-outline" size={40} color="#ff8700" style={styles.welcomeIcon} />
 
                         <Text style={styles.message}>Has iniciado sesión correctamente</Text>
 
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
         height: 500,
         shadowColor: '#191919ff',
         shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 10,
+        shadowOpacity: 0.25,
     },
     popup: {
         top: 100,
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 80,
+        shadowOpacity: 0.6,
         shadowRadius: 12,
         elevation: 12,
         borderWidth: 2,
@@ -184,8 +185,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 5,
     },
-    emoji: {
-        fontSize: 32,
+    welcomeIcon: {
         marginBottom: 10,
     },
     message: {

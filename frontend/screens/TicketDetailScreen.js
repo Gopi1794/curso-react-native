@@ -1,5 +1,5 @@
 // screens/TicketDetailScreen.js
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,7 +7,9 @@ import {
     StyleSheet,
     Dimensions,
     StatusBar,
+    Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Componentes comunes
@@ -22,157 +24,42 @@ import { ticketImages, realProductImages } from '../config/images';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-// DEFINIR LOS ESTILOS ANTES del componente
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    backgroundGradient: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
-    },
-    scrollView: {
-        flex: 1,
-        marginTop: 100,
-    },
-    scrollContent: {
-        paddingBottom: 120,
-        alignItems: 'center',
-    },
-    flipWrapper: {
-        width: screenWidth - 40,
-        marginBottom: 25,
-    },
-    productLabel: {
-        position: 'absolute',
-        top: 15,
-        left: 15,
-        zIndex: 2,
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    productLabelText: {
-        fontFamily: 'Poppins-Bold',
-        color: 'white',
-        fontSize: 8,
-    },
-
-    // SECCIONES ORIGINALES
-    infoContainer: {
-        backgroundColor: '#000',
-        padding: 20,
-        borderTopRightRadius: 15,
-        borderTopLeftRadius: 15,
-        width: '90%',
-        alignItems: 'center',
-    },
-    offerText: {
-        color: '#FF8000',
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 5,
-    },
-    titleText: {
-        color: 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 10,
-    },
-    validUntilText: {
-        color: '#ccc',
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 10,
-    },
-    disclaimerText: {
-        color: '#FF6B6B',
-        fontSize: 14,
-        textAlign: 'center',
-        fontStyle: 'italic',
-    },
-    qrContainer: {
-        zIndex: 1,
-        backgroundColor: 'white',
-        padding: 20,
-        width: '95%',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    qrTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        color: '#333',
-    },
-    qrCodeContainer: {
-        padding: 10,
-        borderRadius: 10,
-    },
-    qrCodeText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        fontFamily: 'monospace',
-        marginBottom: 10,
-    },
-    qrInstruction: {
-        fontSize: 14,
-        color: '#666',
-        textAlign: 'center',
-    },
-    termsContainer: {
-        backgroundColor: '#000',
-        padding: 20,
-        borderBottomRightRadius: 15,
-        borderBottomLeftRadius: 15,
-        width: '90%',
-    },
-    termsTitle: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    termsText: {
-        color: '#ccc',
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-});
-
 const TicketDetailScreen = ({ route, navigation }) => {
     const { ticket } = route.params;
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(30)).current;
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, []);
 
     const handleGoBack = () => {
         navigation.goBack();
     };
 
-    // Obtener imagen del ticket
     const getTicketImage = () => {
         return ticketImages[ticket.img] || ticketImages['ticket-1.webp'];
     };
 
-    // Obtener imagen real del producto
     const getRealProductImage = () => {
         return realProductImages[ticket.realImage] || getTicketImage();
     };
 
-    // Contenido frontal del ticket
     const renderFrontContent = () => (
         <TicketContent ticket={ticket} />
     );
 
-    // Contenido trasero del ticket
     const renderBackContent = () => (
         <View style={styles.productLabel}>
             <Text style={styles.productLabelText}>PRODUCTO REAL</Text>
@@ -183,14 +70,10 @@ const TicketDetailScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-            {/* Fondo con gradiente */}
-            <LinearGradient
-                colors={['#ffffffff', '#ffffffff', '#ffffffff']}
-                style={styles.backgroundGradient}
-            />
+            <View style={styles.background} />
 
             <AppHeader
-                title="Detalle del Ticket"
+                title="Detalle del Cupón"
                 onBack={handleGoBack}
             />
 
@@ -204,7 +87,7 @@ const TicketDetailScreen = ({ route, navigation }) => {
                     text="Toca la imagen para voltear y ver el producto real"
                 />
 
-                {/* CONTENEDOR FLIP */}
+                {/* Flip Card */}
                 <View style={styles.flipWrapper}>
                     <TicketFlipCard
                         ticket={ticket}
@@ -216,39 +99,287 @@ const TicketDetailScreen = ({ route, navigation }) => {
                     />
                 </View>
 
-                {/* Información del ticket */}
-                <View style={styles.infoContainer}>
-                    <Text style={styles.offerText}>{ticket.offer}</Text>
-                    <Text style={styles.titleText}>{ticket.title}</Text>
-                    <Text style={styles.validUntilText}>Válido hasta: {ticket.validUntil}</Text>
-                    <Text style={styles.disclaimerText}>{ticket.disclaimer}</Text>
-                </View>
+                {/* Info principal */}
+                <Animated.View style={[
+                    styles.infoCard,
+                    { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+                ]}>
+                    {/* Barra de color */}
+                    <View style={[styles.infoColorBar, { backgroundColor: ticket.color }]} />
 
-                {/* Código QR */}
-                <View style={styles.qrContainer}>
+                    <View style={[styles.offerBadge, { backgroundColor: ticket.color }]}>
+                        <Ionicons name="pricetag" size={14} color="#fff" />
+                        <Text style={styles.offerText}>{ticket.offer}</Text>
+                    </View>
+
+                    <Text style={styles.titleText}>{ticket.title}</Text>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.infoRow}>
+                        <Ionicons name="calendar-outline" size={16} color="#888" />
+                        <Text style={styles.infoLabel}>Válido hasta</Text>
+                        <Text style={styles.infoValue}>{ticket.validUntil}</Text>
+                    </View>
+
+                    {ticket.disclaimer ? (
+                        <View style={styles.disclaimerBox}>
+                            <Ionicons name="information-circle-outline" size={14} color="#e67e00" />
+                            <Text style={styles.disclaimerText}>{ticket.disclaimer}</Text>
+                        </View>
+                    ) : null}
+                </Animated.View>
+
+                {/* QR Code */}
+                <Animated.View style={[
+                    styles.qrCard,
+                    { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+                ]}>
                     <Text style={styles.qrTitle}>Código QR para canjear</Text>
-                    <View style={styles.qrCodeContainer}>
+
+                    <View style={styles.qrWrapper}>
                         <CustomQRCode
                             value={ticket.code}
-                            size={200}
-                            color="black"
+                            size={180}
+                            color="#1a1a1a"
                             backgroundColor="white"
                         />
                     </View>
-                    <Text style={styles.qrCodeText}>{ticket.code}</Text>
-                    <Text style={styles.qrInstruction}>
-                        Presenta este código al personal para canjear tu promo
-                    </Text>
-                </View>
 
-                {/* Términos y condiciones */}
-                <View style={styles.termsContainer}>
-                    <Text style={styles.termsTitle}>Términos y Condiciones</Text>
-                    <Text style={styles.termsText}>{ticket.backText}</Text>
-                </View>
+                    <View style={styles.codeBox}>
+                        <Text style={styles.codeText}>{ticket.code}</Text>
+                    </View>
+
+                    <View style={styles.qrInstructionRow}>
+                        <Ionicons name="scan-outline" size={16} color="#888" />
+                        <Text style={styles.qrInstruction}>
+                            Presentá este código al personal para canjear tu promo
+                        </Text>
+                    </View>
+                </Animated.View>
+
+                {/* Términos */}
+                {ticket.backText ? (
+                    <Animated.View style={[
+                        styles.termsCard,
+                        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+                    ]}>
+                        <View style={styles.termsHeader}>
+                            <Ionicons name="document-text-outline" size={16} color="#888" />
+                            <Text style={styles.termsTitle}>Términos y Condiciones</Text>
+                        </View>
+                        <Text style={styles.termsText}>{ticket.backText}</Text>
+                    </Animated.View>
+                ) : null}
             </ScrollView>
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    background: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#f5f5f5',
+    },
+    scrollView: {
+        flex: 1,
+        marginTop: (StatusBar.currentHeight || 40) + 60,
+    },
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 120,
+        alignItems: 'center',
+    },
+
+    // Flip card
+    flipWrapper: {
+        width: screenWidth - 40,
+        marginBottom: 20,
+    },
+    productLabel: {
+        position: 'absolute',
+        top: 15,
+        left: 15,
+        zIndex: 2,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 10,
+    },
+    productLabelText: {
+        fontFamily: 'Poppins-Bold',
+        color: 'white',
+        fontSize: 9,
+    },
+
+    // Info card
+    infoCard: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+        overflow: 'hidden',
+    },
+    infoColorBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+    },
+    offerBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 6,
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 20,
+        marginBottom: 12,
+    },
+    offerText: {
+        fontFamily: 'Poppins-Bold',
+        color: '#fff',
+        fontSize: 14,
+    },
+    titleText: {
+        fontFamily: 'Poppins-Bold',
+        color: '#222',
+        fontSize: 20,
+        marginBottom: 12,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#f0f0f0',
+        marginBottom: 12,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 12,
+    },
+    infoLabel: {
+        fontFamily: 'Poppins-Regular',
+        color: '#888',
+        fontSize: 13,
+    },
+    infoValue: {
+        fontFamily: 'Poppins-Bold',
+        color: '#333',
+        fontSize: 13,
+    },
+    disclaimerBox: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        backgroundColor: '#fff8f0',
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#ffe0b2',
+    },
+    disclaimerText: {
+        flex: 1,
+        fontFamily: 'Poppins-Regular',
+        color: '#b36b00',
+        fontSize: 12,
+        lineHeight: 18,
+    },
+
+    // QR Card
+    qrCard: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 24,
+        marginBottom: 16,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    qrTitle: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 16,
+        color: '#333',
+        marginBottom: 20,
+    },
+    qrWrapper: {
+        padding: 12,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#f0f0f0',
+        marginBottom: 16,
+    },
+    codeBox: {
+        backgroundColor: '#f8f8f8',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 12,
+        marginBottom: 16,
+    },
+    codeText: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 18,
+        color: '#333',
+        letterSpacing: 2,
+    },
+    qrInstructionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    qrInstruction: {
+        flex: 1,
+        fontFamily: 'Poppins-Regular',
+        fontSize: 12,
+        color: '#888',
+        lineHeight: 18,
+    },
+
+    // Terms card
+    termsCard: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    termsHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 12,
+    },
+    termsTitle: {
+        fontFamily: 'Poppins-Bold',
+        color: '#333',
+        fontSize: 14,
+    },
+    termsText: {
+        fontFamily: 'Poppins-Regular',
+        color: '#666',
+        fontSize: 13,
+        lineHeight: 20,
+    },
+});
 
 export default TicketDetailScreen;

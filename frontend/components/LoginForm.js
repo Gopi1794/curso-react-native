@@ -5,21 +5,21 @@ import {
     TextInput,
     TouchableOpacity,
     Image,
+    ImageBackground,
     StyleSheet,
-    Alert,
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
 } from "react-native";
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
-// ✅ FIREBASE COMPAT
-import { auth } from '../firebase/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API from '../services/api';
 import { useAppDispatch } from '../store/hooks';
 import { login } from '../store/slices/userSlice';
+import { showErrorMessage, showInfoMessage } from './FlashMessageWrapper';
 
 export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
     const [email, setEmail] = useState("");
@@ -27,79 +27,71 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [focusedInput, setFocusedInput] = useState(null);
+    const [errors, setErrors] = useState({});
     const dispatch = useAppDispatch();
 
     const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert("Error", "Por favor, completa todos los campos");
+        if (!email && !password) {
+            showErrorMessage("Campos vacíos", "Ingresá tu correo y contraseña");
+            return;
+        }
+        if (!email) {
+            showErrorMessage("Campo vacío", "Ingresá tu correo electrónico");
+            return;
+        }
+        if (!password) {
+            showErrorMessage("Campo vacío", "Ingresá tu contraseña");
             return;
         }
 
+        setErrors({});
         setLoading(true);
 
-
         try {
-            // ✅ FIREBASE COMPAT - Método directo
-            const userCredential = await auth.signInWithEmailAndPassword(email, password);
-            const user = userCredential.user;
+            const response = await API.auth.login(email.trim(), password);
+
+            if (!response.success) {
+                showErrorMessage(
+                    'Error al iniciar sesión',
+                    response.message || 'Verificá tu email y contraseña.'
+                );
+                return;
+            }
+
+            await API.token.save(response.token);
 
             dispatch(login({
-                id: user.uid,
-                name: user.displayName || user.email.split('@')[0],
-                email: user.email,
+                id: response.user.id,
+                uuid: response.user.uuid,
+                nombre: response.user.nombre,
+                apellido: response.user.apellido,
+                email: response.user.email,
+                telefono: response.user.telefono,
+                rol: response.user.rol,
+                estado: response.user.estado,
                 avatar: require('../assets/img/usuario-img.jpg'),
-                isPremium: false
+                token: response.token,
             }));
 
+            await AsyncStorage.setItem('showWelcomePopup', 'true');
             onLoginSuccess?.();
 
         } catch (error) {
             console.error('Error en login:', error);
-            let errorMessage = "Error al iniciar sesión";
-
-            switch (error.code) {
-                case 'auth/user-not-found':
-                    errorMessage = "Usuario no encontrado";
-                    break;
-                case 'auth/wrong-password':
-                    errorMessage = "Contraseña incorrecta";
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = "Email inválido";
-                    break;
-                case 'auth/too-many-requests':
-                    errorMessage = "Demasiados intentos. Intenta más tarde";
-                    break;
-                default:
-                    errorMessage = error.message;
-            }
-
-            Alert.alert("Error", errorMessage);
+            showErrorMessage(
+                'Sin conexión',
+                'No se pudo conectar con el servidor. Verificá tu conexión.'
+            );
         } finally {
             setLoading(false);
         }
     };
 
-    const handleGoogleLogin = async () => {
-        setLoading(true);
-
-        try {
-            // ✅ TEMPORAL: Mensaje informativo
-            Alert.alert(
-                "Google Sign-In",
-                "Google Sign-In estará disponible pronto. Por ahora usa el login con email."
-            );
-
-            // Para una implementación real con Expo, usarías:
-            // - expo-auth-session + Firebase Web SDK
-            // O mantén el login con email como opción principal
-
-        } catch (error) {
-            console.error('Error en Google login:', error);
-            Alert.alert("Error", "Error al iniciar sesión con Google");
-        } finally {
-            setLoading(false);
-        }
+    const handleGoogleLogin = () => {
+        showInfoMessage(
+            "Próximamente",
+            "El inicio de sesión con Google estará disponible pronto"
+        );
     };
 
     // Usuarios de prueba para desarrollo (opcional)
@@ -118,16 +110,17 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
             style={styles.mainContainer}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-            <ScrollView
-                contentContainerStyle={styles.scrollContainer}
-                showsVerticalScrollIndicator={false}
+            <ImageBackground
+                source={require('../assets/img/back-app.jpg')}
+                style={styles.background}
+                resizeMode="cover"
             >
-                <View style={styles.container}>
-                    <LinearGradient
-                        colors={['#ffa346ff', '#ffa346ff']}
-                        style={styles.gradientBackground}
-                    >
-                        <BlurView intensity={25} tint="dark" style={styles.blurContainer}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.container}>
+                        <BlurView intensity={55} tint="dark" style={styles.blurContainer}>
                             <View style={styles.formContainer}>
                                 <Image
                                     source={require('../assets/img/logoApp.png')}
@@ -139,18 +132,19 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
                                     <Text style={styles.label}>Correo Electrónico</Text>
                                     <View style={[
                                         styles.inputContainer,
-                                        focusedInput === 'email' && styles.inputFocused
+                                        focusedInput === 'email' && styles.inputFocused,
+                                        errors.email && styles.inputError
                                     ]}>
                                         <Ionicons
                                             name="mail-outline"
                                             size={20}
-                                            color={focusedInput === 'email' ? "#FF6B6B" : "#888"}
+                                            color={errors.email ? "#FF6B6B" : focusedInput === 'email' ? "#FF6B6B" : "#888"}
                                             style={styles.inputIcon}
                                         />
                                         <TextInput
                                             style={styles.input}
                                             value={email}
-                                            onChangeText={setEmail}
+                                            onChangeText={(text) => { setEmail(text); setErrors(e => ({ ...e, email: null })); }}
                                             placeholder="tu@email.com"
                                             placeholderTextColor="#888"
                                             keyboardType="email-address"
@@ -160,6 +154,7 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
                                             onBlur={() => setFocusedInput(null)}
                                         />
                                     </View>
+                                    {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
                                 </View>
 
                                 {/* Campo de Contraseña */}
@@ -167,18 +162,19 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
                                     <Text style={styles.label}>Contraseña</Text>
                                     <View style={[
                                         styles.inputContainer,
-                                        focusedInput === 'password' && styles.inputFocused
+                                        focusedInput === 'password' && styles.inputFocused,
+                                        errors.password && styles.inputError
                                     ]}>
                                         <Ionicons
                                             name="lock-closed-outline"
                                             size={20}
-                                            color={focusedInput === 'password' ? "#FF6B6B" : "#888"}
+                                            color={errors.password ? "#FF6B6B" : focusedInput === 'password' ? "#FF6B6B" : "#888"}
                                             style={styles.inputIcon}
                                         />
                                         <TextInput
                                             style={styles.input}
                                             value={password}
-                                            onChangeText={setPassword}
+                                            onChangeText={(text) => { setPassword(text); setErrors(e => ({ ...e, password: null })); }}
                                             placeholder="••••••••"
                                             placeholderTextColor="#888"
                                             secureTextEntry={!showPassword}
@@ -197,7 +193,16 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
                                             />
                                         </TouchableOpacity>
                                     </View>
+                                    {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
                                 </View>
+
+                                {/* Error general (credenciales / conexión) */}
+                                {errors.general && (
+                                    <View style={styles.generalErrorContainer}>
+                                        <Ionicons name="alert-circle-outline" size={16} color="#FF6B6B" />
+                                        <Text style={styles.generalErrorText}>{errors.general}</Text>
+                                    </View>
+                                )}
 
                                 {/* Botón de Ingresar */}
                                 <TouchableOpacity
@@ -271,9 +276,9 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
                                 </View>
                             </View>
                         </BlurView>
-                    </LinearGradient>
-                </View>
-            </ScrollView>
+                    </View>
+                </ScrollView>
+            </ImageBackground>
         </KeyboardAvoidingView>
     );
 };
@@ -289,27 +294,27 @@ const styles = StyleSheet.create({
         bottom: 0,
         zIndex: 10,
     },
+    background: {
+        flex: 1,
+    },
     scrollContainer: {
-        backgroundColor: '#ff8000',
         flexGrow: 1,
         justifyContent: 'center',
         paddingHorizontal: 20,
+        paddingBottom: 40,
+        paddingTop: 40,
     },
     container: {
-        borderColor: '#ffff',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 8,
-        elevation: 8,
+        shadowOpacity: 0.5,
+        shadowRadius: 12,
+        elevation: 10,
         borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
         width: '100%',
         maxWidth: 400,
         alignSelf: 'center',
-        borderRadius: 30,
-        overflow: 'hidden',
-    },
-    gradientBackground: {
         borderRadius: 30,
         overflow: 'hidden',
     },
@@ -385,6 +390,32 @@ const styles = StyleSheet.create({
     },
     disabledButton: {
         opacity: 0.6,
+    },
+    inputError: {
+        borderColor: '#FF6B6B',
+    },
+    errorText: {
+        color: '#FF6B6B',
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        marginTop: 4,
+        marginLeft: 4,
+    },
+    generalErrorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 107, 107, 0.15)',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        width: '100%',
+        gap: 6,
+    },
+    generalErrorText: {
+        color: '#FF6B6B',
+        fontSize: 13,
+        fontFamily: 'Poppins-Regular',
+        flex: 1,
     },
     buttonText: {
         fontFamily: "Poppins-Bold",

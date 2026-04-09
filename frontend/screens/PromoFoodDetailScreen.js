@@ -28,6 +28,11 @@ import { showSuccessMessage } from '../components/FlashMessageWrapper';
 import { addToCart } from '../store/slices/cartSlice';
 import { useAppDispatch } from '../store/hooks';
 import { imageMap } from '../assets/utils/imageMap';
+const toUri = (val) => {
+    if (typeof val === 'string') return val;
+    if (val && val.uri) return val.uri;
+    return null;
+};
 import { PromoActionBar } from '../components/common/PromoActionBar';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -204,7 +209,7 @@ const PromoFoodDetailScreen = ({ route }) => {
     const renderImageItem = ({ item }) => (
         <View style={styles.carouselItem}>
             <Image
-                source={imageMap[item.imageKey]}
+                source={{ uri: toUri(imageMap[item.imageKey]) }}
                 style={styles.carouselImage}
                 resizeMode="cover"
             />
@@ -536,11 +541,10 @@ const styles = StyleSheet.create({
     // Contador e indicadores
     imageCounter: {
         position: 'absolute',
-        top: 40,
-        right: 165,
-        backgroundColor: '#ff80009f', paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
+        top: 50,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
         zIndex: 100,
     },
     imageCounterText: {
@@ -548,10 +552,15 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
         fontFamily: 'Poppins-SemiBold',
+        backgroundColor: '#ff80009f',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        overflow: 'hidden',
     },
     indicatorsContainer: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 10,
         left: 0,
         right: 0,
         flexDirection: 'row',

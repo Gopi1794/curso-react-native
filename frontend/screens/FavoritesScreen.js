@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // 👈 Agregar useState
+import React, { useState, useRef, useCallback, memo } from 'react';
 import {
     View,
     Text,
@@ -6,226 +6,234 @@ import {
     Image,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView,
     StatusBar,
     Dimensions,
-    Animated
+    Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { removeFromFavorites } from '../store/slices/userSlice';
-import { showSuccessMessage, showFavoriteMessage } from '../components/FlashMessageWrapper';
-import { LinearGradient } from 'expo-linear-gradient';
+import { showFavoriteMessage } from '../components/FlashMessageWrapper';
 import { imageMap } from '../assets/utils/imageMap';
-
-
 import AppHeader from '../components/common/AppHeader';
-// 👇 Importar componentes de React Native Paper
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 
 const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - 52) / 2; // 16px lateral + 10px gap entre columnas
 
+// Componente memoizado para cada favorito
+const FavoriteItem = memo(({ item, onPress, onRemove, index }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const entryAnim = useRef(new Animated.Value(0)).current;
+
+    React.useEffect(() => {
+        Animated.timing(entryAnim, {
+            toValue: 1,
+            duration: 350,
+            delay: index * 60,
+            useNativeDriver: true,
+        }).start();
+    }, []);
+
+    const handlePressIn = () => {
+        Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true }).start();
+    };
+    const handlePressOut = () => {
+        Animated.spring(scaleAnim, { toValue: 1, friction: 4, useNativeDriver: true }).start();
+    };
+
+    const translateY = entryAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [20, 0],
+    });
+
+    const imageUrl = imageMap[item.imageKey];
+    const itemImage = item.image || (imageUrl ? { uri: typeof imageUrl === 'string' ? imageUrl : imageUrl.uri } : null);
+
+    return (
+        <Animated.View style={[
+            styles.cardWrapper,
+            { opacity: entryAnim, transform: [{ scale: scaleAnim }, { translateY }] }
+        ]}>
+            <TouchableOpacity
+                onPress={() => onPress(item)}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                activeOpacity={1}
+                accessibilityLabel={`Ver ${item.name}`}
+            >
+                <View style={styles.card}>
+                    {/* Imagen */}
+                    <View style={styles.imageWrapper}>
+                        {itemImage ? (
+                            <Image
+                                source={itemImage}
+                                style={styles.foodImage}
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            <View style={styles.imagePlaceholder}>
+                                <Ionicons name="image-outline" size={32} color="#ccc" />
+                            </View>
+                        )}
+                        {/* Badge corazón */}
+                        <View style={styles.heartBadge}>
+                            <Ionicons name="heart" size={12} color="#fff" />
+                        </View>
+                    </View>
+
+                    {/* Contenido */}
+                    <View style={styles.cardContent}>
+                        <Text style={styles.foodName} numberOfLines={2}>
+                            {item.name}
+                        </Text>
+
+                        <View style={styles.cardActions}>
+                            {/* Ver detalle */}
+                            <TouchableOpacity
+                                style={styles.viewButton}
+                                onPress={() => onPress(item)}
+                                accessibilityLabel="Ver detalle"
+                            >
+                                <Ionicons name="eye-outline" size={15} color="#fff" />
+                            </TouchableOpacity>
+
+                            {/* Eliminar */}
+                            <TouchableOpacity
+                                style={styles.removeButton}
+                                onPress={() => onRemove(item.id, item.name)}
+                                accessibilityLabel="Eliminar de favoritos"
+                            >
+                                <Ionicons name="heart-dislike-outline" size={15} color="#ff4444" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+});
+
+// Estado vacío
+const EmptyState = ({ onExplore }) => (
+    <View style={styles.emptyState}>
+        <View style={styles.emptyIconWrapper}>
+            <Ionicons name="heart-outline" size={52} color="#ff8700" />
+        </View>
+        <Text style={styles.emptyTitle}>Sin favoritos aún</Text>
+        <Text style={styles.emptySubtitle}>
+            Guardá tus platos preferidos para acceder rápido
+        </Text>
+        <TouchableOpacity style={styles.exploreButton} onPress={onExplore}>
+            <Text style={styles.exploreButtonText}>Explorar menú</Text>
+        </TouchableOpacity>
+    </View>
+);
 
 const FavoritesScreen = () => {
     const navigation = useNavigation();
     const dispatch = useAppDispatch();
     const favorites = useAppSelector(state => state.user.favorites);
 
-    // 👇 Estado para controlar el diálogo
     const [dialogVisible, setDialogVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
 
-    const navigateToFoodDetail = (foodItem) => {
+    const handleGoBack = useCallback(() => navigation.goBack(), [navigation]);
+
+    const handlePress = useCallback((foodItem) => {
         navigation.navigate('FoodDetailFromFavorites', { foodItem });
-    };
-    const navigateToHome = () => {
+    }, [navigation]);
+
+    const handleExplore = useCallback(() => {
         navigation.navigate('HomeTab');
-    };
+    }, [navigation]);
 
-    const handleGoBack = () => {
-        navigation.goBack();
-    };
-
-    // 👇 Nueva función para mostrar el diálogo
-    const showDeleteDialog = (itemId, itemName) => {
+    const showDeleteDialog = useCallback((itemId, itemName) => {
         setSelectedItem({ id: itemId, name: itemName });
         setDialogVisible(true);
-    };
+    }, []);
 
-    // 👇 Función para confirmar eliminación
-    const confirmDelete = () => {
+    const confirmDelete = useCallback(() => {
         if (selectedItem) {
             dispatch(removeFromFavorites(selectedItem.id));
             showFavoriteMessage(false, selectedItem.name);
             setDialogVisible(false);
             setSelectedItem(null);
         }
-    };
+    }, [selectedItem, dispatch]);
 
-    // 👇 Función para cancelar eliminación
-    const cancelDelete = () => {
+    const cancelDelete = useCallback(() => {
         setDialogVisible(false);
         setSelectedItem(null);
-    };
+    }, []);
 
-    const renderFavoriteItem = ({ item, index }) => {
-        const itemImage = item.image || imageMap[item.imageKey];
+    const renderItem = useCallback(({ item, index }) => (
+        <FavoriteItem
+            item={item}
+            index={index}
+            onPress={handlePress}
+            onRemove={showDeleteDialog}
+        />
+    ), [handlePress, showDeleteDialog]);
 
-        return (
-            <Animated.View
-                style={[
-                    styles.favoriteCard,
-                    {
-                        opacity: 1,
-                        transform: [{ translateY: 0 }]
-                    }
-                ]}
-            >
-                <TouchableOpacity
-                    style={styles.cardTouchable}
-                    onPress={() => {
-                        navigateToFoodDetail(item);
-                    }}
-                    activeOpacity={0.7}
-                >
-                    {/* Imagen con overlay gradient */}
-                    <View style={styles.imageContainer}>
-                        <Image
-                            source={itemImage}
-                            style={styles.foodImage}
-                            resizeMode="cover"
-                        />
-
-                        {/* Badge de favorito */}
-                        <View style={styles.favoriteBadge}>
-                            <Ionicons name="heart" size={16} color="#fff" />
-                        </View>
-                    </View>
-
-                    {/* Contenido de la tarjeta */}
-                    <View style={styles.cardContent}>
-                        <View style={styles.textContainer}>
-                            <Text style={styles.foodName} numberOfLines={2}>
-                                {item.name}
-                            </Text>
-                        </View>
-
-                        {/* Botones de acción */}
-                        <View style={styles.actionButtons}>
-                            <TouchableOpacity
-                                style={styles.detailButton}
-                                onPress={() => {
-                                    navigateToFoodDetail(item);
-                                }}
-                            >
-                                <Ionicons name="eye" size={20} color="#fff" />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.removeButton}
-                                onPress={() => showDeleteDialog(item.id, item.name)} // 👈 Cambiado
-                            >
-                                <Ionicons name="heart-dislike" size={24} color="#ff4444" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-            </Animated.View>
-        );
-    };
+    const keyExtractor = useCallback((item) => String(item.id), []);
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
-            {/* Fondo con gradiente fijo */}
-            <LinearGradient
-                colors={['#ffffffff', '#ffffff', '#ffffff']}
-                style={styles.backgroundGradient}
-            />
-
-            {/* Header moderno */}
+            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+            <View style={styles.background} />
 
             <AppHeader
                 title="Mis Favoritos"
                 onBack={handleGoBack}
-                showCart={false} // Opcional: si quieres mostrar el carrito
+                showCart={false}
                 rightContent={
-                    <Text style={styles.favoritesCount}>
-                        {favorites.length} {favorites.length === 1 ? 'item' : 'items'}
-                    </Text>
+                    favorites.length > 0 ? (
+                        <View style={styles.countBadge}>
+                            <Text style={styles.countText}>{favorites.length}</Text>
+                        </View>
+                    ) : null
                 }
             />
 
+            {favorites.length === 0 ? (
+                <View style={styles.emptyWrapper}>
+                    <EmptyState onExplore={handleExplore} />
+                </View>
+            ) : (
+                <FlatList
+                    data={favorites}
+                    renderItem={renderItem}
+                    keyExtractor={keyExtractor}
+                    numColumns={2}
+                    columnWrapperStyle={styles.columnWrapper}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    initialNumToRender={6}
+                    maxToRenderPerBatch={6}
+                />
+            )}
 
-            {/* Contenido principal */}
-            <View style={styles.content}>
-                {favorites.length === 0 ? (
-                    <View style={styles.emptyState}>
-                        <View style={styles.emptyIcon}>
-                            <Ionicons name="heart-outline" size={80} color="#ff8700" />
-                        </View>
-                        <Text style={styles.emptyTitle}>Tus favoritos están vacíos</Text>
-                        <Text style={styles.emptyDescription}>
-                            Descubre platos increíbles y guárdalos aquí para acceder rápidamente
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.exploreButton}
-                            onPress={() => {
-                                navigateToHome(); // ✅ Usar la función que definiste arriba
-                                showSuccessMessage('Explorando', 'Navegando al menú principal');
-                            }}
-                        >
-                            <Text style={styles.exploreButtonText}>Explorar Menú</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={favorites}
-                        renderItem={renderFavoriteItem}
-                        keyExtractor={(item) => item.id.toString()}
-                        contentContainerStyle={styles.listContainer}
-                        showsVerticalScrollIndicator={false}
-                        numColumns={2}
-                        columnWrapperStyle={styles.columnWrapper}
-                    />
-                )}
-            </View>
-
-            {/* 👇 Diálogo de Confirmación con React Native Paper */}
+            {/* Diálogo de confirmación */}
             <Portal>
                 <Dialog
                     visible={dialogVisible}
                     onDismiss={cancelDelete}
                     style={styles.dialog}
                 >
-                    <Dialog.Icon
-                        icon="alert"
-                        size={40}
-                        color="#ff8700"
-                    />
-                    <Dialog.Title style={styles.dialogTitle}>
-                        Eliminar de favoritos
-                    </Dialog.Title>
+                    <Dialog.Icon icon="alert-circle-outline" size={36} color="#ff8700" />
+                    <Dialog.Title style={styles.dialogTitle}>Eliminar favorito</Dialog.Title>
                     <Dialog.Content>
                         <Paragraph style={styles.dialogMessage}>
-                            ¿Estás seguro de que quieres eliminar "{selectedItem?.name}" de tus favoritos?
+                            ¿Querés eliminar "{selectedItem?.name}" de tus favoritos?
                         </Paragraph>
                     </Dialog.Content>
                     <Dialog.Actions style={styles.dialogActions}>
-                        <Button
-                            onPress={cancelDelete}
-                            textColor="#666"
-                            style={styles.cancelButton}
-                        >
+                        <Button onPress={cancelDelete} textColor="#888">
                             Cancelar
                         </Button>
-                        <Button
-                            onPress={confirmDelete}
-                            textColor="#ff4444"
-                            style={styles.deleteButton}
-                        >
+                        <Button onPress={confirmDelete} textColor="#ff4444">
                             Eliminar
                         </Button>
                     </Dialog.Actions>
@@ -238,190 +246,192 @@ const FavoritesScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
-    },
-    backgroundGradient: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
     },
     background: {
-        flex: 1,
-        width: '100%',
-        height: '100%',
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#f5f5f5',
     },
 
-    favoritesCount: {
-        color: '#ff8700',
-        fontSize: 10,
-        fontWeight: '400',
-    },
-    content: {
-        flex: 1,
-        paddingTop: 120,
-        paddingBottom: 100,
-    },
-    listContainer: {
-        paddingHorizontal: 15,
-        paddingBottom: 20,
+    // Lista
+    listContent: {
+        paddingTop: (StatusBar.currentHeight || 40) + 70,
+        paddingHorizontal: 16,
+        paddingBottom: 120,
     },
     columnWrapper: {
         justifyContent: 'space-between',
-        marginBottom: 15,
+        marginBottom: 12,
     },
-    favoriteCard: {
-        width: (width - 45) / 2,
-        backgroundColor: 'rgba(157, 157, 157, 1)',
-        borderRadius: 20,
+
+    // Tarjeta
+    cardWrapper: {
+        width: CARD_WIDTH,
+    },
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 18,
         overflow: 'hidden',
-        marginBottom: 15,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 4,
     },
-    cardTouchable: {
-        flex: 1,
-    },
-    imageContainer: {
+    imageWrapper: {
         height: 120,
+        backgroundColor: '#f0f0f0',
         position: 'relative',
-        backgroundColor: '#ff9c39ff'
     },
     foodImage: {
         width: '100%',
         height: '100%',
     },
-
-    favoriteBadge: {
+    imagePlaceholder: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f0f0f0',
+    },
+    heartBadge: {
         position: 'absolute',
         top: 10,
         right: 10,
-        borderRadius: 12,
         width: 24,
         height: 24,
+        borderRadius: 12,
+        backgroundColor: '#ff8700',
         justifyContent: 'center',
         alignItems: 'center',
-
     },
     cardContent: {
         padding: 12,
-        flex: 1,
-    },
-    textContainer: {
-        flex: 1,
-        marginBottom: 10,
     },
     foodName: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: 'bold',
         fontFamily: 'Poppins-Bold',
-        marginBottom: 5,
+        fontSize: 13,
+        color: '#222',
         lineHeight: 18,
+        marginBottom: 10,
     },
-
-    actionButtons: {
+    cardActions: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        gap: 8,
     },
-    detailButton: {
-        position: 'absolute',
-        zIndex: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255, 135, 0, 0.8)',
-        paddingHorizontal: 15,
-        paddingVertical: 15,
-        borderRadius: 25,
+    viewButton: {
         flex: 1,
-        marginRight: 8,
+        height: 34,
+        backgroundColor: '#ff8700',
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    removeButton: {
+        width: 34,
+        height: 34,
+        backgroundColor: '#fff0f0',
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ffd0d0',
     },
 
-    removeButton: {
-        left: 90,
-        padding: 12,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        borderRadius: 25,
+    // Header badge
+    countBadge: {
+        backgroundColor: '#ff8700',
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        minWidth: 24,
+        alignItems: 'center',
+    },
+    countText: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 11,
+        color: '#fff',
+    },
 
+    // Empty state
+    emptyWrapper: {
+        flex: 1,
+        paddingTop: (StatusBar.currentHeight || 40) + 70,
     },
     emptyState: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
-        marginBottom: 100,
+        paddingBottom: 100,
     },
-    emptyIcon: {
-        marginBottom: 25,
+    emptyIconWrapper: {
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        backgroundColor: '#fff8f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+        shadowColor: '#ff8700',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 4,
     },
     emptyTitle: {
-        color: '#000',
-        fontSize: 24,
-        fontWeight: 'bold',
         fontFamily: 'Poppins-Bold',
+        fontSize: 20,
+        color: '#222',
+        marginBottom: 8,
         textAlign: 'center',
-        marginBottom: 12,
     },
-    emptyDescription: {
-        color: '#000',
-        fontSize: 16,
+    emptySubtitle: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 14,
+        color: '#888',
         textAlign: 'center',
-        lineHeight: 22,
-        fontFamily: 'Inter-Regular',
-        marginBottom: 30,
+        lineHeight: 20,
+        marginBottom: 28,
     },
     exploreButton: {
         backgroundColor: '#ff8700',
-        paddingHorizontal: 30,
-        paddingVertical: 15,
-        borderRadius: 25,
+        paddingHorizontal: 28,
+        paddingVertical: 12,
+        borderRadius: 24,
         shadowColor: '#ff8700',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.25,
         shadowRadius: 8,
-        elevation: 6,
+        elevation: 4,
     },
     exploreButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
         fontFamily: 'Poppins-Bold',
+        fontSize: 14,
+        color: '#fff',
     },
-    // 👇 Nuevos estilos para el diálogo
+
+    // Dialog
     dialog: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: '#fff',
         borderRadius: 20,
-        margin: 20,
+        marginHorizontal: 24,
     },
     dialogTitle: {
         textAlign: 'center',
         fontFamily: 'Poppins-Bold',
-        fontSize: 20,
-        color: '#333',
+        fontSize: 18,
+        color: '#222',
     },
     dialogMessage: {
         textAlign: 'center',
-        fontFamily: 'Inter-Regular',
-        fontSize: 16,
+        fontFamily: 'Poppins-Regular',
+        fontSize: 14,
         color: '#666',
-        lineHeight: 22,
+        lineHeight: 20,
     },
     dialogActions: {
         justifyContent: 'space-between',
-        paddingHorizontal: 50,
-        paddingBottom: 15,
-    },
-    cancelButton: {
-        marginRight: 10,
-        backgroundColor: 'rgba(200, 200, 200, 0.3)',
-    },
-    deleteButton: {
-        backgroundColor: 'rgba(255, 68, 68, 0.1)',
-        marginLeft: 10,
+        paddingHorizontal: 24,
+        paddingBottom: 12,
     },
 });
 

@@ -1,57 +1,103 @@
-import React, { useState, useRef, useCallback } from "react";
-import { View, Text, Image, StyleSheet, FlatList, Dimensions } from "react-native";
+import React, { useState, useRef, useCallback, useMemo } from "react";
+import { View, Text, Image, StyleSheet, FlatList, Dimensions, TouchableOpacity, Animated } from "react-native";
 import { ActionButton } from './ActionButton';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-// Importa solo las imágenes de las sugerencias
-const imgSugerencia1 = require("../assets/img/sugerencias/sugerencia-1.webp");
-const imgSugerencia2 = require("../assets/img/sugerencias/sugerencia-2.webp");
-const imgSugerencia3 = require("../assets/img/sugerencias/sugerencia-3.webp");
+import { imageMap } from '../assets/utils/imageMap';
+
+const toImageSource = (val) => {
+    if (typeof val === 'string') return { uri: val };
+    if (val && val.uri) return { uri: val.uri };
+    return null;
+};
 
 // Componente memoizado para cada sugerencia
-const SugerenciaItem = React.memo(({ sugerencia, onAddSugerencia }) => {
+const SugerenciaItem = React.memo(({ sugerencia, onPress }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    const handlePressIn = () => {
+        Animated.spring(scaleAnim, {
+            toValue: 0.88,
+            tension: 100,
+            friction: 5,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const handlePressOut = () => {
+        Animated.spring(scaleAnim, {
+            toValue: 1,
+            tension: 40,
+            friction: 3,
+            useNativeDriver: true,
+        }).start();
+    };
+
     return (
-        <View style={styles.sugerenciaItemContainer}>
-            <View style={styles.sugerenciaItemInner}>
-                {/* Imagen */}
+        <Animated.View style={[styles.sugerenciaItemContainer, { transform: [{ scale: scaleAnim }] }]}>
+            <TouchableOpacity
+                style={styles.sugerenciaItemInner}
+                onPress={onPress}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                activeOpacity={1}
+                accessibilityLabel={`Ver ${sugerencia.name}`}
+                accessibilityRole="button"
+            >
                 <Image
                     style={styles.sugerenciaImage}
                     source={sugerencia.image}
                     resizeMode="cover"
                 />
 
-                {/* Card de texto */}
                 <View style={styles.sugerenciaCard}>
-                    {sugerencia.title.includes("\n") ? (
-                        <Text style={styles.sugerenciaText}>
-                            {sugerencia.title.split("\n")[0] + "\n" + sugerencia.title.split("\n")[1]}
-                        </Text>
-                    ) : (
-                        <Text style={styles.sugerenciaText}>{sugerencia.title}</Text>
-                    )}
+                    <Text style={styles.sugerenciaText} numberOfLines={2}>
+                        {sugerencia.name}
+                    </Text>
+                    <View style={styles.sugerenciaButtonDecor}>
+                        <ActionButton
+                            onPress={onPress}
+                            size="medium"
+                            variant="suggestion"
+                            accessibilityLabel=""
+                            style={styles.sugerenciaButton}
+                        />
+                    </View>
                 </View>
-
-                {/* Botón reutilizable */}
-                <ActionButton
-                    onPress={() => onAddSugerencia(sugerencia.id)}
-                    size="medium"
-                    variant="suggestion"
-                    accessibilityLabel={`Agregar ${sugerencia.title} al carrito`}
-                    style={styles.sugerenciaButton}
-                />
-            </View>
-        </View>
+            </TouchableOpacity>
+        </Animated.View>
     );
 });
 
-export const ListSugerencias = () => {
+export const ListSugerencias = ({ navigation, menuItems = [] }) => {
     const flatListRef = useRef(null);
     const [activeIndex, setActiveIndex] = useState(0);
 
-    const handleAddSugerencia = useCallback((id) => {
-        console.log(`Agregando sugerencia ${id} al carrito`);
-    }, []);
+    // 3 platos fijos que tienen carrusel de imágenes (sufijos _0, _1, etc.)
+    const SUGERENCIA_KEYS = ['imgBurger5', 'imgEmplatado4', 'imgHelado9'];
+
+    const sugerenciasData = useMemo(() => {
+        return SUGERENCIA_KEYS
+            .map(key => {
+                const item = menuItems.find(m => {
+                    const mKey = Array.isArray(m.imageKey) ? m.imageKey[0] : m.imageKey;
+                    return mKey === key;
+                });
+                if (!item) return null;
+                return {
+                    ...item,
+                    image: toImageSource(imageMap[key]),
+                };
+            })
+            .filter(Boolean);
+    }, [menuItems]);
+
+    const handlePress = useCallback((foodItem) => {
+        if (navigation && foodItem.id) {
+            navigation.navigate('FoodDetail', { foodItem });
+        }
+    }, [navigation]);
 
     const handleScroll = useCallback((event) => {
         const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -60,26 +106,13 @@ export const ListSugerencias = () => {
     }, []);
 
     const renderSugerencia = useCallback(({ item }) => (
-        <SugerenciaItem sugerencia={item} onAddSugerencia={handleAddSugerencia} />
-    ), [handleAddSugerencia]);
+        <SugerenciaItem
+            sugerencia={item}
+            onPress={() => handlePress(item)}
+        />
+    ), [handlePress]);
 
-    const sugerenciasData = [
-        {
-            id: 1,
-            title: "HOTCAKE CON FRUTILLAS Y MIEL",
-            image: imgSugerencia1,
-        },
-        {
-            id: 2,
-            title: "BURRITOS VEGANOS X2",
-            image: imgSugerencia2,
-        },
-        {
-            id: 3,
-            title: "TACOS DE CARNE\nX2",
-            image: imgSugerencia3,
-        },
-    ];
+    if (sugerenciasData.length === 0) return null;
 
     return (
         <View style={styles.sugerenciasSection}>
@@ -130,7 +163,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     sugerenciasTitle: {
-        fontFamily: 'Inter-Bold',
+        fontFamily: 'Poppins-Bold',
         fontWeight: 'bold',
         color: '#ff8000',
         fontSize: 16,
@@ -183,27 +216,30 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(217, 217, 217, 1)',
         borderRadius: 20,
         marginLeft: 80,
-        marginRight: 30,
-        justifyContent: 'center',
+        marginRight: 0,
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
+        paddingLeft: 50,
+        paddingRight: 8,
+        shadowColor: '#FF8000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 4,
     },
     sugerenciaText: {
-        textAlign: 'center',
+        flex: 1,
         textShadowColor: 'rgba(0, 0, 0, 0.25)',
-        fontFamily: 'Inter-Bold',
+        fontFamily: 'Poppins-Bold',
         fontWeight: 'bold',
         color: 'gray',
-        fontSize: 14,
-        margin: 19,
-        lineHeight: 20,
+        fontSize: 13,
+        lineHeight: 18,
     },
-    sugerenciaButton: {
-        position: 'absolute',
-        right: 10,
-        top: '60%',
-        marginTop: -25,
+    sugerenciaButtonDecor: {
+        marginLeft: 8,
     },
+    sugerenciaButton: {},
 });
 
 export default ListSugerencias;

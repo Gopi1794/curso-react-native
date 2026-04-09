@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const OnboardingScreen = ({ onGetStarted }) => {
+const OnboardingScreen = ({ onFinish: onGetStarted }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollX = useRef(new Animated.Value(0)).current;
     const slidesRef = useRef(null);
@@ -40,6 +40,7 @@ const OnboardingScreen = ({ onGetStarted }) => {
             title: 'Disfruta y Comparte',
             description: 'Comparte momentos especiales con la mejor comida a tu alcance',
             image: require('../assets/img/onboarding/slide3.jpg'),
+
             backgroundColor: '#000000'
         }
     ];
