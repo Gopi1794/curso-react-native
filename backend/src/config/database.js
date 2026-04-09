@@ -1,27 +1,20 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
-// Configuración para PostgreSQL local (pgAdmin4)
+if (!process.env.DB_PASSWORD) {
+    throw new Error("DB_PASSWORD no está definida en las variables de entorno");
+}
+
 const pool = new Pool({
-    // 1. HOST: Dónde está tu PostgreSQL
-    host: process.env.DB_HOST || "localhost",  // Si está en tu PC
-
-    // 2. PUERTO: Puerto de PostgreSQL (5432 es el default)
-    port: process.env.DB_PORT || 5432,
-
-    // 3. NOMBRE DE LA BASE: El que creaste en pgAdmin4
+    host:     process.env.DB_HOST || "localhost",
+    port:     parseInt(process.env.DB_PORT) || 5432,
     database: process.env.DB_NAME || "foodapp_db",
-
-    // 4. USUARIO: Usuario de PostgreSQL (generalmente "postgres")
-    user: process.env.DB_USER || "postgres",
-
-    // 5. CONTRASEÑA: La que pusiste al instalar PostgreSQL
-    password: process.env.DB_PASSWORD || "Cachipun.1994",
-
-    // 6. CONFIGURACIÓN ADICIONAL (opcional pero recomendada)
-    max: 20,                 // Máximo de conexiones simultáneas
-    idleTimeoutMillis: 30000, // Tiempo antes de cerrar conexión inactiva (30 seg)
-    connectionTimeoutMillis: 2000, // Tiempo máximo para conectar (2 seg)
+    user:     process.env.DB_USER || "postgres",
+    password: process.env.DB_PASSWORD,
+    ssl:      { rejectUnauthorized: false },
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
 });
 
 // Función para probar la conexión

@@ -1,0 +1,355 @@
+/* ── BACKDROP ── */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  animation: backdropIn 0.25s ease;
+}
+
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── MODAL PANEL ── */
+.modal {
+  width: 1080px;
+  height: 1760px;
+  background: #fff;
+  border-radius: 48px 48px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ── IMAGE CAROUSEL ── */
+.carousel {
+  flex-shrink: 0;
+  height: 800px;
+  position: relative;
+  background: #ffffff;
+}
+
+.carouselImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carouselPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #ddd;
+}
+
+/* Nav arrows */
+.carouselBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(255, 128, 0, 0.82);
+  border: none;
+  color: #fff;
+  font-size: 48px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s;
+}
+
+.carouselBtn:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.prevBtn {
+  left: 24px;
+}
+
+.nextBtn {
+  right: 24px;
+}
+
+/* Image counter */
+.counter {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 128, 0, 0.82);
+  color: #fff;
+  padding: 10px 28px;
+  border-radius: 24px;
+  font-size: 26px;
+  font-weight: 600;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+/* Dot indicators */
+.dots {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.dotActive {
+  background: #f7931e;
+  width: 40px;
+  border-radius: 8px;
+}
+
+/* Close button */
+.closeBtn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  font-size: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: background 0.2s;
+}
+
+.closeBtn:active {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* ── SCROLLABLE CONTENT ── */
+.content {
+  flex: 1;
+  min-height: 0;       /* fix crítico: permite que el flex child se encoja y habilita el scroll */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 44px 64px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* Title + Price */
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.title {
+  font-size: 44px;
+  font-weight: 700;
+  color: #222;
+  margin: 0;
+  flex: 1;
+  line-height: 1.2;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+.price {
+  font-size: 52px;
+  font-weight: 800;
+  white-space: nowrap;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+/* Rating */
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.stars {
+  display: flex;
+  gap: 4px;
+}
+
+.starFilled {
+  color: #f7931e;
+  font-size: 36px;
+}
+
+.starEmpty {
+  color: #ddd;
+  font-size: 36px;
+}
+
+.ratingText {
+  font-size: 28px;
+  color: #888;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+/* Stats chips */
+.statsRow {
+  display: flex;
+  gap: 20px;
+}
+
+.statChip {
+  background: rgba(255, 128, 0, 0.1);
+  border: 2px solid rgba(255, 128, 0, 0.35);
+  color: #666;
+  border-radius: 18px;
+  padding: 10px 28px 10px 16px;
+  font-size: 28px;
+  font-weight: 600;
+  font-family: 'Poppins', Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Description / Ingredients sections */
+.section {}
+
+.sectionTitle {
+  font-size: 36px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 16px;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+.descriptionText {
+  font-size: 30px;
+  color: #666;
+  line-height: 1.65;
+  margin: 0;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+.ingredientsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ingredientChip {
+  background: #f5f5f5;
+  border: 2px solid #e0e0e0;
+  border-radius: 50px;
+  padding: 14px 32px;
+  font-size: 26px;
+  color: #555;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+/* ── FIXED ACTION BAR ── */
+.actionBar {
+  flex-shrink: 0;
+  height: 160px;
+  background: #fff;
+  border-top: 2px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 52px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Quantity selector */
+.qtySelector {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 24px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.qtyBtn {
+  width: 88px;
+  height: 88px;
+  background: none;
+  border: none;
+  font-size: 40px;
+  font-weight: 700;
+  color: #f7931e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.qtyBtn:active {
+  background: rgba(247, 147, 30, 0.15);
+}
+
+.qtyNum {
+  width: 76px;
+  text-align: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: #333;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+/* Add to cart button */
+.addBtn {
+  flex: 1;
+  height: 104px;
+  background: #f7931e;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: 32px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Poppins', Arial, sans-serif;
+  box-shadow: 0 6px 24px rgba(247, 147, 30, 0.4);
+  transition: background 0.2s, transform 0.1s;
+}
+
+.addBtn:active {
+  background: #e07600;
+  transform: scale(0.98);
+}

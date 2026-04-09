@@ -1,28 +1,29 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from './common/Header';
 import { SearchBar } from './common/SearchBar';
 
 export const HeaderSection = ({
     onTicketPress,
     onCartPress,
-    cartItemsCount,
     searchQuery,
     onSearchChange,
-    onClearSearch // ✅ Nueva prop
+    onClearSearch
 }) => {
+    const insets = useSafeAreaInsets();
+
     return (
-        <View style={styles.fixedHeader}>
+        <View style={[styles.fixedHeader, { paddingTop: insets.top + 8 }]}>
             <Header
                 onTicketPress={onTicketPress}
                 onCartPress={onCartPress}
-                cartItemsCount={cartItemsCount}
             />
 
             <SearchBar
                 value={searchQuery}
                 onChangeText={onSearchChange}
-                onClearSearch={onClearSearch} // ✅ Pasar la nueva prop
+                onClearSearch={onClearSearch}
                 placeholder="Buscar platos, ingredientes..."
             />
         </View>
@@ -34,13 +35,11 @@ const styles = StyleSheet.create({
         borderBottomRightRadius: 15,
         borderBottomLeftRadius: 15,
         backgroundColor: '#FF8000',
-        position: 'static',
-        height: 150,
+        position: 'relative',
         zIndex: 1000,
-        paddingTop: 40,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
+        shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
     },

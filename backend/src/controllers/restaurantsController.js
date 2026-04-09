@@ -1,0 +1,226 @@
+const db = require('../config/database');
+
+// ── GET ALL RESTAURANTS ───────────────────────────────────
+// GET /api/restaurants
+exports.getAll = async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT id, nombre, descripcion, direccion, telefono, horario, logo_url, estado, fecha_creacion
+             FROM restaurantes
+             WHERE estado = 'activo'
+             ORDER BY nombre ASC`
+        );
+
+        res.json({
+            success: true,
+            count: result.rows.length,
+            restaurants: result.rows
+        });
+
+    } catch (error) {
+        console.error('Error en getAll restaurants:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── GET RESTAURANT BY ID ──────────────────────────────────
+// GET /api/restaurants/:id
+exports.getById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de restaurante inválido'
+            });
+        }
+
+        const result = await db.query(
+            `SELECT id, nombre, descripcion, direccion, telefono, horario, logo_url, estado, fecha_creacion
+             FROM restaurantes
+             WHERE id = $1`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Restaurante no encontrado'
+            });
+        }
+
+        res.json({
+            success: true,
+            restaurant: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error en getById restaurant:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── GET MENU ──────────────────────────────────────────────
+// GET /api/restaurants/:id/menu
+// Query params opcionales: ?category=burgers
+exports.getMenu = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { category } = req.query;
+
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de restaurante inválido'
+            });
+        }
+
+        // Verificar que el restaurante exista
+        const restaurantCheck = await db.query(
+            'SELECT id FROM restaurantes WHERE id = $1',
+            [id]
+        );
+
+        if (restaurantCheck.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Restaurante no encontrado'
+            });
+        }
+
+        // Construir query: usar vista de disponibilidad + ingredientes desde tablas nuevas
+        let query = `
+            SELECT mi.id, mi.nombre, mi.precio, mi.categoria, mi.descripcion, mi.imagen_key,
+                   COALESCE(vd.disponible, TRUE) AS disponible
+            FROM menu_items mi
+            LEFT JOIN vista_disponibilidad_platos vd
+                ON vd.menu_item_id = mi.id AND vd.restaurante_id = mi.restaurante_id
+            WHERE mi.restaurante_id = $1
+              AND COALESCE(vd.disponible, TRUE) = TRUE
+        `;
+        const values = [id];
+
+        if (category) {
+            values.push(category.toLowerCase());
+            query += ` AND mi.categoria = $${values.length}`;
+        }
+
+        query += ' ORDER BY mi.categoria ASC, mi.nombre ASC';
+
+        const result = await db.query(query, values);
+
+        // Traer ingredientes de todos los items en una sola query
+        const itemIds = result.rows.map(r => r.id);
+        let ingredientesMap = {};
+
+        if (itemIds.length > 0) {
+            const ingResult = await db.query(
+                `SELECT mii.menu_item_id, i.nombre, mii.es_removible
+                 FROM menu_item_ingredientes mii
+                 JOIN ingredientes i ON i.id = mii.ingrediente_id
+                 WHERE mii.menu_item_id = ANY($1)
+                 ORDER BY i.nombre ASC`,
+                [itemIds]
+            );
+
+            for (const row of ingResult.rows) {
+                if (!ingredientesMap[row.menu_item_id]) {
+                    ingredientesMap[row.menu_item_id] = [];
+                }
+                ingredientesMap[row.menu_item_id].push({
+                    nombre: row.nombre,
+                    es_removible: row.es_removible
+                });
+            }
+        }
+
+        // Armar respuesta con ingredientes embebidos
+        const items = result.rows.map(item => ({
+            ...item,
+            ingredientes: (ingredientesMap[item.id] || []).map(i => i.nombre),
+            ingredientes_detalle: ingredientesMap[item.id] || []
+        }));
+
+        res.json({
+            success: true,
+            restaurante_id: parseInt(id),
+            category: category || 'all',
+            count: items.length,
+            items
+        });
+
+    } catch (error) {
+        console.error('Error en getMenu:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── GET MENU ITEM ─────────────────────────────────────────
+// GET /api/restaurants/:id/menu/:itemId
+exports.getMenuItem = async (req, res) => {
+    try {
+        const { id, itemId } = req.params;
+
+        if (isNaN(id) || isNaN(itemId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID inválido'
+            });
+        }
+
+        const result = await db.query(
+            `SELECT mi.id, mi.nombre, mi.precio, mi.categoria, mi.descripcion, mi.imagen_key,
+                    COALESCE(vd.disponible, TRUE) AS disponible, mi.fecha_creacion
+             FROM menu_items mi
+             LEFT JOIN vista_disponibilidad_platos vd
+                ON vd.menu_item_id = mi.id AND vd.restaurante_id = mi.restaurante_id
+             WHERE mi.id = $1 AND mi.restaurante_id = $2`,
+            [itemId, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Ítem del menú no encontrado'
+            });
+        }
+
+        // Traer ingredientes con detalle
+        const ingResult = await db.query(
+            `SELECT i.nombre, mii.es_removible
+             FROM menu_item_ingredientes mii
+             JOIN ingredientes i ON i.id = mii.ingrediente_id
+             WHERE mii.menu_item_id = $1
+             ORDER BY i.nombre ASC`,
+            [itemId]
+        );
+
+        const item = {
+            ...result.rows[0],
+            ingredientes: ingResult.rows.map(i => i.nombre),
+            ingredientes_detalle: ingResult.rows
+        };
+
+        res.json({
+            success: true,
+            item
+        });
+
+    } catch (error) {
+        console.error('Error en getMenuItem:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};

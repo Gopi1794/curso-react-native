@@ -1,69 +1,148 @@
-// services/api.js - VERSIÓN KISS (Keep It Simple, Stupid)
-import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
-// ELIGE UNA URL (comenta/descomenta):
-const URL_OPTIONS = {
-    // OPCIÓN A: Android Emulator
-    // API_BASE_URL: 'http://10.0.2.2:3000',
+// ── URL base ──────────────────────────────────────────────
+// Cambiá esto según dónde corra el backend:
+//   Android emulator : 'http://10.0.2.2:3000'
+//   iOS simulator    : 'http://localhost:3000'
+//   Dispositivo físico: tu IP local, ej: 'http://192.168.1.100:3000'
+//   Ngrok            : 'https://xxxx.ngrok-free.dev'
+const API_BASE_URL = 'http://192.168.1.35:3000';
 
-    // OPCIÓN B: iOS Simulator  
-    // API_BASE_URL: 'http://localhost:3000',
+const TOKEN_KEY = 'userToken';
 
-    // OPCIÓN C: Expo en celular (TU IP)
-    API_BASE_URL: 'https://verlie-ripply-jill.ngrok-free.dev',
+// ── Helper base ───────────────────────────────────────────
+const request = async (endpoint, options = {}) => {
+    const token = await SecureStore.getItemAsync(TOKEN_KEY);
 
-    // OPCIÓN D: Ngrok (si las otras fallan)
-    // API_BASE_URL: 'https://abc123.ngrok.io',
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+    };
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+    });
+
+    const data = await response.json();
+    return data;
 };
 
-const API_BASE_URL = URL_OPTIONS.API_BASE_URL;
+// ── AUTH ──────────────────────────────────────────────────
+const auth = {
+    register: (userData) => request('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+    }),
 
-console.log('🎯 URL actual:', API_BASE_URL);
-console.log('📱 Platform:', Platform.OS);
+    login: (email, password) => request('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+    }),
 
-const api = {
-    register: async (userData) => {
-        console.log('📤 Enviando a:', API_BASE_URL);
+    logout: () => request('/api/auth/logout', { method: 'POST' }),
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(userData)
-            });
+    getMe: () => request('/api/auth/me'),
 
-            const data = await response.json();
-            console.log('✅ Respuesta:', data.message);
-            return data;
-
-        } catch (error) {
-            console.error('❌ Error:', error.message);
-
-            // Si falla, prueba automáticamente con localhost
-            if (API_BASE_URL.includes('192.168')) {
-                console.log('🔄 Probando con localhost...');
-                try {
-                    const fallbackResponse = await fetch('http://localhost:3000/api/auth/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(userData)
-                    });
-                    return await fallbackResponse.json();
-                } catch (fallbackError) {
-                    // Si todo falla, devolver mock
-                    console.log('📦 Devolviendo MOCK');
-                    return {
-                        success: true,
-                        message: 'Usuario creado (MOCK FINAL)',
-                        user: { ...userData, id: 999, rol: 'cliente' },
-                        token: 'final_mock_token'
-                    };
-                }
-            }
-
-            throw error;
-        }
-    }
+    googleLogin: (idToken, accessToken) => request('/api/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ idToken, accessToken }),
+    }),
 };
 
-export default api;
+// ── USERS ─────────────────────────────────────────────────
+const users = {
+    getProfile: () => request('/api/users/profile'),
+
+    updateProfile: (data) => request('/api/users/profile', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    }),
+
+    changePassword: (currentPassword, newPassword) => request('/api/users/change-password', {
+        method: 'PUT',
+        body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+};
+
+// ── RESTAURANTS ───────────────────────────────────────────
+const restaurants = {
+    getAll: () => request('/api/restaurants'),
+
+    getById: (id) => request(`/api/restaurants/${id}`),
+
+    getMenu: (id, category = null) => {
+        const query = category ? `?category=${category}` : '';
+        return request(`/api/restaurants/${id}/menu${query}`);
+    },
+
+    getMenuItem: (restaurantId, itemId) =>
+        request(`/api/restaurants/${restaurantId}/menu/${itemId}`),
+};
+
+// ── ORDERS ────────────────────────────────────────────────
+const orders = {
+    create: (restauranteId, items, direccionEntrega, notas) => request('/api/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+            restaurante_id: restauranteId,
+            items,
+            direccion_entrega: direccionEntrega,
+            notas,
+        }),
+    }),
+
+    getAll: () => request('/api/orders'),
+
+    getById: (id) => request(`/api/orders/${id}`),
+
+    cancel: (id) => request(`/api/orders/${id}/cancel`, { method: 'PUT' }),
+};
+
+// ── PAYMENTS ──────────────────────────────────────────────
+const payments = {
+    getMethods: () => request('/api/payments/methods'),
+
+    addMethod: (data) => request('/api/payments/methods', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    }),
+
+    deleteMethod: (id) => request(`/api/payments/methods/${id}`, { method: 'DELETE' }),
+
+    pay: (pedidoId, metodoPagoId) => request('/api/payments/pay', {
+        method: 'POST',
+        body: JSON.stringify({ pedido_id: pedidoId, metodo_pago_id: metodoPagoId }),
+    }),
+
+    getHistory: () => request('/api/payments/history'),
+};
+
+// ── COMENTARIOS ──────────────────────────────────────────
+const comentarios = {
+    getByMenuItem: (menuItemId) => request(`/api/menu-items/${menuItemId}/comentarios`),
+
+    create: (menuItemId, rating, comentario) => request(`/api/menu-items/${menuItemId}/comentarios`, {
+        method: 'POST',
+        body: JSON.stringify({ rating, comentario }),
+    }),
+
+    remove: (menuItemId) => request(`/api/menu-items/${menuItemId}/comentarios`, { method: 'DELETE' }),
+};
+
+// ── CUPONES ───────────────────────────────────────────────
+const cupones = {
+    getAll: () => request('/api/cupones'),
+    getById: (id) => request(`/api/cupones/${id}`),
+};
+
+// ── Token helpers (SecureStore) ──────────────────────────
+const token = {
+    save: (t) => SecureStore.setItemAsync(TOKEN_KEY, t),
+    remove: () => SecureStore.deleteItemAsync(TOKEN_KEY),
+    get: () => SecureStore.getItemAsync(TOKEN_KEY),
+};
+
+export { API_BASE_URL as API_URL };
+export default { auth, users, restaurants, orders, payments, comentarios, cupones, token };

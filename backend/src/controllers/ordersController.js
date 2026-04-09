@@ -1,0 +1,294 @@
+const db = require('../config/database');
+
+// ── CREATE ORDER ──────────────────────────────────────────
+// POST /api/orders
+exports.createOrder = async (req, res) => {
+    const { restaurante_id, items, direccion_entrega, notas } = req.body;
+
+    // 1. Validar estructura del body
+    if (!restaurante_id || !items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Se requiere restaurante_id y al menos un ítem en el pedido'
+        });
+    }
+
+    for (const item of items) {
+        if (!item.menu_item_id || !item.cantidad || item.cantidad < 1) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cada ítem debe tener menu_item_id y cantidad (mínimo 1)'
+            });
+        }
+        // ingredientes_removidos es opcional, debe ser array de strings si viene
+        if (item.ingredientes_removidos && !Array.isArray(item.ingredientes_removidos)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ingredientes_removidos debe ser un array'
+            });
+        }
+    }
+
+    // Usamos una transacción: si algo falla en el medio, nada queda guardado
+    const client = await db.getClient();
+
+    try {
+        await client.query('BEGIN');
+
+        // 2. Verificar que el restaurante exista y esté activo
+        const restaurantResult = await client.query(
+            'SELECT id FROM restaurantes WHERE id = $1 AND estado = $2',
+            [restaurante_id, 'activo']
+        );
+
+        if (restaurantResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                success: false,
+                message: 'Restaurante no encontrado o inactivo'
+            });
+        }
+
+        // 3. Consultar precios reales desde la DB (nunca confiar en el cliente)
+        const menuItemIds = items.map(i => i.menu_item_id);
+        const menuResult = await client.query(
+            `SELECT id, nombre, precio, disponible
+             FROM menu_items
+             WHERE id = ANY($1) AND restaurante_id = $2`,
+            [menuItemIds, restaurante_id]
+        );
+
+        // Verificar que todos los ítems existen y pertenecen al restaurante
+        if (menuResult.rows.length !== menuItemIds.length) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: 'Uno o más ítems no pertenecen a este restaurante'
+            });
+        }
+
+        // Verificar disponibilidad
+        const unavailable = menuResult.rows.filter(m => !m.disponible);
+        if (unavailable.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: `Los siguientes ítems no están disponibles: ${unavailable.map(i => i.nombre).join(', ')}`
+            });
+        }
+
+        // 4. Construir mapa de precios y calcular total
+        const priceMap = {};
+        menuResult.rows.forEach(m => { priceMap[m.id] = m; });
+
+        let total = 0;
+        const orderItems = items.map(item => {
+            const menuItem = priceMap[item.menu_item_id];
+            const subtotal = parseFloat(menuItem.precio) * item.cantidad;
+            total += subtotal;
+            return {
+                menu_item_id: item.menu_item_id,
+                nombre_item: menuItem.nombre,
+                precio_unitario: parseFloat(menuItem.precio),
+                cantidad: item.cantidad,
+                ingredientes_removidos: item.ingredientes_removidos || []
+            };
+        });
+
+        // 5. Insertar el pedido
+        const pedidoResult = await client.query(
+            `INSERT INTO pedidos (usuario_id, restaurante_id, estado, total, direccion_entrega, notas)
+             VALUES ($1, $2, 'pendiente', $3, $4, $5)
+             RETURNING id, usuario_id, restaurante_id, estado, total, direccion_entrega, notas, fecha_creacion`,
+            [req.user.userId, restaurante_id, total.toFixed(2), direccion_entrega || null, notas || null]
+        );
+
+        const pedido = pedidoResult.rows[0];
+
+        // 6. Insertar los ítems del pedido y descontar stock
+        for (const item of orderItems) {
+            await client.query(
+                `INSERT INTO pedido_items (pedido_id, menu_item_id, nombre_item, precio_unitario, cantidad, ingredientes_removidos)
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                [pedido.id, item.menu_item_id, item.nombre_item, item.precio_unitario, item.cantidad, item.ingredientes_removidos]
+            );
+
+            // Descontar stock de ingredientes
+            await client.query(
+                'SELECT descontar_stock($1, $2, $3)',
+                [restaurante_id, item.menu_item_id, item.cantidad]
+            );
+        }
+
+        await client.query('COMMIT');
+
+        // 7. Devolver el pedido completo con sus ítems
+        const itemsResult = await client.query(
+            `SELECT id, menu_item_id, nombre_item, precio_unitario, cantidad, subtotal
+             FROM pedido_items WHERE pedido_id = $1`,
+            [pedido.id]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Pedido creado exitosamente',
+            order: {
+                ...pedido,
+                items: itemsResult.rows
+            }
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error en createOrder:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    } finally {
+        client.release();
+    }
+};
+
+// ── GET MY ORDERS ─────────────────────────────────────────
+// GET /api/orders
+exports.getMyOrders = async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.fecha_creacion,
+                    r.nombre AS restaurante_nombre,
+                    COUNT(pi.id) AS cantidad_items
+             FROM pedidos p
+             JOIN restaurantes r ON p.restaurante_id = r.id
+             JOIN pedido_items pi ON p.id = pi.pedido_id
+             WHERE p.usuario_id = $1
+             GROUP BY p.id, r.nombre
+             ORDER BY p.fecha_creacion DESC`,
+            [req.user.userId]
+        );
+
+        res.json({
+            success: true,
+            count: result.rows.length,
+            orders: result.rows
+        });
+
+    } catch (error) {
+        console.error('Error en getMyOrders:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── GET ORDER BY ID ───────────────────────────────────────
+// GET /api/orders/:id
+exports.getOrderById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de pedido inválido'
+            });
+        }
+
+        // Verificar que el pedido existe y pertenece al usuario
+        const pedidoResult = await db.query(
+            `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.notas,
+                    p.fecha_creacion, p.fecha_actualizacion,
+                    r.nombre AS restaurante_nombre, r.direccion AS restaurante_direccion
+             FROM pedidos p
+             JOIN restaurantes r ON p.restaurante_id = r.id
+             WHERE p.id = $1 AND p.usuario_id = $2`,
+            [id, req.user.userId]
+        );
+
+        if (pedidoResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Pedido no encontrado'
+            });
+        }
+
+        const itemsResult = await db.query(
+            `SELECT id, menu_item_id, nombre_item, precio_unitario, cantidad, subtotal
+             FROM pedido_items WHERE pedido_id = $1`,
+            [id]
+        );
+
+        res.json({
+            success: true,
+            order: {
+                ...pedidoResult.rows[0],
+                items: itemsResult.rows
+            }
+        });
+
+    } catch (error) {
+        console.error('Error en getOrderById:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── CANCEL ORDER ──────────────────────────────────────────
+// PUT /api/orders/:id/cancel
+exports.cancelOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de pedido inválido'
+            });
+        }
+
+        // Solo se puede cancelar si el pedido es del usuario y está en estado 'pendiente'
+        const result = await db.query(
+            `UPDATE pedidos
+             SET estado = 'cancelado'
+             WHERE id = $1 AND usuario_id = $2 AND estado = 'pendiente'
+             RETURNING id, estado, fecha_actualizacion`,
+            [id, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            // Verificar si el pedido existe para dar un mensaje más preciso
+            const check = await db.query(
+                'SELECT estado FROM pedidos WHERE id = $1 AND usuario_id = $2',
+                [id, req.user.userId]
+            );
+
+            if (check.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Pedido no encontrado'
+                });
+            }
+
+            return res.status(409).json({
+                success: false,
+                message: `No se puede cancelar un pedido en estado "${check.rows[0].estado}"`
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Pedido cancelado correctamente',
+            order: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error en cancelOrder:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};

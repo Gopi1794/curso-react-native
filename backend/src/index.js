@@ -1,0 +1,90 @@
+require('dotenv').config();
+
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+const authRouter        = require('./routers/auth');
+const usersRouter       = require('./routers/users');
+const restaurantsRouter = require('./routers/restaurants');
+const ordersRouter      = require('./routers/orders');
+const paymentsRouter    = require('./routers/payments');
+const cuponesRouter     = require('./routers/cupones');
+const comentariosRouter = require('./routers/comentarios');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// ── Middleware global ──────────────────────────────────────
+app.use(helmet());
+
+const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+    : ['http://localhost:8081', 'http://192.168.0.82:8081'];
+app.use(cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.use(express.json({ limit: '1mb' }));
+
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
+// ── Rutas ─────────────────────────────────────────────────
+app.use('/api/auth',        authRouter);
+app.use('/api/users',       usersRouter);
+app.use('/api/restaurants', restaurantsRouter);
+app.use('/api/orders',      ordersRouter);
+app.use('/api/payments',    paymentsRouter);
+app.use('/api/cupones',     cuponesRouter);
+app.use('/api/menu-items/:menuItemId/comentarios', comentariosRouter);
+
+// ── Health check ───────────────────────────────────────────
+app.get('/health', async (req, res) => {
+    const db = require('./config/database');
+    try {
+        await db.query('SELECT 1');
+        res.json({ status: 'ok', database: 'connected' });
+    } catch (err) {
+        res.status(500).json({ status: 'error', database: 'disconnected', message: err.message });
+    }
+});
+
+// ── 404 ───────────────────────────────────────────────────
+app.use((req, res) => {
+    res.status(404).json({ success: false, message: 'Ruta no encontrada' });
+});
+
+// ── Servidor ──────────────────────────────────────────────
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Endpoints disponibles:`);
+    console.log(`  POST /api/auth/register`);
+    console.log(`  POST /api/auth/login`);
+    console.log(`  GET  /api/auth/me`);
+    console.log(`  GET  /api/users/profile`);
+    console.log(`  PUT  /api/users/profile`);
+    console.log(`  PUT  /api/users/change-password`);
+    console.log(`  GET  /api/restaurants`);
+    console.log(`  GET  /api/restaurants/:id`);
+    console.log(`  GET  /api/restaurants/:id/menu`);
+    console.log(`  GET  /api/restaurants/:id/menu/:itemId`);
+    console.log(`  POST /api/orders`);
+    console.log(`  GET  /api/orders`);
+    console.log(`  GET  /api/orders/:id`);
+    console.log(`  PUT  /api/orders/:id/cancel`);
+    console.log(`  GET  /api/payments/methods`);
+    console.log(`  POST /api/payments/methods`);
+    console.log(`  DEL  /api/payments/methods/:id`);
+    console.log(`  POST /api/payments/pay`);
+    console.log(`  GET  /api/payments/history`);
+    console.log(`  GET  /api/menu-items/:id/comentarios`);
+    console.log(`  POST /api/menu-items/:id/comentarios`);
+    console.log(`  DEL  /api/menu-items/:id/comentarios`);
+    console.log(`  GET  /health`);
+});

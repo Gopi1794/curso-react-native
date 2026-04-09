@@ -11,8 +11,8 @@ import {
     ActivityIndicator
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../components/common/AppHeader';
+import API from '../services/api';
 import { API_URL } from '../services/api';
 
 export default function EditProfileScreen({ navigation }) {
@@ -39,7 +39,7 @@ export default function EditProfileScreen({ navigation }) {
 
     const loadUserData = async () => {
         try {
-            const token = await AsyncStorage.getItem('userToken');
+            const token = await API.token.get();
             const response = await fetch(`${API_URL}/api/usuarios/perfil`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -96,7 +96,7 @@ export default function EditProfileScreen({ navigation }) {
     // Subir imagen al servidor
     const uploadImage = async (uri) => {
         try {
-            const token = await AsyncStorage.getItem('userToken');
+            const token = await API.token.get();
             const formData = new FormData();
 
             formData.append('avatar', {
@@ -143,7 +143,7 @@ export default function EditProfileScreen({ navigation }) {
         setSaving(true);
 
         try {
-            const token = await AsyncStorage.getItem('userToken');
+            const token = await API.token.get();
             const response = await fetch(`${API_URL}/api/usuarios/perfil`, {
                 method: 'PUT',
                 headers: {

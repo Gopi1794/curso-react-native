@@ -11,7 +11,12 @@ const lottie = {
 const MenuItem = memo(({ item, onAddToCart }) => {
     const getImageSource = (key) => {
         const imageKey = Array.isArray(key) ? key[0] : key;
-        return imageMap[imageKey];
+        const src = imageMap[imageKey];
+        if (!src) return null;
+        // src puede ser string "https://..." o ya un objeto { uri: "..." }
+        if (typeof src === 'string') return { uri: src };
+        if (src.uri) return { uri: src.uri };
+        return null;
     };
 
     return (
@@ -28,17 +33,19 @@ const MenuItem = memo(({ item, onAddToCart }) => {
                     ]}
                 />
 
-                <Image
-                    source={getImageSource(item.imageKey)}
-                    style={[
-                        styles.foodImage,
-                        {
-                            width: 99,
-                            height: 99,
-                        }
-                    ]}
-                    resizeMode="cover"
-                />
+                {getImageSource(item.imageKey) && (
+                    <Image
+                        source={getImageSource(item.imageKey)}
+                        style={[
+                            styles.foodImage,
+                            {
+                                width: 99,
+                                height: 99,
+                            }
+                        ]}
+                        resizeMode="cover"
+                    />
+                )}
 
                 {item.imageKey === "imgBurger6" && (
                     <Lottie
@@ -98,6 +105,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(217, 217, 217, 1)',
         borderRadius: 25,
         left: 0,
+        shadowColor: '#FF8000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 4,
     },
     foodImage: {
         position: 'absolute',

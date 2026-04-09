@@ -5,7 +5,7 @@ import { StatusBar } from 'react-native';
 const FlashMessageWrapper = () => {
     return (
         <FlashMessage
-            position="center"
+            position="top"
             animated={true}
             statusBarHeight={StatusBar.currentHeight}
             floating={true}
@@ -17,6 +17,9 @@ const FlashMessageWrapper = () => {
             titleStyle={{
                 fontSize: 16,
                 fontWeight: 'bold',
+                textAlign: 'center',
+            }}
+            textStyle={{
                 textAlign: 'center',
             }}
         />

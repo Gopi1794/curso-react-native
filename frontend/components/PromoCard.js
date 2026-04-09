@@ -13,6 +13,11 @@ import Feather from '@expo/vector-icons/Feather';
 import Lottie from 'lottie-react-native';
 import { imageMap } from '../assets/utils/imageMap';
 
+const toUri = (val) => {
+    if (typeof val === 'string') return val;
+    if (val && val.uri) return val.uri;
+    return null;
+};
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -70,7 +75,7 @@ export const PromoCard = memo(({ promo, onPress, isActive }) => {
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
             >
-                {/* Badge de PROMO con porcentaje de descuento */}
+                {/* Badge de PROMO */}
                 <View style={styles.promoBadge}>
                     <Lottie
                         source={lottie.discount}
@@ -78,13 +83,11 @@ export const PromoCard = memo(({ promo, onPress, isActive }) => {
                         loop
                         style={styles.discountAnimation}
                     />
-                    <Text style={styles.promoBadgeText}>
-                        -{promo.discountPercentage}%
-                    </Text>
+                    <Text style={styles.promoBadgeText}>PROMO</Text>
                 </View>
 
                 <Image
-                    source={imageMap[promo.imageKey[0]]}
+                    source={{ uri: toUri(imageMap[Array.isArray(promo.imageKey) ? promo.imageKey[0] : promo.imageKey]) }}
                     style={styles.promoImage}
                     resizeMode="cover"
                 />
@@ -102,7 +105,6 @@ export const PromoCard = memo(({ promo, onPress, isActive }) => {
                         {promo.descriptionText}
                     </Text>
                     <View style={styles.promoPriceContainer}>
-                        <Text style={styles.promoOldPrice}>{promo.originalPrice}</Text>
                         <Text style={styles.promoNewPrice}>{promo.price}</Text>
                     </View>
                     <View style={styles.promoTimeContainer}>

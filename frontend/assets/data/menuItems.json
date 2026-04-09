@@ -3,9 +3,15 @@
     "id": 1,
     "name": "ENSALADA CESAR",
     "price": "$10.00",
-    "imageKey":[
-     "imgEnsalada1" ,"imgEnsalada1_0" ,"imgEnsalada1_1" , "imgEnsalada1_2","imgEnsalada1_3","imgEnsalada1_4" ]
-,    "priceColor": "#ff8700",
+    "imageKey": [
+      "imgEnsalada1",
+      "imgEnsalada1_0",
+      "imgEnsalada1_1",
+      "imgEnsalada1_2",
+      "imgEnsalada1_3",
+      "imgEnsalada1_4"
+    ],
+    "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
     "height": 200,
@@ -23,13 +29,22 @@
       "Croutons",
       "Queso parmesano",
       "Aderezo César"
-    ]
+    ],
+    "name_en": "CAESAR SALAD",
+    "name_pt": "SALADA CÉSAR"
   },
   {
     "id": 2,
     "name": "ENSALADA GRIEGA",
     "price": "$12.00",
-    "imageKey": [ "imgEnsalada2" ,"imgEnsalada2_0" ,"imgEnsalada2_1" , "imgEnsalada2_2","imgEnsalada2_3","imgEnsalada2_4" ],
+    "imageKey": [
+      "imgEnsalada2",
+      "imgEnsalada2_0",
+      "imgEnsalada2_1",
+      "imgEnsalada2_2",
+      "imgEnsalada2_3",
+      "imgEnsalada2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -49,13 +64,22 @@
       "Queso feta",
       "Cebolla morada",
       "Orégano"
-    ]
+    ],
+    "name_en": "GREEK SALAD",
+    "name_pt": "SALADA GREGA"
   },
   {
     "id": 3,
     "name": "ENSALADA DE QUINOA",
     "price": "$11.50",
-    "imageKey": ["imgEnsalada3" , "imgEnsalada3_0" , "imgEnsalada3_1" , "imgEnsalada3_2","imgEnsalada3_3","imgEnsalada3_4"],
+    "imageKey": [
+      "imgEnsalada3",
+      "imgEnsalada3_0",
+      "imgEnsalada3_1",
+      "imgEnsalada3_2",
+      "imgEnsalada3_3",
+      "imgEnsalada3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -75,13 +99,22 @@
       "Pimiento rojo",
       "Limón",
       "Aceite de oliva"
-    ]
+    ],
+    "name_en": "QUINOA SALAD",
+    "name_pt": "SALADA DE QUINOA"
   },
   {
     "id": 4,
     "name": "ENSALADA CAPRESE",
     "price": "$9.50",
-    "imageKey": ["imgEnsalada4", "imgEnsalada4_0", "imgEnsalada4_1" , "imgEnsalada4_2","imgEnsalada4_3","imgEnsalada4_4"],
+    "imageKey": [
+      "imgEnsalada4",
+      "imgEnsalada4_0",
+      "imgEnsalada4_1",
+      "imgEnsalada4_2",
+      "imgEnsalada4_3",
+      "imgEnsalada4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -100,13 +133,22 @@
       "Albahaca",
       "Aceite de oliva",
       "Sal y pimienta"
-    ]
+    ],
+    "name_en": "CAPRESE SALAD",
+    "name_pt": "SALADA CAPRESE"
   },
   {
     "id": 5,
     "name": "ENSALADA DE ATÚN",
     "price": "$13.00",
-    "imageKey": ["imgEnsalada5", "imgEnsalada5_0", "imgEnsalada5_1" , "imgEnsalada5_2","imgEnsalada5_3","imgEnsalada5_4"],
+    "imageKey": [
+      "imgEnsalada5",
+      "imgEnsalada5_0",
+      "imgEnsalada5_1",
+      "imgEnsalada5_2",
+      "imgEnsalada5_3",
+      "imgEnsalada5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -126,13 +168,22 @@
       "Lechuga",
       "Tomate",
       "Aceitunas"
-    ]
+    ],
+    "name_en": "TUNA SALAD",
+    "name_pt": "SALADA DE ATUM"
   },
   {
     "id": 6,
     "name": "ENSALADA MIXTA",
     "price": "$8.50",
-    "imageKey":[ "imgEnsalada6","imgEnsalada6_0" , "imgEnsalada6_1" , "imgEnsalada6_2","imgEnsalada6_3","imgEnsalada6_4"],
+    "imageKey": [
+      "imgEnsalada6",
+      "imgEnsalada6_0",
+      "imgEnsalada6_1",
+      "imgEnsalada6_2",
+      "imgEnsalada6_3",
+      "imgEnsalada6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -152,13 +203,22 @@
       "Aceitunas",
       "Maíz",
       "Aceite de oliva"
-    ]
+    ],
+    "name_en": "MIXED SALAD",
+    "name_pt": "SALADA MISTA"
   },
   {
     "id": 7,
     "name": "ENSALADA DE ESPINACAS",
     "price": "$10.50",
-    "imageKey": ["imgEnsalada7" , "imgEnsalada7_0", "imgEnsalada7_1" , "imgEnsalada7_2","imgEnsalada7_3","imgEnsalada7_4"],
+    "imageKey": [
+      "imgEnsalada7",
+      "imgEnsalada7_0",
+      "imgEnsalada7_1",
+      "imgEnsalada7_2",
+      "imgEnsalada7_3",
+      "imgEnsalada7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -177,13 +237,22 @@
       "Queso de cabra",
       "Arándanos secos",
       "Aderezo de miel"
-    ]
+    ],
+    "name_en": "SPINACH SALAD",
+    "name_pt": "SALADA DE ESPINAFRE"
   },
   {
     "id": 8,
     "name": "ENSALADA WALDORF",
     "price": "$12.50",
-    "imageKey": ["imgEnsalada8", "imgEnsalada8_0" , "imgEnsalada8_1" , "imgEnsalada8_2","imgEnsalada8_3","imgEnsalada8_4"],
+    "imageKey": [
+      "imgEnsalada8",
+      "imgEnsalada8_0",
+      "imgEnsalada8_1",
+      "imgEnsalada8_2",
+      "imgEnsalada8_3",
+      "imgEnsalada8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -203,13 +272,22 @@
       "Uvas rojas",
       "Mayonesa light",
       "Lechuga"
-    ]
+    ],
+    "name_en": "WALDORF SALAD",
+    "name_pt": "SALADA WALDORF"
   },
   {
     "id": 9,
     "name": "ENSALADA DE POLLO",
     "price": "$11.00",
-    "imageKey":[ "imgEnsalada9", "imgEnsalada9_0", "imgEnsalada9_1" , "imgEnsalada9_2","imgEnsalada9_3","imgEnsalada9_4"],
+    "imageKey": [
+      "imgEnsalada9",
+      "imgEnsalada9_0",
+      "imgEnsalada9_1",
+      "imgEnsalada9_2",
+      "imgEnsalada9_3",
+      "imgEnsalada9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -229,13 +307,22 @@
       "Pepino",
       "Zanahoria",
       "Aderezo ranch"
-    ]
+    ],
+    "name_en": "CHICKEN SALAD",
+    "name_pt": "SALADA DE FRANGO"
   },
   {
     "id": 10,
     "name": "ENSALADA MEDITERRÁNEA",
     "price": "$14.00",
-    "imageKey": ["imgEnsalada10", "imgEnsalada10_0", "imgEnsalada10_1" , "imgEnsalada10_2","imgEnsalada10_3","imgEnsalada10_4"],
+    "imageKey": [
+      "imgEnsalada10",
+      "imgEnsalada10_0",
+      "imgEnsalada10_1",
+      "imgEnsalada10_2",
+      "imgEnsalada10_3",
+      "imgEnsalada10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "ensaladas",
     "width": 105,
@@ -255,13 +342,22 @@
       "Queso feta",
       "Pepino",
       "Alioli"
-    ]
+    ],
+    "name_en": "MEDITERRANEAN SALAD",
+    "name_pt": "SALADA MEDITERRÂNEA"
   },
   {
     "id": 11,
     "name": "BURGER CLÁSICA",
     "price": "$12.00",
-    "imageKey": ["imgBurger1", "imgBurger1_0",  "imgBurger1_1" , "imgBurger1_2","imgBurger1_3","imgBurger1_4"],
+    "imageKey": [
+      "imgBurger1",
+      "imgBurger1_0",
+      "imgBurger1_1",
+      "imgBurger1_2",
+      "imgBurger1_3",
+      "imgBurger1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -281,13 +377,22 @@
       "Tomate",
       "Cebolla",
       "Salsa especial"
-    ]
+    ],
+    "name_en": "CLASSIC BURGER",
+    "name_pt": "BURGER CLÁSSICA"
   },
   {
     "id": 12,
     "name": "BURGER DOBLE QUESO",
     "price": "$15.00",
-    "imageKey": ["imgBurger2", "imgBurger2_0" , "imgBurger2_1" , "imgBurger2_2","imgBurger2_3","imgBurger2_4"],
+    "imageKey": [
+      "imgBurger2",
+      "imgBurger2_0",
+      "imgBurger2_1",
+      "imgBurger2_2",
+      "imgBurger2_3",
+      "imgBurger2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -307,13 +412,22 @@
       "Tomate",
       "Cebolla caramelizada",
       "Salsa BBQ"
-    ]
+    ],
+    "name_en": "DOUBLE CHEESE BURGER",
+    "name_pt": "BURGER DUPLO QUEIJO"
   },
   {
     "id": 13,
     "name": "BURGER BACON",
     "price": "$14.50",
-    "imageKey": ["imgBurger3", "imgBurger3_0", "imgBurger3_1" , "imgBurger3_2","imgBurger3_3","imgBurger3_4"],
+    "imageKey": [
+      "imgBurger3",
+      "imgBurger3_0",
+      "imgBurger3_1",
+      "imgBurger3_2",
+      "imgBurger3_3",
+      "imgBurger3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -332,14 +446,23 @@
       "Queso americano",
       "Lechuga",
       "Tomate",
-      "Salsa ahumada" 
-    ]
+      "Salsa ahumada"
+    ],
+    "name_en": "BACON BURGER",
+    "name_pt": "BURGER BACON"
   },
   {
     "id": 14,
     "name": "BURGER VEGGIE",
     "price": "$11.00",
-    "imageKey": ["imgBurger4", "imgBurger4_0", "imgBurger4_1" , "imgBurger4_2","imgBurger4_3","imgBurger4_4"],
+    "imageKey": [
+      "imgBurger4",
+      "imgBurger4_0",
+      "imgBurger4_1",
+      "imgBurger4_2",
+      "imgBurger4_3",
+      "imgBurger4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -359,13 +482,22 @@
       "Tomate",
       "Aguacate",
       "Salsa yogurt"
-    ]
+    ],
+    "name_en": "VEGGIE BURGER",
+    "name_pt": "BURGER VEGGIE"
   },
   {
     "id": 15,
     "name": "BURGER BBQ",
     "price": "$16.00",
-    "imageKey": ["imgBurger5" , "imgBurger5_0" , "imgBurger5_1" , "imgBurger5_2","imgBurger5_3","imgBurger5_4"],
+    "imageKey": [
+      "imgBurger5",
+      "imgBurger5_0",
+      "imgBurger5_1",
+      "imgBurger5_2",
+      "imgBurger5_3",
+      "imgBurger5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -385,13 +517,22 @@
       "Queso provolone",
       "Lechuga",
       "Bacon"
-    ]
+    ],
+    "name_en": "BBQ BURGER",
+    "name_pt": "BURGER BBQ"
   },
   {
     "id": 16,
     "name": "BURGER PICANTE",
     "price": "$13.50",
-    "imageKey": ["imgBurger6", "imgBurger6_0" , "imgBurger6_1" , "imgBurger6_2","imgBurger6_3","imgBurger6_4"],
+    "imageKey": [
+      "imgBurger6",
+      "imgBurger6_0",
+      "imgBurger6_1",
+      "imgBurger6_2",
+      "imgBurger6_3",
+      "imgBurger6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -411,13 +552,22 @@
       "Lechuga",
       "Cebolla morada",
       "Salsa picante"
-    ]
+    ],
+    "name_en": "SPICY BURGER",
+    "name_pt": "BURGER PICANTE"
   },
   {
     "id": 17,
     "name": "BURGER TRIPLE",
     "price": "$18.00",
-    "imageKey": ["imgBurger7" , "imgBurger7_0" , "imgBurger7_1" , "imgBurger7_2","imgBurger7_3","imgBurger7_4"],
+    "imageKey": [
+      "imgBurger7",
+      "imgBurger7_0",
+      "imgBurger7_1",
+      "imgBurger7_2",
+      "imgBurger7_3",
+      "imgBurger7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -437,13 +587,22 @@
       "Tomate",
       "Cebolla",
       "Salsa especial"
-    ]
+    ],
+    "name_en": "TRIPLE BURGER",
+    "name_pt": "BURGER TRIPLO"
   },
   {
     "id": 18,
     "name": "BURGER POLLO CRISPY",
     "price": "$13.00",
-    "imageKey": ["imgBurger8", "imgBurger8_0", "imgBurger8_1" , "imgBurger8_2","imgBurger8_3","imgBurger8_4"],
+    "imageKey": [
+      "imgBurger8",
+      "imgBurger8_0",
+      "imgBurger8_1",
+      "imgBurger8_2",
+      "imgBurger8_3",
+      "imgBurger8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -463,13 +622,22 @@
       "Tomate",
       "Mayonesa",
       "Pepinillos"
-    ]
+    ],
+    "name_en": "CRISPY CHICKEN BURGER",
+    "name_pt": "BURGER FRANGO CROCANTE"
   },
   {
     "id": 19,
     "name": "BURGER MEXICANA",
     "price": "$14.00",
-    "imageKey": ["imgBurger9" , "imgBurger9_0", "imgBurger9_1" , "imgBurger9_2","imgBurger9_3","imgBurger9_4"],
+    "imageKey": [
+      "imgBurger9",
+      "imgBurger9_0",
+      "imgBurger9_1",
+      "imgBurger9_2",
+      "imgBurger9_3",
+      "imgBurger9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -489,13 +657,22 @@
       "Lechuga",
       "Jalapeños",
       "Salsa mexicana"
-    ]
+    ],
+    "name_en": "MEXICAN BURGER",
+    "name_pt": "BURGER MEXICANA"
   },
   {
     "id": 20,
     "name": "BURGER DELUXE",
     "price": "$20.00",
-    "imageKey": ["imgBurger10", "imgBurger10_0", "imgBurger10_1" , "imgBurger10_2","imgBurger10_3","imgBurger10_4"],
+    "imageKey": [
+      "imgBurger10",
+      "imgBurger10_0",
+      "imgBurger10_1",
+      "imgBurger10_2",
+      "imgBurger10_3",
+      "imgBurger10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "burgers",
     "width": 105,
@@ -515,13 +692,22 @@
       "Rúcula",
       "Tomate heirloom",
       "Salsa trufada"
-    ]
+    ],
+    "name_en": "DELUXE BURGER",
+    "name_pt": "BURGER DELUXE"
   },
   {
     "id": 21,
     "name": "LOMO SALTADO",
     "price": "$18.00",
-    "imageKey": ["imgEmplatado1", "imgEmplatado1_0", "imgEmplatado1_1" , "imgEmplatado1_2","imgEmplatado1_3","imgEmplatado1_4"],
+    "imageKey": [
+      "imgEmplatado1",
+      "imgEmplatado1_0",
+      "imgEmplatado1_1",
+      "imgEmplatado1_2",
+      "imgEmplatado1_3",
+      "imgEmplatado1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -541,13 +727,22 @@
       "Ají amarillo",
       "Papas fritas",
       "Arroz blanco"
-    ]
+    ],
+    "name_en": "LOMO SALTADO",
+    "name_pt": "LOMO SALTADO"
   },
   {
     "id": 22,
     "name": "POLLO A LA PLANCHA",
     "price": "$16.00",
-    "imageKey": ["imgEmplatado2" , "imgEmplatado2_0", "imgEmplatado2_1" , "imgEmplatado2_2","imgEmplatado2_3","imgEmplatado2_4"],
+    "imageKey": [
+      "imgEmplatado2",
+      "imgEmplatado2_0",
+      "imgEmplatado2_1",
+      "imgEmplatado2_2",
+      "imgEmplatado2_3",
+      "imgEmplatado2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -566,13 +761,22 @@
       "Zanahorias glaseadas",
       "Puré de papas",
       "Salsa de hierbas"
-    ]
+    ],
+    "name_en": "GRILLED CHICKEN",
+    "name_pt": "FRANGO GRELHADO"
   },
   {
     "id": 23,
     "name": "SALMÓN A LA PARRILLA",
     "price": "$22.00",
-    "imageKey": ["imgEmplatado3", "imgEmplatado3_0", "imgEmplatado3_1" , "imgEmplatado3_2","imgEmplatado3_3","imgEmplatado3_4"],
+    "imageKey": [
+      "imgEmplatado3",
+      "imgEmplatado3_0",
+      "imgEmplatado3_1",
+      "imgEmplatado3_2",
+      "imgEmplatado3_3",
+      "imgEmplatado3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -592,13 +796,22 @@
       "Espárragos",
       "Arroz basmati",
       "Salsa holandesa"
-    ]
+    ],
+    "name_en": "GRILLED SALMON",
+    "name_pt": "SALMÃO GRELHADO"
   },
   {
     "id": 24,
     "name": "MILANESA DE RES",
     "price": "$15.00",
-    "imageKey": ["imgEmplatado4", "imgEmplatado4_0", "imgEmplatado4_1" , "imgEmplatado4_2","imgEmplatado4_3","imgEmplatado4_4"],
+    "imageKey": [
+      "imgEmplatado4",
+      "imgEmplatado4_0",
+      "imgEmplatado4_1",
+      "imgEmplatado4_2",
+      "imgEmplatado4_3",
+      "imgEmplatado4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -618,13 +831,22 @@
       "Papas fritas",
       "Ensalada mixta",
       "Limón"
-    ]
+    ],
+    "name_en": "BEEF MILANESA",
+    "name_pt": "MILANESA DE CARNE"
   },
   {
     "id": 25,
     "name": "PAELLA MARINERA",
     "price": "$25.00",
-    "imageKey": ["imgEmplatado5", "imgEmplatado5_0", "imgEmplatado5_1" , "imgEmplatado5_2","imgEmplatado5_3","imgEmplatado5_4"],
+    "imageKey": [
+      "imgEmplatado5",
+      "imgEmplatado5_0",
+      "imgEmplatado5_1",
+      "imgEmplatado5_2",
+      "imgEmplatado5_3",
+      "imgEmplatado5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -644,13 +866,22 @@
       "Calamares",
       "Azafrán",
       "Pimiento rojo"
-    ]
+    ],
+    "name_en": "SEAFOOD PAELLA",
+    "name_pt": "PAELLA MARINEIRA"
   },
   {
     "id": 26,
     "name": "LASAGNA BOLOÑESA",
     "price": "$17.00",
-    "imageKey": ["imgEmplatado6", "imgEmplatado6_0", "imgEmplatado6_1" , "imgEmplatado6_2","imgEmplatado6_3","imgEmplatado6_4"],
+    "imageKey": [
+      "imgEmplatado6",
+      "imgEmplatado6_0",
+      "imgEmplatado6_1",
+      "imgEmplatado6_2",
+      "imgEmplatado6_3",
+      "imgEmplatado6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -670,13 +901,22 @@
       "Queso mozzarella",
       "Queso parmesano",
       "Bechamel"
-    ]
+    ],
+    "name_en": "BOLOGNESE LASAGNA",
+    "name_pt": "LASANHA BOLONHESA"
   },
   {
     "id": 27,
     "name": "COSTILLAS BBQ",
     "price": "$21.00",
-    "imageKey": ["imgEmplatado7", "imgEmplatado7_0", "imgEmplatado7_1" , "imgEmplatado7_2","imgEmplatado7_3","imgEmplatado7_4"],
+    "imageKey": [
+      "imgEmplatado7",
+      "imgEmplatado7_0",
+      "imgEmplatado7_1",
+      "imgEmplatado7_2",
+      "imgEmplatado7_3",
+      "imgEmplatado7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -695,13 +935,22 @@
       "Papas horneadas",
       "Elote asado",
       "Ensalada coleslaw"
-    ]
+    ],
+    "name_en": "BBQ RIBS",
+    "name_pt": "COSTELAS BBQ"
   },
   {
     "id": 28,
     "name": "POLLO AL CURRY",
     "price": "$16.50",
-    "imageKey": ["imgEmplatado8", "imgEmplatado8_0" , "imgEmplatado8_1" , "imgEmplatado8_2","imgEmplatado8_3","imgEmplatado8_4"],
+    "imageKey": [
+      "imgEmplatado8",
+      "imgEmplatado8_0",
+      "imgEmplatado8_1",
+      "imgEmplatado8_2",
+      "imgEmplatado8_3",
+      "imgEmplatado8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -721,13 +970,22 @@
       "Cilantro fresco",
       "Arroz jazmín",
       "Verduras salteadas"
-    ]
+    ],
+    "name_en": "CHICKEN CURRY",
+    "name_pt": "FRANGO AO CURRY"
   },
   {
     "id": 29,
     "name": "FILETE MIGNON",
     "price": "$28.00",
-    "imageKey": ["imgEmplatado9", "imgEmplatado9_0", "imgEmplatado9_1" , "imgEmplatado9_2","imgEmplatado9_3","imgEmplatado9_4"],
+    "imageKey": [
+      "imgEmplatado9",
+      "imgEmplatado9_0",
+      "imgEmplatado9_1",
+      "imgEmplatado9_2",
+      "imgEmplatado9_3",
+      "imgEmplatado9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -746,13 +1004,22 @@
       "Puré de papas trufado",
       "Espárragos",
       "Champiñones salteados"
-    ]
+    ],
+    "name_en": "FILET MIGNON",
+    "name_pt": "FILÉ MIGNON"
   },
   {
     "id": 30,
     "name": "POLLO A LA NARANJA",
     "price": "$17.50",
-    "imageKey": ["imgEmplatado10", "imgEmplatado10_0", "imgEmplatado10_1" , "imgEmplatado10_2","imgEmplatado10_3","imgEmplatado10_4"],
+    "imageKey": [
+      "imgEmplatado10",
+      "imgEmplatado10_0",
+      "imgEmplatado10_1",
+      "imgEmplatado10_2",
+      "imgEmplatado10_3",
+      "imgEmplatado10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "emplatados",
     "width": 105,
@@ -772,13 +1039,22 @@
       "Cebollín",
       "Arroz blanco",
       "Semillas de sésamo"
-    ]
+    ],
+    "name_en": "ORANGE CHICKEN",
+    "name_pt": "FRANGO À LARANJA"
   },
   {
     "id": 31,
     "name": "SÁNDWICH CLUB",
     "price": "$11.00",
-    "imageKey": ["imgSandwich1", "imgSandwich1_0", "imgSandwich1_1" , "imgSandwich1_2","imgSandwich1_3","imgSandwich1_4"],
+    "imageKey": [
+      "imgSandwich1",
+      "imgSandwich1_0",
+      "imgSandwich1_1",
+      "imgSandwich1_2",
+      "imgSandwich1_3",
+      "imgSandwich1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -798,13 +1074,22 @@
       "Tomate",
       "Mayonesa",
       "Pan tostado"
-    ]
+    ],
+    "name_en": "CLUB SANDWICH",
+    "name_pt": "SANDUÍCHE CLUB"
   },
   {
     "id": 32,
     "name": "SÁNDWICH DE POLLO",
     "price": "$10.00",
-    "imageKey": ["imgSandwich2" , "imgSandwich2_0", "imgSandwich2_1" , "imgSandwich2_2","imgSandwich2_3","imgSandwich2_4"],
+    "imageKey": [
+      "imgSandwich2",
+      "imgSandwich2_0",
+      "imgSandwich2_1",
+      "imgSandwich2_2",
+      "imgSandwich2_3",
+      "imgSandwich2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -824,13 +1109,22 @@
       "Cebolla",
       "Mayonesa",
       "Pan integral"
-    ]
+    ],
+    "name_en": "CHICKEN SANDWICH",
+    "name_pt": "SANDUÍCHE DE FRANGO"
   },
   {
     "id": 33,
     "name": "SÁNDWICH VEGETAL",
     "price": "$9.00",
-    "imageKey": ["imgSandwich3",  "imgSandwich3_0"  ,  "imgSandwich3_1" , "imgSandwich3_2","imgSandwich3_3","imgSandwich3_4"],
+    "imageKey": [
+      "imgSandwich3",
+      "imgSandwich3_0",
+      "imgSandwich3_1",
+      "imgSandwich3_2",
+      "imgSandwich3_3",
+      "imgSandwich3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -850,13 +1144,22 @@
       "Lechuga",
       "Queso fresco",
       "Pan de centeno"
-    ]
+    ],
+    "name_en": "VEGGIE SANDWICH",
+    "name_pt": "SANDUÍCHE VEGETAL"
   },
   {
     "id": 34,
     "name": "SÁNDWICH DE JAMÓN",
     "price": "$8.50",
-    "imageKey":[ "imgSandwich4" , "imgSandwich4_0", "imgSandwich4_1" , "imgSandwich4_2","imgSandwich4_3","imgSandwich4_4"],
+    "imageKey": [
+      "imgSandwich4",
+      "imgSandwich4_0",
+      "imgSandwich4_1",
+      "imgSandwich4_2",
+      "imgSandwich4_3",
+      "imgSandwich4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -876,13 +1179,22 @@
       "Tomate",
       "Mostaza",
       "Pan blanco"
-    ]
+    ],
+    "name_en": "HAM SANDWICH",
+    "name_pt": "SANDUÍCHE DE PRESUNTO"
   },
   {
     "id": 35,
     "name": "SÁNDWICH DE ATÚN",
     "price": "$9.50",
-    "imageKey":[ "imgSandwich5" , "imgSandwich5_0" , "imgSandwich5_1" , "imgSandwich5_2","imgSandwich5_3","imgSandwich5_4"],
+    "imageKey": [
+      "imgSandwich5",
+      "imgSandwich5_0",
+      "imgSandwich5_1",
+      "imgSandwich5_2",
+      "imgSandwich5_3",
+      "imgSandwich5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -902,13 +1214,22 @@
       "Cebolla morada",
       "Lechuga",
       "Pan integral"
-    ]
+    ],
+    "name_en": "TUNA SANDWICH",
+    "name_pt": "SANDUÍCHE DE ATUM"
   },
   {
     "id": 36,
     "name": "SÁNDWICH CUBANO",
     "price": "$12.00",
-    "imageKey": ["imgSandwich6", "imgSandwich6_0", "imgSandwich6_1" , "imgSandwich6_2","imgSandwich6_3","imgSandwich6_4"],
+    "imageKey": [
+      "imgSandwich6",
+      "imgSandwich6_0",
+      "imgSandwich6_1",
+      "imgSandwich6_2",
+      "imgSandwich6_3",
+      "imgSandwich6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -928,13 +1249,22 @@
       "Pickles",
       "Mostaza",
       "Pan cubano"
-    ]
+    ],
+    "name_en": "CUBAN SANDWICH",
+    "name_pt": "SANDUÍCHE CUBANO"
   },
   {
     "id": 37,
     "name": "SÁNDWICH DE PAVO",
     "price": "$10.50",
-    "imageKey": ["imgSandwich7" , "imgSandwich7_0", "imgSandwich7_1" , "imgSandwich7_2","imgSandwich7_3","imgSandwich7_4"],
+    "imageKey": [
+      "imgSandwich7",
+      "imgSandwich7_0",
+      "imgSandwich7_1",
+      "imgSandwich7_2",
+      "imgSandwich7_3",
+      "imgSandwich7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -954,13 +1284,22 @@
       "Tomate",
       "Mayonesa",
       "Pan de ajo"
-    ]
+    ],
+    "name_en": "TURKEY SANDWICH",
+    "name_pt": "SANDUÍCHE DE PERU"
   },
   {
     "id": 38,
     "name": "SÁNDWICH CAPRESE",
     "price": "$9.00",
-    "imageKey": ["imgSandwich8", "imgSandwich8_0", "imgSandwich8_1" , "imgSandwich8_2","imgSandwich8_3","imgSandwich8_4"],
+    "imageKey": [
+      "imgSandwich8",
+      "imgSandwich8_0",
+      "imgSandwich8_1",
+      "imgSandwich8_2",
+      "imgSandwich8_3",
+      "imgSandwich8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -980,13 +1319,22 @@
       "Aceite de oliva",
       "Vinagre balsámico",
       "Pan ciabatta"
-    ]
+    ],
+    "name_en": "CAPRESE SANDWICH",
+    "name_pt": "SANDUÍCHE CAPRESE"
   },
   {
     "id": 39,
     "name": "SÁNDWICH DE ROAST BEEF",
     "price": "$13.00",
-    "imageKey": ["imgSandwich9", "imgSandwich9_0", "imgSandwich9_1" , "imgSandwich9_2","imgSandwich9_3","imgSandwich9_4"],
+    "imageKey": [
+      "imgSandwich9",
+      "imgSandwich9_0",
+      "imgSandwich9_1",
+      "imgSandwich9_2",
+      "imgSandwich9_3",
+      "imgSandwich9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -1006,13 +1354,22 @@
       "Cebolla caramelizada",
       "Rúcula",
       "Pan de centeno"
-    ]
+    ],
+    "name_en": "ROAST BEEF SANDWICH",
+    "name_pt": "SANDUÍCHE DE ROAST BEEF"
   },
   {
     "id": 40,
     "name": "SÁNDWICH MEDITERRÁNEO",
     "price": "$11.50",
-    "imageKey": ["imgSandwich10", "imgSandwich10_0", "imgSandwich10_1" , "imgSandwich10_2","imgSandwich10_3","imgSandwich10_4"],
+    "imageKey": [
+      "imgSandwich10",
+      "imgSandwich10_0",
+      "imgSandwich10_1",
+      "imgSandwich10_2",
+      "imgSandwich10_3",
+      "imgSandwich10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "sandwichs",
     "width": 105,
@@ -1032,13 +1389,22 @@
       "Rúcula",
       "Pesto",
       "Pan focaccia"
-    ]
+    ],
+    "name_en": "MEDITERRANEAN SANDWICH",
+    "name_pt": "SANDUÍCHE MEDITERRÂNEO"
   },
   {
     "id": 41,
     "name": "COMBO BURGER + PAPAS",
     "price": "$16.00",
-    "imageKey": ["imgPromo1", "imgPromo1_0", "imgPromo1_1" , "imgPromo1_2","imgPromo1_3","imgPromo1_4"],
+    "imageKey": [
+      "imgPromo1",
+      "imgPromo1_0",
+      "imgPromo1_1",
+      "imgPromo1_2",
+      "imgPromo1_3",
+      "imgPromo1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1057,13 +1423,22 @@
       "Papas fritas",
       "Bebida personal",
       "Salsa al gusto"
-    ]
+    ],
+    "name_en": "BURGER + FRIES COMBO",
+    "name_pt": "COMBO BURGER + BATATAS"
   },
   {
     "id": 42,
     "name": "COMBO FAMILIAR",
     "price": "$35.00",
-    "imageKey": ["imgPromo2", "imgPromo2_0", "imgPromo2_1" , "imgPromo2_2","imgPromo2_3","imgPromo2_4"],
+    "imageKey": [
+      "imgPromo2",
+      "imgPromo2_0",
+      "imgPromo2_1",
+      "imgPromo2_2",
+      "imgPromo2_3",
+      "imgPromo2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1081,13 +1456,22 @@
       "2 porciones papas",
       "4 bebidas",
       "Postre familiar"
-    ]
+    ],
+    "name_en": "FAMILY COMBO",
+    "name_pt": "COMBO FAMILIAR"
   },
   {
     "id": 43,
     "name": "PROMO DESAYUNO",
     "price": "$8.00",
-    "imageKey": ["imgPromo3", "imgPromo3_0", "imgPromo3_1" , "imgPromo3_2","imgPromo3_3","imgPromo3_4"],
+    "imageKey": [
+      "imgPromo3",
+      "imgPromo3_0",
+      "imgPromo3_1",
+      "imgPromo3_2",
+      "imgPromo3_3",
+      "imgPromo3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1105,13 +1489,22 @@
       "Tostadas",
       "Jugo natural",
       "Café o té"
-    ]
+    ],
+    "name_en": "BREAKFAST SPECIAL",
+    "name_pt": "PROMOÇÃO CAFÉ DA MANHÃ"
   },
   {
     "id": 44,
     "name": "COMBO EJECUTIVO",
     "price": "$12.00",
-    "imageKey": ["imgPromo4", "imgPromo4_0", "imgPromo4_1" , "imgPromo4_2","imgPromo4_3","imgPromo4_4"],
+    "imageKey": [
+      "imgPromo4",
+      "imgPromo4_0",
+      "imgPromo4_1",
+      "imgPromo4_2",
+      "imgPromo4_3",
+      "imgPromo4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1129,13 +1522,22 @@
       "Ensalada o sopa",
       "Bebida",
       "Postre pequeño"
-    ]
+    ],
+    "name_en": "EXECUTIVE COMBO",
+    "name_pt": "COMBO EXECUTIVO"
   },
   {
     "id": 45,
     "name": "PROMO 2x1 PIZZAS",
     "price": "$20.00",
-    "imageKey": ["imgPromo5", "imgPromo5_0", "imgPromo5_1" , "imgPromo5_2","imgPromo5_3","imgPromo5_4"],
+    "imageKey": [
+      "imgPromo5",
+      "imgPromo5_0",
+      "imgPromo5_1",
+      "imgPromo5_2",
+      "imgPromo5_3",
+      "imgPromo5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1152,13 +1554,21 @@
       "2 pizzas medianas",
       "Ingredientes a elegir",
       "Salsa extra"
-    ]
+    ],
+    "name_en": "2x1 PIZZA SPECIAL",
+    "name_pt": "PROMOÇÃO 2x1 PIZZAS"
   },
   {
     "id": 46,
     "name": "COMBO INFANTIL",
     "price": "$9.00",
-    "imageKey": ["imgPromo6", "imgPromo6_0", "imgPromo6_1" , "imgPromo6_2","imgPromo6_3","imgPromo6_4"],
+    "imageKey": [
+      "imgPromo6",
+      "imgPromo6_1",
+      "imgPromo6_2",
+      "imgPromo6_3",
+      "imgPromo6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1176,13 +1586,21 @@
       "Papas fritas",
       "Jugo o leche",
       "Sorpresa infantil"
-    ]
+    ],
+    "name_en": "KIDS COMBO",
+    "name_pt": "COMBO INFANTIL"
   },
   {
     "id": 47,
     "name": "PROMO FIN DE SEMANA",
     "price": "$25.00",
-    "imageKey": ["imgPromo7", "imgPromo7_0", "imgPromo7_1" , "imgPromo7_2","imgPromo7_3","imgPromo7_4"],
+    "imageKey": [
+      "imgPromo7",
+      "imgPromo7_1",
+      "imgPromo7_2",
+      "imgPromo7_3",
+      "imgPromo7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1200,13 +1618,22 @@
       "Entrada",
       "Bebida",
       "Postre gourmet"
-    ]
+    ],
+    "name_en": "WEEKEND SPECIAL",
+    "name_pt": "PROMOÇÃO FIM DE SEMANA"
   },
   {
     "id": 48,
     "name": "COMBO PARRILLA",
     "price": "$30.00",
-    "imageKey":[ "imgPromo8", "imgPromo8_0", "imgPromo8_1" , "imgPromo8_2","imgPromo8_3","imgPromo8_4"],
+    "imageKey": [
+      "imgPromo8",
+      "imgPromo8_0",
+      "imgPromo8_1",
+      "imgPromo8_2",
+      "imgPromo8_3",
+      "imgPromo8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1224,13 +1651,22 @@
       "Chorizo y morcilla",
       "Ensaladas",
       "Papas y vegetales"
-    ]
+    ],
+    "name_en": "GRILL COMBO",
+    "name_pt": "COMBO CHURRASCO"
   },
   {
     "id": 49,
     "name": "PROMO POSTRES",
     "price": "$15.00",
-    "imageKey": ["imgPromo9", "imgPromo9_0", "imgPromo9_1" , "imgPromo9_2","imgPromo9_3","imgPromo9_4"],
+    "imageKey": [
+      "imgPromo9",
+      "imgPromo9_0",
+      "imgPromo9_1",
+      "imgPromo9_2",
+      "imgPromo9_3",
+      "imgPromo9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1248,13 +1684,22 @@
       "Cheesecake",
       "Brownie con helado",
       "Café o té"
-    ]
+    ],
+    "name_en": "DESSERT SPECIAL",
+    "name_pt": "PROMOÇÃO SOBREMESAS"
   },
   {
     "id": 50,
     "name": "COMBO MEXICANO",
     "price": "$22.00",
-    "imageKey": ["imgPromo10", "imgPromo10_0", "imgPromo10_1" , "imgPromo10_2","imgPromo10_3","imgPromo10_4"],
+    "imageKey": [
+      "imgPromo10",
+      "imgPromo10_0",
+      "imgPromo10_1",
+      "imgPromo10_2",
+      "imgPromo10_3",
+      "imgPromo10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promos",
     "width": 105,
@@ -1272,13 +1717,22 @@
       "Guacamole y salsa",
       "Arroz y frijoles",
       "Bebida mexicana"
-    ]
+    ],
+    "name_en": "MEXICAN COMBO",
+    "name_pt": "COMBO MEXICANO"
   },
   {
     "id": 51,
     "name": "PIZZA MARGHERITA",
     "price": "$14.00",
-    "imageKey": [ "imgPizza1", "imgPizza1_0", "imgPizza1_1" , "imgPizza1_2","imgPizza1_3","imgPizza1_4"],
+    "imageKey": [
+      "imgPizza1",
+      "imgPizza1_0",
+      "imgPizza1_1",
+      "imgPizza1_2",
+      "imgPizza1_3",
+      "imgPizza1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1296,13 +1750,22 @@
       "Mozzarella fresca",
       "Albahaca fresca",
       "Aceite de oliva"
-    ]
+    ],
+    "name_en": "MARGHERITA PIZZA",
+    "name_pt": "PIZZA MARGHERITA"
   },
   {
     "id": 52,
     "name": "PIZZA PEPPERONI",
     "price": "$16.00",
-    "imageKey": ["imgPizza2", "imgPizza2_0" , "imgPizza2_1" , "imgPizza2_2","imgPizza2_3","imgPizza2_4"],
+    "imageKey": [
+      "imgPizza2",
+      "imgPizza2_0",
+      "imgPizza2_1",
+      "imgPizza2_2",
+      "imgPizza2_3",
+      "imgPizza2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1320,13 +1783,22 @@
       "Mozzarella",
       "Pepperoni",
       "Orégano"
-    ]
+    ],
+    "name_en": "PEPPERONI PIZZA",
+    "name_pt": "PIZZA PEPPERONI"
   },
   {
     "id": 53,
     "name": "PIZZA HAWAIANA",
     "price": "$15.50",
-    "imageKey": ["imgPizza3","imgPizza3_0", "imgPizza3_1" , "imgPizza3_2","imgPizza3_3","imgPizza3_4"],
+    "imageKey": [
+      "imgPizza3",
+      "imgPizza3_0",
+      "imgPizza3_1",
+      "imgPizza3_2",
+      "imgPizza3_3",
+      "imgPizza3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1345,13 +1817,22 @@
       "Jamón",
       "Piña",
       "Orégano"
-    ]
+    ],
+    "name_en": "HAWAIIAN PIZZA",
+    "name_pt": "PIZZA HAVAIANA"
   },
   {
     "id": 54,
     "name": "PIZZA CUATRO QUESOS",
     "price": "$17.00",
-    "imageKey": ["imgPizza4", "imgPizza4_0", "imgPizza4_1" , "imgPizza4_2","imgPizza4_3","imgPizza4_4"],
+    "imageKey": [
+      "imgPizza4",
+      "imgPizza4_0",
+      "imgPizza4_1",
+      "imgPizza4_2",
+      "imgPizza4_3",
+      "imgPizza4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1370,13 +1851,22 @@
       "Parmesano",
       "Fontina",
       "Salsa blanca"
-    ]
+    ],
+    "name_en": "FOUR CHEESE PIZZA",
+    "name_pt": "PIZZA QUATRO QUEIJOS"
   },
   {
     "id": 55,
     "name": "PIZZA VEGETARIANA",
     "price": "$15.00",
-    "imageKey": ["imgPizza5", "imgPizza5_0", "imgPizza5_1" , "imgPizza5_2","imgPizza5_3","imgPizza5_4"],
+    "imageKey": [
+      "imgPizza5",
+      "imgPizza5_0",
+      "imgPizza5_1",
+      "imgPizza5_2",
+      "imgPizza5_3",
+      "imgPizza5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1395,13 +1885,22 @@
       "Champiñones",
       "Aceitunas",
       "Mozzarella"
-    ]
+    ],
+    "name_en": "VEGETARIAN PIZZA",
+    "name_pt": "PIZZA VEGETARIANA"
   },
   {
     "id": 56,
     "name": "PIZZA CARNIVORA",
     "price": "$18.00",
-    "imageKey": ["imgPizza6", "imgPizza6_0", "imgPizza6_1" , "imgPizza6_2","imgPizza6_3","imgPizza6_4"],
+    "imageKey": [
+      "imgPizza6",
+      "imgPizza6_0",
+      "imgPizza6_1",
+      "imgPizza6_2",
+      "imgPizza6_3",
+      "imgPizza6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1420,13 +1919,22 @@
       "Jamón",
       "Carne molida",
       "Bacon"
-    ]
+    ],
+    "name_en": "MEAT LOVERS PIZZA",
+    "name_pt": "PIZZA CARNÍVORA"
   },
   {
     "id": 57,
     "name": "PIZZA MEXICANA",
     "price": "$16.50",
-    "imageKey": ["imgPizza7", "imgPizza7_0", "imgPizza7_1" , "imgPizza7_2","imgPizza7_3","imgPizza7_4"],
+    "imageKey": [
+      "imgPizza7",
+      "imgPizza7_0",
+      "imgPizza7_1",
+      "imgPizza7_2",
+      "imgPizza7_3",
+      "imgPizza7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1445,13 +1953,22 @@
       "Pimiento",
       "Cebolla",
       "Salsa picante"
-    ]
+    ],
+    "name_en": "MEXICAN PIZZA",
+    "name_pt": "PIZZA MEXICANA"
   },
   {
     "id": 58,
     "name": "PIZZA NAPOLITANA",
     "price": "$14.50",
-    "imageKey": ["imgPizza8", "imgPizza8_0", "imgPizza8_1" , "imgPizza8_2","imgPizza8_3","imgPizza8_4"],
+    "imageKey": [
+      "imgPizza8",
+      "imgPizza8_0",
+      "imgPizza8_1",
+      "imgPizza8_2",
+      "imgPizza8_3",
+      "imgPizza8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1470,13 +1987,22 @@
       "Aceitunas negras",
       "Orégano",
       "Aceite de oliva"
-    ]
+    ],
+    "name_en": "NEAPOLITAN PIZZA",
+    "name_pt": "PIZZA NAPOLITANA"
   },
   {
     "id": 59,
     "name": "PIZZA BBQ CHICKEN",
     "price": "$17.50",
-    "imageKey": ["imgPizza9", "imgPizza9_0", "imgPizza9_1" , "imgPizza9_2","imgPizza9_3","imgPizza9_4"],
+    "imageKey": [
+      "imgPizza9",
+      "imgPizza9_0",
+      "imgPizza9_1",
+      "imgPizza9_2",
+      "imgPizza9_3",
+      "imgPizza9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1495,13 +2021,22 @@
       "Cebolla caramelizada",
       "Cilantro",
       "Mozzarella"
-    ]
+    ],
+    "name_en": "BBQ CHICKEN PIZZA",
+    "name_pt": "PIZZA FRANGO BBQ"
   },
   {
     "id": 60,
     "name": "PIZZA ESPECIAL",
     "price": "$19.00",
-    "imageKey": ["imgPizza10", "imgPizza10_0", "imgPizza10_1" , "imgPizza10_2","imgPizza10_3","imgPizza10_4"],
+    "imageKey": [
+      "imgPizza10",
+      "imgPizza10_0",
+      "imgPizza10_1",
+      "imgPizza10_2",
+      "imgPizza10_3",
+      "imgPizza10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pizzas",
     "width": 105,
@@ -1520,13 +2055,22 @@
       "Rúcula",
       "Tomate secado al sol",
       "Aceitunas"
-    ]
+    ],
+    "name_en": "SPECIAL PIZZA",
+    "name_pt": "PIZZA ESPECIAL"
   },
   {
     "id": 61,
     "name": "SPAGHETTI BOLOÑESA",
     "price": "$13.00",
-    "imageKey": ["imgPasta1", "imgPasta1_0", "imgPasta1_1" , "imgPasta1_2","imgPasta1_3","imgPasta1_4"],
+    "imageKey": [
+      "imgPasta1",
+      "imgPasta1_0",
+      "imgPasta1_1",
+      "imgPasta1_2",
+      "imgPasta1_3",
+      "imgPasta1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1546,13 +2090,22 @@
       "Cebolla",
       "Zanahoria",
       "Vino tinto"
-    ]
+    ],
+    "name_en": "SPAGHETTI BOLOGNESE",
+    "name_pt": "ESPAGUETE BOLONHESA"
   },
   {
     "id": 62,
     "name": "FETTUCCINE ALFREDO",
     "price": "$14.00",
-    "imageKey":[ "imgPasta2", "imgPasta2_0", "imgPasta2_1" , "imgPasta2_2","imgPasta2_3","imgPasta2_4"],
+    "imageKey": [
+      "imgPasta2",
+      "imgPasta2_0",
+      "imgPasta2_1",
+      "imgPasta2_2",
+      "imgPasta2_3",
+      "imgPasta2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1571,13 +2124,22 @@
       "Mantequilla",
       "Queso parmesano",
       "Nuez moscada"
-    ]
+    ],
+    "name_en": "FETTUCCINE ALFREDO",
+    "name_pt": "FETTUCCINE ALFREDO"
   },
   {
     "id": 63,
     "name": "LASAGNA CLÁSICA",
     "price": "$16.00",
-    "imageKey":[  "imgPasta3", "imgPasta3_0", "imgPasta3_1" , "imgPasta3_2","imgPasta3_3","imgPasta3_4"],
+    "imageKey": [
+      "imgPasta3",
+      "imgPasta3_0",
+      "imgPasta3_1",
+      "imgPasta3_2",
+      "imgPasta3_3",
+      "imgPasta3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1596,13 +2158,22 @@
       "Queso ricotta",
       "Mozzarella",
       "Salsa bechamel"
-    ]
+    ],
+    "name_en": "CLASSIC LASAGNA",
+    "name_pt": "LASANHA CLÁSSICA"
   },
   {
     "id": 64,
     "name": "RAVIOLI DE ESPINACA",
     "price": "$15.00",
-    "imageKey":[ "imgPasta4", "imgPasta4_0" , "imgPasta4_1" , "imgPasta4_2","imgPasta4_3","imgPasta4_4"],
+    "imageKey": [
+      "imgPasta4",
+      "imgPasta4_0",
+      "imgPasta4_1",
+      "imgPasta4_2",
+      "imgPasta4_3",
+      "imgPasta4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1620,13 +2191,22 @@
       "Queso ricotta",
       "Mantequilla y salvia",
       "Queso parmesano"
-    ]
+    ],
+    "name_en": "SPINACH RAVIOLI",
+    "name_pt": "RAVIOLI DE ESPINAFRE"
   },
   {
     "id": 65,
     "name": "PENNE ARRABBIATA",
     "price": "$12.50",
-    "imageKey": [   "imgPasta5", "imgPasta5_0", "imgPasta5_1" , "imgPasta5_2","imgPasta5_3","imgPasta5_4"],
+    "imageKey": [
+      "imgPasta5",
+      "imgPasta5_0",
+      "imgPasta5_1",
+      "imgPasta5_2",
+      "imgPasta5_3",
+      "imgPasta5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1645,13 +2225,22 @@
       "Ajo",
       "Chile rojo",
       "Albahaca"
-    ]
+    ],
+    "name_en": "PENNE ARRABBIATA",
+    "name_pt": "PENNE ARRABBIATA"
   },
   {
     "id": 66,
     "name": "CANELONES DE CARNE",
     "price": "$14.50",
-    "imageKey": ["imgPasta6", "imgPasta6_0", "imgPasta6_1" , "imgPasta6_2","imgPasta6_3","imgPasta6_4"],
+    "imageKey": [
+      "imgPasta6",
+      "imgPasta6_0",
+      "imgPasta6_1",
+      "imgPasta6_2",
+      "imgPasta6_3",
+      "imgPasta6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1670,13 +2259,22 @@
       "Espinacas",
       "Salsa bechamel",
       "Queso gratinado"
-    ]
+    ],
+    "name_en": "MEAT CANNELLONI",
+    "name_pt": "CANELONE DE CARNE"
   },
   {
     "id": 67,
     "name": "GNOCCHI POMODORO",
     "price": "$13.50",
-    "imageKey": ["imgPasta7", "imgPasta7_0", "imgPasta7_1" , "imgPasta7_2","imgPasta7_3","imgPasta7_4"],
+    "imageKey": [
+      "imgPasta7",
+      "imgPasta7_0",
+      "imgPasta7_1",
+      "imgPasta7_2",
+      "imgPasta7_3",
+      "imgPasta7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1694,13 +2292,22 @@
       "Salsa de tomate natural",
       "Albahaca",
       "Queso parmesano"
-    ]
+    ],
+    "name_en": "GNOCCHI POMODORO",
+    "name_pt": "NHOQUE POMODORO"
   },
   {
     "id": 68,
     "name": "LINGUINI PESCADOR",
     "price": "$18.00",
-    "imageKey": ["imgPasta8", "imgPasta8_0", "imgPasta8_1" , "imgPasta8_2","imgPasta8_3","imgPasta8_4"],
+    "imageKey": [
+      "imgPasta8",
+      "imgPasta8_0",
+      "imgPasta8_1",
+      "imgPasta8_2",
+      "imgPasta8_3",
+      "imgPasta8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1719,13 +2326,22 @@
       "Mejillones",
       "Calamares",
       "Salsa de vino blanco"
-    ]
+    ],
+    "name_en": "FISHERMAN'S LINGUINE",
+    "name_pt": "LINGUINI DO PESCADOR"
   },
   {
     "id": 69,
     "name": "TORTELLINI QUESO",
     "price": "$14.00",
-    "imageKey": ["imgPasta9", "imgPasta9_0", "imgPasta9_1" , "imgPasta9_2","imgPasta9_3","imgPasta9_4"],
+    "imageKey": [
+      "imgPasta9",
+      "imgPasta9_0",
+      "imgPasta9_1",
+      "imgPasta9_2",
+      "imgPasta9_3",
+      "imgPasta9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1744,13 +2360,22 @@
       "Jamón",
       "Champiñones",
       "Queso parmesano"
-    ]
+    ],
+    "name_en": "CHEESE TORTELLINI",
+    "name_pt": "TORTELLINI DE QUEIJO"
   },
   {
     "id": 70,
     "name": "MACARONI CON QUESO",
     "price": "$11.00",
-    "imageKey": ["imgPasta10", "imgPasta10_0", "imgPasta10_1" , "imgPasta10_2","imgPasta10_3","imgPasta10_4"],
+    "imageKey": [
+      "imgPasta10",
+      "imgPasta10_0",
+      "imgPasta10_1",
+      "imgPasta10_2",
+      "imgPasta10_3",
+      "imgPasta10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "pastas",
     "width": 105,
@@ -1769,13 +2394,21 @@
       "Leche",
       "Mantequilla",
       "Pan rallado"
-    ]
+    ],
+    "name_en": "MAC & CHEESE",
+    "name_pt": "MACARRÃO COM QUEIJO"
   },
   {
     "id": 71,
     "name": "TIRAMISÚ",
     "price": "$7.00",
-    "imageKey":[ "imgPostre1", "imgPostre1_1" , "imgPostre1_2","imgPostre1_3","imgPostre1_4"],
+    "imageKey": [
+      "imgPostre1",
+      "imgPostre1_1",
+      "imgPostre1_2",
+      "imgPostre1_3",
+      "imgPostre1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1794,13 +2427,21 @@
       "Queso mascarpone",
       "Cacao en polvo",
       "Huevos"
-    ]
+    ],
+    "name_en": "TIRAMISU",
+    "name_pt": "TIRAMISU"
   },
   {
     "id": 72,
     "name": "CHEESECAKE",
     "price": "$6.50",
-    "imageKey": ["imgPostre2", "imgPostre2_1" , "imgPostre2_2","imgPostre2_3","imgPostre2_4"],
+    "imageKey": [
+      "imgPostre2",
+      "imgPostre2_1",
+      "imgPostre2_2",
+      "imgPostre2_3",
+      "imgPostre2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1819,13 +2460,21 @@
       "Mantequilla",
       "Crema agria",
       "Frutos rojos"
-    ]
+    ],
+    "name_en": "CHEESECAKE",
+    "name_pt": "CHEESECAKE"
   },
   {
     "id": 73,
     "name": "FLAN CASERO",
     "price": "$5.00",
-    "imageKey": ["imgPostre3", "imgPostre3_1" , "imgPostre3_2","imgPostre3_3","imgPostre3_4"],
+    "imageKey": [
+      "imgPostre3",
+      "imgPostre3_1",
+      "imgPostre3_2",
+      "imgPostre3_3",
+      "imgPostre3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1844,13 +2493,21 @@
       "Azúcar",
       "Vainilla",
       "Caramelo líquido"
-    ]
+    ],
+    "name_en": "HOMEMADE FLAN",
+    "name_pt": "FLAN CASEIRO"
   },
   {
     "id": 74,
     "name": "MOUSSE DE CHOCOLATE",
     "price": "$6.00",
-    "imageKey": ["imgPostre4", "imgPostre4_1" , "imgPostre4_2","imgPostre4_3","imgPostre4_4"],
+    "imageKey": [
+      "imgPostre4",
+      "imgPostre4_1",
+      "imgPostre4_2",
+      "imgPostre4_3",
+      "imgPostre4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1869,13 +2526,21 @@
       "Claras de huevo",
       "Azúcar",
       "Mantequilla"
-    ]
+    ],
+    "name_en": "CHOCOLATE MOUSSE",
+    "name_pt": "MOUSSE DE CHOCOLATE"
   },
   {
     "id": 75,
     "name": "PASTEL DE ZANAHORIA",
     "price": "$7.50",
-    "imageKey": ["imgPostre5" , "imgPoster5_1" , "imgPoster5_2" , "imgPoster5_3" , "imgPoster5_4" ],
+    "imageKey": [
+      "imgPostre5",
+      "imgPoster5_1",
+      "imgPoster5_2",
+      "imgPoster5_3",
+      "imgPoster5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1894,13 +2559,21 @@
       "Canela",
       "Queso crema",
       "Azúcar glas"
-    ]
+    ],
+    "name_en": "CARROT CAKE",
+    "name_pt": "BOLO DE CENOURA"
   },
   {
     "id": 76,
     "name": "CREPE SUZETTE",
     "price": "$8.00",
-    "imageKey": ["imgPostre6", "imgPostre6_1" , "imgPostre6_2","imgPostre6_3","imgPostre6_4"],
+    "imageKey": [
+      "imgPostre6",
+      "imgPostre6_1",
+      "imgPostre6_2",
+      "imgPostre6_3",
+      "imgPostre6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1919,13 +2592,21 @@
       "Grand Marnier",
       "Mantequilla",
       "Azúcar"
-    ]
+    ],
+    "name_en": "CREPE SUZETTE",
+    "name_pt": "CRÊPE SUZETTE"
   },
   {
     "id": 77,
     "name": "PROFITEROLES",
     "price": "$7.00",
-    "imageKey": [ "imgPostre7", "imgPostre7_1" , "imgPostre7_2","imgPostre7_3","imgPostre7_4"],
+    "imageKey": [
+      "imgPostre7",
+      "imgPostre7_1",
+      "imgPostre7_2",
+      "imgPostre7_3",
+      "imgPostre7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1943,13 +2624,21 @@
       "Crema pastelera",
       "Chocolate semi-amargo",
       "Azúcar glas"
-    ]
+    ],
+    "name_en": "PROFITEROLES",
+    "name_pt": "CAROLINAS"
   },
   {
     "id": 78,
     "name": "TARTA DE MANZANA",
     "price": "$6.00",
-    "imageKey": ["imgPostre8", "imgPostre8_1" , "imgPostre8_2","imgPostre8_3","imgPostre8_4"],
+    "imageKey": [
+      "imgPostre8",
+      "imgPostre8_1",
+      "imgPostre8_2",
+      "imgPostre8_3",
+      "imgPostre8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1968,13 +2657,21 @@
       "Canela",
       "Mantequilla",
       "Azúcar moreno"
-    ]
+    ],
+    "name_en": "APPLE TART",
+    "name_pt": "TORTA DE MAÇÃ"
   },
   {
     "id": 79,
     "name": "GELATINA DE FRUTAS",
     "price": "$4.50",
-    "imageKey": ["imgPostre9", "imgPostre9_1" , "imgPostre9_2","imgPostre9_3","imgPostre9_4"],
+    "imageKey": [
+      "imgPostre9",
+      "imgPostre9_1",
+      "imgPostre9_2",
+      "imgPostre9_3",
+      "imgPostre9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -1992,13 +2689,21 @@
       "Frutas mixtas",
       "Crema batida",
       "Menta fresca"
-    ]
+    ],
+    "name_en": "FRUIT JELLY",
+    "name_pt": "GELATINA DE FRUTAS"
   },
   {
     "id": 80,
     "name": "BROWNIE CON HELADO",
     "price": "$8.50",
-    "imageKey": ["imgPostre10", "imgPostre10_1" , "imgPostre10_2","imgPostre10_3","imgPostre10_4"],
+    "imageKey": [
+      "imgPostre10",
+      "imgPostre10_1",
+      "imgPostre10_2",
+      "imgPostre10_3",
+      "imgPostre10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "postres",
     "width": 105,
@@ -2017,13 +2722,21 @@
       "Salsa de chocolate",
       "Nueces",
       "Crema batida"
-    ]
+    ],
+    "name_en": "BROWNIE WITH ICE CREAM",
+    "name_pt": "BROWNIE COM SORVETE"
   },
   {
     "id": 81,
     "name": "HELADO DE VAINILLA",
     "price": "$4.00",
-    "imageKey": ["imgHelado1", "imgHelado1_1" , "imgHelado1_2","imgHelado1_3","imgHelado1_4"],
+    "imageKey": [
+      "imgHelado1",
+      "imgHelado1_1",
+      "imgHelado1_2",
+      "imgHelado1_3",
+      "imgHelado1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2042,13 +2755,21 @@
       "Leche",
       "Azúcar",
       "Yemas de huevo"
-    ]
+    ],
+    "name_en": "VANILLA ICE CREAM",
+    "name_pt": "SORVETE DE BAUNILHA"
   },
   {
     "id": 82,
     "name": "HELADO DE CHOCOLATE",
     "price": "$4.50",
-    "imageKey": ["imgHelado2" , "imgHelado2_1" , "imgHelado2_2","imgHelado2_3","imgHelado2_4"],
+    "imageKey": [
+      "imgHelado2",
+      "imgHelado2_1",
+      "imgHelado2_2",
+      "imgHelado2_3",
+      "imgHelado2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2067,13 +2788,21 @@
       "Cacao en polvo",
       "Azúcar",
       "Leche"
-    ]
+    ],
+    "name_en": "CHOCOLATE ICE CREAM",
+    "name_pt": "SORVETE DE CHOCOLATE"
   },
   {
     "id": 83,
     "name": "HELADO DE FRUTILLA",
     "price": "$4.00",
-    "imageKey": ["imgHelado3", "imgHelado3_1" , "imgHelado3_2","imgHelado3_3","imgHelado3_4"],
+    "imageKey": [
+      "imgHelado3",
+      "imgHelado3_1",
+      "imgHelado3_2",
+      "imgHelado3_3",
+      "imgHelado3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2091,13 +2820,21 @@
       "Crema de leche",
       "Azúcar",
       "Jugo de limón"
-    ]
+    ],
+    "name_en": "STRAWBERRY ICE CREAM",
+    "name_pt": "SORVETE DE MORANGO"
   },
   {
     "id": 84,
     "name": "SUNDAE DE CHOCOLATE",
     "price": "$6.00",
-    "imageKey": ["imgHelado4", "imgHelado4_1" , "imgHelado4_2","imgHelado4_3","imgHelado4_4"],
+    "imageKey": [
+      "imgHelado4",
+      "imgHelado4_1",
+      "imgHelado4_2",
+      "imgHelado4_3",
+      "imgHelado4_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2116,13 +2853,21 @@
       "Crema batida",
       "Cerezas",
       "Nueces"
-    ]
+    ],
+    "name_en": "CHOCOLATE SUNDAE",
+    "name_pt": "SUNDAE DE CHOCOLATE"
   },
   {
     "id": 85,
     "name": "HELADO DE MENTA",
     "price": "$4.50",
-    "imageKey": ["imgHelado5", "imgHelado5_1" , "imgHelado5_2","imgHelado5_3","imgHelado5_4"],
+    "imageKey": [
+      "imgHelado5",
+      "imgHelado5_1",
+      "imgHelado5_2",
+      "imgHelado5_3",
+      "imgHelado5_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2141,13 +2886,21 @@
       "Crema de leche",
       "Leche",
       "Azúcar"
-    ]
+    ],
+    "name_en": "MINT ICE CREAM",
+    "name_pt": "SORVETE DE MENTA"
   },
   {
     "id": 86,
     "name": "HELADO DE COCO",
     "price": "$4.00",
-    "imageKey": ["imgHelado6", "imgHelado6_1" , "imgHelado6_2","imgHelado6_3","imgHelado6_4"],
+    "imageKey": [
+      "imgHelado6",
+      "imgHelado6_1",
+      "imgHelado6_2",
+      "imgHelado6_3",
+      "imgHelado6_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2166,13 +2919,21 @@
       "Crema de leche",
       "Azúcar",
       "Vainilla"
-    ]
+    ],
+    "name_en": "COCONUT ICE CREAM",
+    "name_pt": "SORVETE DE COCO"
   },
   {
     "id": 87,
     "name": "BANANA SPLIT",
     "price": "$7.00",
-    "imageKey":[ "imgHelado7", "imgHelado7_1" , "imgHelado7_2","imgHelado7_3","imgHelado7_4"],
+    "imageKey": [
+      "imgHelado7",
+      "imgHelado7_1",
+      "imgHelado7_2",
+      "imgHelado7_3",
+      "imgHelado7_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2191,13 +2952,21 @@
       "Helado de chocolate",
       "Helado de fresa",
       "Salsas y toppings"
-    ]
+    ],
+    "name_en": "BANANA SPLIT",
+    "name_pt": "BANANA SPLIT"
   },
   {
     "id": 88,
     "name": "HELADO DE LIMÓN",
     "price": "$4.00",
-    "imageKey": ["imgHelado8", "imgHelado8_1" , "imgHelado8_2","imgHelado8_3","imgHelado8_4"],
+    "imageKey": [
+      "imgHelado8",
+      "imgHelado8_1",
+      "imgHelado8_2",
+      "imgHelado8_3",
+      "imgHelado8_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2216,13 +2985,21 @@
       "Crema de leche",
       "Azúcar",
       "Leche"
-    ]
+    ],
+    "name_en": "LEMON ICE CREAM",
+    "name_pt": "SORVETE DE LIMÃO"
   },
   {
     "id": 89,
     "name": "COPA DE HELADO",
     "price": "$5.50",
-    "imageKey": ["imgHelado9", "imgHelado9_1" , "imgHelado9_2","imgHelado9_3","imgHelado9_4"],
+    "imageKey": [
+      "imgHelado9",
+      "imgHelado9_1",
+      "imgHelado9_2",
+      "imgHelado9_3",
+      "imgHelado9_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2241,13 +3018,21 @@
       "Crema batida",
       "Cereza",
       "Galleta"
-    ]
+    ],
+    "name_en": "ICE CREAM CUP",
+    "name_pt": "COPA DE SORVETE"
   },
   {
     "id": 90,
     "name": "HELADO DE COOKIES",
     "price": "$5.00",
-    "imageKey": ["imgHelado10", "imgHelado10_1" , "imgHelado10_2","imgHelado10_3","imgHelado10_4"],
+    "imageKey": [
+      "imgHelado10",
+      "imgHelado10_1",
+      "imgHelado10_2",
+      "imgHelado10_3",
+      "imgHelado10_4"
+    ],
     "priceColor": "#ff8700",
     "category": "helados",
     "width": 105,
@@ -2265,7 +3050,9 @@
       "Galletas oreo",
       "Crema de leche",
       "Chocolate blanco"
-    ]
+    ],
+    "name_en": "COOKIES ICE CREAM",
+    "name_pt": "SORVETE DE COOKIES"
   },
   {
     "id": 91,
@@ -2289,7 +3076,9 @@
       "Azúcar",
       "Colorante caramelo",
       "Aromas naturales"
-    ]
+    ],
+    "name_en": "COCA COLA",
+    "name_pt": "COCA COLA"
   },
   {
     "id": 92,
@@ -2312,7 +3101,9 @@
       "Naranjas frescas",
       "Hielo",
       "Azúcar (opcional)"
-    ]
+    ],
+    "name_en": "ORANGE JUICE",
+    "name_pt": "SUCO DE LARANJA"
   },
   {
     "id": 93,
@@ -2334,7 +3125,9 @@
     "ingredientText": [
       "Agua purificada",
       "Minerales naturales"
-    ]
+    ],
+    "name_en": "MINERAL WATER",
+    "name_pt": "ÁGUA MINERAL"
   },
   {
     "id": 94,
@@ -2358,7 +3151,9 @@
       "Malta",
       "Lúpulo",
       "Levadura"
-    ]
+    ],
+    "name_en": "CRAFT BEER",
+    "name_pt": "CERVEJA ARTESANAL"
   },
   {
     "id": 95,
@@ -2383,7 +3178,9 @@
       "Agua",
       "Hojas de menta",
       "Hielo"
-    ]
+    ],
+    "name_en": "FRESH LEMONADE",
+    "name_pt": "LIMONADA NATURAL"
   },
   {
     "id": 96,
@@ -2405,7 +3202,9 @@
     "ingredientText": [
       "Granos de café arábica",
       "Agua caliente"
-    ]
+    ],
+    "name_en": "AMERICANO COFFEE",
+    "name_pt": "CAFÉ AMERICANO"
   },
   {
     "id": 97,
@@ -2430,7 +3229,9 @@
       "Menta",
       "Azúcar",
       "Hielo"
-    ]
+    ],
+    "name_en": "ICED TEA",
+    "name_pt": "CHÁ GELADO"
   },
   {
     "id": 98,
@@ -2455,7 +3256,9 @@
       "Yogurt natural",
       "Miel",
       "Hielo"
-    ]
+    ],
+    "name_en": "FRUIT SMOOTHIE",
+    "name_pt": "VITAMINA DE FRUTAS"
   },
   {
     "id": 99,
@@ -2479,7 +3282,9 @@
       "Leche",
       "Chocolate syrup",
       "Crema batida"
-    ]
+    ],
+    "name_en": "CHOCOLATE MILKSHAKE",
+    "name_pt": "MILK-SHAKE DE CHOCOLATE"
   },
   {
     "id": 100,
@@ -2503,14 +3308,23 @@
       "Agua",
       "Azúcar",
       "Hielo"
-    ]
+    ],
+    "name_en": "HIBISCUS TEA",
+    "name_pt": "ÁGUA DE HIBISCO"
   },
-    {
+  {
     "id": 101,
     "name": "PROMO ITALIANA",
     "originalPrice": "$25.00",
     "price": "$22.50",
-    "imageKey": ["imgPromoDia1" , "imgPromoDia1_0" , "imgPromoDia1_1" , "imgPromoDia1_2","imgPromoDia1_3","imgPromoDia1_4"],
+    "imageKey": [
+      "imgPromoDia1",
+      "imgPromoDia1_0",
+      "imgPromoDia1_1",
+      "imgPromoDia1_2",
+      "imgPromoDia1_3",
+      "imgPromoDia1_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promoDia",
     "discountPercentage": 10,
@@ -2527,14 +3341,23 @@
     "includes": [
       "Pasta de fetuccine a la bolonesa",
       "Bedida Gaseosa (Coca Cola, Fanta, Sprite)"
-    ]
+    ],
+    "name_en": "ITALIAN SPECIAL",
+    "name_pt": "PROMOÇÃO ITALIANA"
   },
-    {
+  {
     "id": 102,
     "name": "PIZZA CLASSIC",
     "originalPrice": "$50.00",
     "price": "$42.50",
-    "imageKey": ["imgPromoDia2" , "imgPromoDia2_0" , "imgPromoDia2_1" , "imgPromoDia2_2","imgPromoDia2_3","imgPromoDia2_4"],
+    "imageKey": [
+      "imgPromoDia2",
+      "imgPromoDia2_0",
+      "imgPromoDia2_1",
+      "imgPromoDia2_2",
+      "imgPromoDia2_3",
+      "imgPromoDia2_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promoDia",
     "discountPercentage": 15,
@@ -2552,14 +3375,23 @@
       "Pizza Mozzarella Grande",
       "2 Bebidas Gaseosas (Coca Cola, Fanta, Sprite)",
       "O 1 Cerveza Artesanal"
-    ]
+    ],
+    "name_en": "CLASSIC PIZZA",
+    "name_pt": "PIZZA CLÁSSICA"
   },
-      {
+  {
     "id": 103,
     "name": "BURGER + CERVEZA ARTESANAL",
     "originalPrice": "$30.00",
     "price": "$28.20",
-    "imageKey": ["imgPromoDia3", "imgPromoDia3_0" , "imgPromoDia3_1" , "imgPromoDia3_2","imgPromoDia3_3","imgPromoDia3_4"],
+    "imageKey": [
+      "imgPromoDia3",
+      "imgPromoDia3_0",
+      "imgPromoDia3_1",
+      "imgPromoDia3_2",
+      "imgPromoDia3_3",
+      "imgPromoDia3_4"
+    ],
     "priceColor": "#ff8700",
     "category": "promoDia",
     "discountPercentage": 6,
@@ -2576,7 +3408,8 @@
     "includes": [
       "Hamburguesa clásica",
       "Cervza Artesanal (A elección)"
-    ]
+    ],
+    "name_en": "BURGER + CRAFT BEER",
+    "name_pt": "BURGER + CERVEJA ARTESANAL"
   }
-
 ]

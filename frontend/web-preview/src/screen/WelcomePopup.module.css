@@ -1,97 +1,239 @@
+/* ── ROOT ── */
 .overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  background: #fff;
   z-index: 9999;
-}
-
-.container {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  /* Fondo tipo ondas */
-  background: radial-gradient(circle at top,
-    #ffd39a,
-    #f6b26b,
-    #ffffff 70%);
+  overflow: hidden;
+  animation: fadeIn 0.4s ease;
 }
 
-.card {
-  background: #e5e5e5;
-  border-radius: 16px;
-  padding: 30px 20px;
-  width: 260px;
-  text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.subtitle {
-  font-size: 14px;
-  color: #fff;
-  display: block;
-  margin-bottom: 10px;
+/* ── BANNER ── */
+.banner {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
 }
 
-.logo {
-  width: 140px;
-  margin: 20px auto;
+.bannerImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
-.startButton {
-  background: #f7931e;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 10px 25px;
-  font-size: 14px;
-  cursor: pointer;
+.bannerOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.4) 100%);
 }
 
-.startButton:hover {
-  background: #e6830f;
+.bannerLogo {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 24px rgba(0,0,0,0.4));
 }
 
-.languages {
+/* ── CARDS ROW ── */
+.cardsRow {
+  flex-shrink: 0;
+  height: 580px;
   display: flex;
-  gap: 10px;
-  margin-top: 25px;
+  gap: 0;
+  background: #f0ece6;
 }
 
-.languages img {
-  width: 28px;
+/* ── LEFT CARD: LOGIN ── */
+.cardLogin {
+  flex: 1;
+  background: #f7931e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 48px;
+}
+
+.cardLoginTitle {
+  font-size: 40px;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Poppins', Arial, sans-serif;
+  text-align: center;
+}
+
+.cardLoginSub {
+  font-size: 24px;
+  color: rgba(255,255,255,0.9);
+  font-family: 'Poppins', Arial, sans-serif;
+  text-align: center;
+}
+
+.qrWrap {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.cardLoginHint {
+  font-size: 20px;
+  color: rgba(255,255,255,0.8);
+  font-family: 'Poppins', Arial, sans-serif;
+  text-align: center;
+}
+
+/* ── Saludo bienvenida ── */
+.welcomeBack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.welcomeCheck {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #fff;
+  color: #f7931e;
+  font-size: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+.welcomeBackTitle {
+  font-size: 30px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  font-family: 'Poppins', Arial, sans-serif;
+  text-align: center;
+}
+
+.welcomeBackName {
+  font-size: 52px;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Poppins', Arial, sans-serif;
+  text-align: center;
+}
+
+.scanningMsg {
+  font-size: 30px;
+  color: rgba(255,255,255,0.85);
+  font-family: 'Poppins', Arial, sans-serif;
+  text-align: center;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+/* ── RIGHT CARD: GUEST ── */
+.cardGuest {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  padding: 40px 48px;
+  border-left: 3px solid #e8e2da;
+}
+
+.guestBtn {
+  width: 100%;
+  background: #fff;
+  color: #222;
+  border: 3px solid #222;
+  border-radius: 20px;
+  padding: 36px 24px;
+  font-size: 32px;
+  font-weight: 700;
   cursor: pointer;
+  font-family: 'Poppins', Arial, sans-serif;
+  line-height: 1.25;
+  text-align: center;
+  transition: background 0.2s, color 0.2s;
 }
 
-/* Animaciones */
-.scaleIn {
-  animation: scaleIn 0.3s ease forwards;
+.guestBtn:active {
+  background: #222;
+  color: #fff;
 }
 
-.scaleOut {
-  animation: scaleOut 0.3s ease forwards;
+/* ── IDIOMAS ── */
+.langRow {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
 }
 
-@keyframes scaleIn {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+.langBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: 'Poppins', Arial, sans-serif;
+  transition: transform 0.15s;
 }
 
-@keyframes scaleOut {
-  from {
-    transform: scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: scale(0.9);
-    opacity: 0;
-  }
+.langBtn:active { transform: scale(0.92); }
+
+.langCircle {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #ddd;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.langFlag {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.langCode {
+  font-size: 18px;
+  font-weight: 700;
+  color: #666;
+  letter-spacing: 1px;
+}
+
+.langBtnActive .langCircle {
+  border-color: #f7931e;
+  box-shadow: 0 0 0 3px rgba(247,147,30,0.35);
+}
+
+.langBtnActive .langCode {
+  color: #f7931e;
 }
