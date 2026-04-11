@@ -47,3 +47,7 @@ web-build/
 # ── Backups ─────────────────────────────────────────────
 *.backup
 *.orig.*
+
+# ── APKs y archivos grandes ────────────────────────────
+*.apk
+frontend/extracted_apks/
