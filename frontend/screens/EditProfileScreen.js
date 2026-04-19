@@ -8,12 +8,14 @@ import {
     TouchableOpacity,
     Image,
     Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    Platform
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AppHeader from '../components/common/AppHeader';
-import API from '../services/api';
-import { API_URL } from '../services/api';
+import API, { API_URL } from '../services/api';
+import { useAppDispatch } from '../store/hooks';
+import { updateUserProfile } from '../store/slices/userSlice';
 
 export default function EditProfileScreen({ navigation }) {
     const [loading, setLoading] = useState(true);
@@ -31,6 +33,7 @@ export default function EditProfileScreen({ navigation }) {
         }
     });
     const [avatarUrl, setAvatarUrl] = useState(null);
+    const dispatch = useAppDispatch();
 
     // Cargar datos del usuario
     useEffect(() => {
@@ -39,30 +42,25 @@ export default function EditProfileScreen({ navigation }) {
 
     const loadUserData = async () => {
         try {
-            const token = await API.token.get();
-            const response = await fetch(`${API_URL}/api/usuarios/perfil`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const data = await API.users.getProfile();
 
-            if (response.ok) {
-                const data = await response.json();
+            if (data.success) {
+                const user = data.user;
                 setUserData({
-                    nombre: data.nombre || '',
-                    apellido: data.apellido || '',
-                    email: data.email || '',
-                    telefono: data.telefono || '',
-                    direccion: data.direccion || {
+                    nombre: user.nombre || '',
+                    apellido: user.apellido || '',
+                    email: user.email || '',
+                    telefono: user.telefono || '',
+                    direccion: user.direccion || {
                         calle: '',
                         ciudad: '',
                         estado: '',
                         codigo_postal: ''
                     }
                 });
-                setAvatarUrl(data.avatar_url);
+                setAvatarUrl(user.avatar_url);
             } else {
-                Alert.alert('Error', 'No se pudieron cargar los datos del perfil');
+                Alert.alert('Error', data.message || 'No se pudieron cargar los datos del perfil');
             }
         } catch (error) {
             console.error('Error loading user data:', error);
@@ -82,48 +80,52 @@ export default function EditProfileScreen({ navigation }) {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [1, 1],
             quality: 0.5,
         });
 
         if (!result.canceled) {
-            await uploadImage(result.assets[0].uri);
+            await uploadImage(result.assets[0]);
         }
     };
 
     // Subir imagen al servidor
-    const uploadImage = async (uri) => {
+    const uploadImage = async (asset) => {
         try {
             const token = await API.token.get();
-            const formData = new FormData();
+            const uri = Platform.OS === 'android' ? asset.uri : asset.uri.replace('file://', '');
+            const ext = asset.uri.split('.').pop() || 'jpg';
+            const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
 
+            const formData = new FormData();
             formData.append('avatar', {
-                uri,
-                type: 'image/jpeg',
-                name: 'avatar.jpg'
+                uri: asset.uri,
+                type: mimeType,
+                name: `avatar.${ext}`,
             });
 
-            const response = await fetch(`${API_URL}/api/usuarios/avatar`, {
+            const response = await fetch(`${API_URL}/api/users/avatar`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
                 },
-                body: formData
+                body: formData,
             });
 
-            if (response.ok) {
-                const data = await response.json();
+            const data = await response.json();
+
+            if (data.success) {
                 setAvatarUrl(data.avatar_url);
+                dispatch(updateUserProfile({ avatar_url: data.avatar_url }));
                 Alert.alert('Éxito', 'Foto de perfil actualizada');
             } else {
-                Alert.alert('Error', 'Error al subir la imagen');
+                Alert.alert('Error', data.message || 'Error al subir la imagen');
             }
         } catch (error) {
             console.error('Error uploading image:', error);
-            Alert.alert('Error', 'Error de conexión');
+            Alert.alert('Error', 'Error de conexión al subir imagen');
         }
     };
 
@@ -143,25 +145,25 @@ export default function EditProfileScreen({ navigation }) {
         setSaving(true);
 
         try {
-            const token = await API.token.get();
-            const response = await fetch(`${API_URL}/api/usuarios/perfil`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userData)
+            const data = await API.users.updateProfile({
+                nombre: userData.nombre,
+                apellido: userData.apellido,
+                telefono: userData.telefono,
             });
 
-            if (response.ok) {
+            if (data.success) {
+                dispatch(updateUserProfile({
+                    nombre: userData.nombre,
+                    apellido: userData.apellido,
+                    telefono: userData.telefono,
+                }));
                 Alert.alert(
                     'Éxito',
                     'Perfil actualizado correctamente',
                     [{ text: 'OK', onPress: () => navigation.goBack() }]
                 );
             } else {
-                const errorData = await response.json();
-                Alert.alert('Error', errorData.message || 'Error al actualizar el perfil');
+                Alert.alert('Error', data.message || 'Error al actualizar el perfil');
             }
         } catch (error) {
             console.error('Error saving profile:', error);
@@ -338,7 +340,7 @@ export default function EditProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f5f5f5' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    scrollContainer: { flex: 1, paddingHorizontal: 16 },
+    scrollContainer: { flex: 1, paddingHorizontal: 16, paddingTop: 100 },
 
     avatarSection: {
         alignItems: 'center',

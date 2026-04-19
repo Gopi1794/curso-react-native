@@ -2,6 +2,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../config/database');
+const emailService = require('../services/emailService');
+
+// Genera código de 6 dígitos
+const generateVerificationCode = () => {
+    return crypto.randomInt(100000, 999999).toString();
+};
 
 // ── REGISTER ──────────────────────────────────────────────
 exports.register = async (req, res) => {
@@ -77,12 +83,17 @@ exports.register = async (req, res) => {
         // 7. Generar UUID único
         const uuid = crypto.randomUUID();
 
-        // 8. Insertar usuario — RETURNING evita un segundo SELECT
+        // 8. Generar código de verificación
+        const verificationCode = generateVerificationCode();
+        const codeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+        // 9. Insertar usuario con email NO verificado
         const result = await db.query(
             `INSERT INTO usuarios (
                 uuid, nombre, apellido, email, telefono,
-                password_hash, rol, estado, fecha_creacion
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+                password_hash, rol, estado, email_verificado,
+                token_verificacion, token_verificacion_expira, fecha_creacion
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
             RETURNING id, uuid, nombre, apellido, email, telefono, rol, estado, fecha_creacion`,
             [
                 uuid,
@@ -92,34 +103,28 @@ exports.register = async (req, res) => {
                 telefono.trim(),
                 hashedPassword,
                 'cliente',
-                'activo'
+                'activo',
+                false,
+                verificationCode,
+                codeExpires
             ]
         );
 
         const user = result.rows[0];
 
-        // 9. Generar token JWT
-        const token = jwt.sign(
-            { userId: user.id, uuid: user.uuid, email: user.email, rol: user.rol },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRE || '7d' }
-        );
+        // 10. Enviar email de verificación
+        try {
+            await emailService.sendVerificationEmail(user.email, user.nombre, verificationCode);
+        } catch (emailError) {
+            console.error('Error enviando email de verificación:', emailError);
+            // No fallar el registro si el email no se envía
+        }
 
         res.status(201).json({
             success: true,
-            message: 'Usuario registrado exitosamente',
-            token,
-            user: {
-                id: user.id,
-                uuid: user.uuid,
-                nombre: user.nombre,
-                apellido: user.apellido,
-                email: user.email,
-                telefono: user.telefono,
-                rol: user.rol,
-                estado: user.estado,
-                fecha_creacion: user.fecha_creacion
-            }
+            message: 'Registro exitoso. Revisá tu email para verificar tu cuenta.',
+            requiresVerification: true,
+            email: user.email
         });
 
     } catch (error) {
@@ -179,6 +184,31 @@ exports.login = async (req, res) => {
             return res.status(403).json({
                 success: false,
                 message: 'Tu cuenta no está activa'
+            });
+        }
+
+        // Verificar si el email está verificado
+        if (!user.email_verificado) {
+            // Generar nuevo código y enviarlo
+            const verificationCode = generateVerificationCode();
+            const codeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+            await db.query(
+                'UPDATE usuarios SET token_verificacion = $1, token_verificacion_expira = $2 WHERE id = $3',
+                [verificationCode, codeExpires, user.id]
+            );
+
+            try {
+                await emailService.sendVerificationEmail(user.email, user.nombre, verificationCode);
+            } catch (emailError) {
+                console.error('Error reenviando email:', emailError);
+            }
+
+            return res.status(403).json({
+                success: false,
+                message: 'Tu email no está verificado. Te enviamos un nuevo código.',
+                requiresVerification: true,
+                email: user.email
             });
         }
 
@@ -347,6 +377,146 @@ exports.getUserProfile = async (req, res) => {
 
     } catch (error) {
         console.error('Error en getUserProfile:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── VERIFY EMAIL ─────────────────────────────────────────
+// POST /api/auth/verify-email
+exports.verifyEmail = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+
+        if (!email || !code) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email y código son requeridos'
+            });
+        }
+
+        const result = await db.query(
+            'SELECT id, uuid, nombre, apellido, email, telefono, rol, estado, token_verificacion, token_verificacion_expira FROM usuarios WHERE email = $1',
+            [email.trim().toLowerCase()]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        const user = result.rows[0];
+
+        // Verificar código
+        if (user.token_verificacion !== code) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código incorrecto'
+            });
+        }
+
+        // Verificar expiración
+        if (new Date() > new Date(user.token_verificacion_expira)) {
+            return res.status(400).json({
+                success: false,
+                message: 'El código expiró. Solicitá uno nuevo.',
+                expired: true
+            });
+        }
+
+        // Marcar email como verificado
+        await db.query(
+            'UPDATE usuarios SET email_verificado = TRUE, token_verificacion = NULL, token_verificacion_expira = NULL WHERE id = $1',
+            [user.id]
+        );
+
+        // Generar JWT y loguear al usuario
+        const token = jwt.sign(
+            { userId: user.id, uuid: user.uuid, email: user.email, rol: user.rol },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRE || '7d' }
+        );
+
+        res.json({
+            success: true,
+            message: 'Email verificado correctamente',
+            token,
+            user: {
+                id: user.id,
+                uuid: user.uuid,
+                nombre: user.nombre,
+                apellido: user.apellido,
+                email: user.email,
+                telefono: user.telefono,
+                rol: user.rol,
+                estado: user.estado
+            }
+        });
+
+    } catch (error) {
+        console.error('Error en verifyEmail:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── RESEND VERIFICATION ──────────────────────────────────
+// POST /api/auth/resend-verification
+exports.resendVerification = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email es requerido'
+            });
+        }
+
+        const result = await db.query(
+            'SELECT id, nombre, email, email_verificado FROM usuarios WHERE email = $1',
+            [email.trim().toLowerCase()]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        const user = result.rows[0];
+
+        if (user.email_verificado) {
+            return res.json({
+                success: true,
+                message: 'Tu email ya está verificado'
+            });
+        }
+
+        const verificationCode = generateVerificationCode();
+        const codeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        await db.query(
+            'UPDATE usuarios SET token_verificacion = $1, token_verificacion_expira = $2 WHERE id = $3',
+            [verificationCode, codeExpires, user.id]
+        );
+
+        await emailService.sendVerificationEmail(user.email, user.nombre, verificationCode);
+
+        res.json({
+            success: true,
+            message: 'Código de verificación reenviado'
+        });
+
+    } catch (error) {
+        console.error('Error en resendVerification:', error);
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'

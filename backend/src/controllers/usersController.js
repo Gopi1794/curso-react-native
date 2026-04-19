@@ -1,12 +1,13 @@
 const bcrypt = require('bcryptjs');
 const db = require('../config/database');
+const supabase = require('../config/supabase');
 
 // ── GET PROFILE ───────────────────────────────────────────
 // GET /api/users/profile
 exports.getProfile = async (req, res) => {
     try {
         const result = await db.query(
-            `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado, fecha_creacion, fecha_actualizacion
+            `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado, avatar_url, fecha_creacion, fecha_actualizacion
              FROM usuarios WHERE id = $1`,
             [req.user.userId]
         );
@@ -156,6 +157,106 @@ exports.changePassword = async (req, res) => {
 
     } catch (error) {
         console.error('Error en changePassword:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── UPLOAD AVATAR ────────────────────────────────────────
+// POST /api/users/avatar
+exports.uploadAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se envió ninguna imagen'
+            });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({
+                success: false,
+                message: 'Supabase Storage no está configurado'
+            });
+        }
+
+        const userId = req.user.userId;
+        const ext = req.file.originalname.split('.').pop() || 'jpg';
+        const fileName = `avatars/user_${userId}_${Date.now()}.${ext}`;
+
+        // Subir a Supabase Storage
+        const { data, error } = await supabase.storage
+            .from('bucketFoodApp')
+            .upload(fileName, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: true,
+            });
+
+        if (error) {
+            console.error('Error subiendo a Supabase Storage:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al subir la imagen'
+            });
+        }
+
+        // Obtener URL pública
+        const { data: urlData } = supabase.storage
+            .from('bucketFoodApp')
+            .getPublicUrl(fileName);
+
+        const avatarUrl = urlData.publicUrl;
+
+        // Guardar URL en la DB
+        await db.query(
+            'UPDATE usuarios SET avatar_url = $1 WHERE id = $2',
+            [avatarUrl, userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Avatar actualizado',
+            avatar_url: avatarUrl
+        });
+
+    } catch (error) {
+        console.error('Error en uploadAvatar:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── GET STATS ────────────────────────────────────────────
+// GET /api/users/stats
+exports.getStats = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const result = await db.query(
+            `SELECT
+                (SELECT COUNT(*) FROM pedidos WHERE usuario_id = $1) AS total_pedidos,
+                (SELECT COALESCE(AVG(c.rating), 0) FROM comentarios c WHERE c.usuario_id = $1) AS rating_promedio,
+                (SELECT COUNT(*) FROM comentarios WHERE usuario_id = $1) AS total_resenas`,
+            [userId]
+        );
+
+        const stats = result.rows[0];
+
+        res.json({
+            success: true,
+            stats: {
+                pedidos: parseInt(stats.total_pedidos),
+                rating: parseFloat(parseFloat(stats.rating_promedio).toFixed(1)),
+                resenas: parseInt(stats.total_resenas),
+            }
+        });
+
+    } catch (error) {
+        console.error('Error en getStats:', error);
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'

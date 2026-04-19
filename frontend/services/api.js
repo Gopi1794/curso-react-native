@@ -6,7 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 //   iOS simulator    : 'http://localhost:3000'
 //   Dispositivo físico: tu IP local, ej: 'http://192.168.1.100:3000'
 //   Ngrok            : 'https://xxxx.ngrok-free.dev'
-const API_BASE_URL = 'http://192.168.1.35:3000';
+const API_BASE_URL = 'http://192.168.1.33:3000';
 
 const TOKEN_KEY = 'userToken';
 
@@ -49,6 +49,16 @@ const auth = {
         method: 'POST',
         body: JSON.stringify({ idToken, accessToken }),
     }),
+
+    verifyEmail: (email, code) => request('/api/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ email, code }),
+    }),
+
+    resendVerification: (email) => request('/api/auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+    }),
 };
 
 // ── USERS ─────────────────────────────────────────────────
@@ -64,6 +74,8 @@ const users = {
         method: 'PUT',
         body: JSON.stringify({ currentPassword, newPassword }),
     }),
+
+    getStats: () => request('/api/users/stats'),
 };
 
 // ── RESTAURANTS ───────────────────────────────────────────
