@@ -18,6 +18,8 @@ router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
 router.post('/logout', authController.logout);
 router.post('/google', authController.googleLogin);
+router.post('/verify-email', authLimiter, authController.verifyEmail);
+router.post('/resend-verification', authLimiter, authController.resendVerification);
 
 // Rutas protegidas
 router.get('/me', authMiddleware, authController.getUserProfile);

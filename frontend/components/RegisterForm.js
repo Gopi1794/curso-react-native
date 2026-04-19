@@ -21,7 +21,7 @@ import { useAppDispatch } from '../store/hooks';
 import { login } from '../store/slices/userSlice';
 import { showSuccessMessage, showErrorMessage } from './FlashMessageWrapper';
 
-export const ModernRegisterForm = ({ onBackToLogin }) => {
+export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
     const [formData, setFormData] = useState({
         // ✅ CAMBIOS: Según tu tabla 'usuarios'
         nombre: "",           // Antes: displayName
@@ -161,22 +161,27 @@ export const ModernRegisterForm = ({ onBackToLogin }) => {
             });
 
             if (response.success) {
-                if (response.token) {
+                if (response.requiresVerification) {
+                    // Ir a pantalla de verificación
+                    showSuccessMessage("Registro exitoso", "Revisá tu email para el código de verificación");
+                    if (onVerifyEmail) {
+                        onVerifyEmail(response.email);
+                    }
+                } else if (response.token) {
+                    // Login directo (no debería pasar, pero por si acaso)
                     await API.token.save(response.token);
+                    dispatch(login({
+                        id: response.user.id || response.user.uuid,
+                        nombre: response.user.nombre,
+                        apellido: response.user.apellido,
+                        email: response.user.email,
+                        telefono: response.user.telefono,
+                        rol: response.user.rol || 'cliente',
+                        estado: response.user.estado || 'activo',
+                        token: response.token,
+                        justRegistered: true,
+                    }));
                 }
-
-                dispatch(login({
-                    id: response.user.id || response.user.uuid,
-                    nombre: response.user.nombre,
-                    apellido: response.user.apellido,
-                    email: response.user.email,
-                    telefono: response.user.telefono,
-                    rol: response.user.rol || 'cliente',
-                    estado: response.user.estado || 'activo',
-                    token: response.token,
-                    avatar: require('../assets/img/usuario-img.jpg'),
-                    justRegistered: true,
-                }));
             } else {
                 showErrorMessage("Error", response.message || "Error al crear la cuenta");
             }

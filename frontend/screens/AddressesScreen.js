@@ -211,7 +211,7 @@ export default function AddressesScreen({ navigation }) {
     };
 
     if (loading) return (
-        <View style={{ flex: 1 }}>
+        <View style={styles.container}>
             <AppHeader title="Mis Direcciones" onBack={() => navigation.goBack()} showCart={false} />
             <View style={styles.content}><ActivityIndicator size="large" color="#ff8000" /></View>
         </View>
@@ -342,7 +342,7 @@ export default function AddressesScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: 'transparent', paddingBottom: 80, paddingTop: 100 },
+    container: { flex: 1, backgroundColor: 'transparent', paddingBottom: 80, paddingTop: 110 },
     content: { flex: 1, padding: 16 },
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     emptyText: { color: '#666' },

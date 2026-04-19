@@ -21,7 +21,7 @@ import { useAppDispatch } from '../store/hooks';
 import { login } from '../store/slices/userSlice';
 import { showErrorMessage, showInfoMessage } from './FlashMessageWrapper';
 
-export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
+export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -51,6 +51,13 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess }) => {
             const response = await API.auth.login(email.trim(), password);
 
             if (!response.success) {
+                // Si el email no está verificado, ir a verificación
+                if (response.requiresVerification && onVerifyEmail) {
+                    showInfoMessage('Verificá tu email', response.message);
+                    onVerifyEmail(response.email);
+                    return;
+                }
+
                 showErrorMessage(
                     'Error al iniciar sesión',
                     response.message || 'Verificá tu email y contraseña.'

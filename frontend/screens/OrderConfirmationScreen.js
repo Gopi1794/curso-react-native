@@ -53,10 +53,7 @@ const OrderConfirmationScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-            <LinearGradient
-                colors={['#ffffff', '#ffffff', '#ffffff']}
-                style={styles.backgroundGradient}
-            />
+            <View style={styles.backgroundGradient} />
 
             {/* Header */}
             <View style={styles.header}>
@@ -212,12 +209,17 @@ const styles = StyleSheet.create({
         height: 300,
     },
     messageContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.56)',
+        backgroundColor: '#fff',
         borderRadius: 15,
         marginHorizontal: 20,
         marginBottom: 20,
         padding: 25,
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+        elevation: 3,
     },
     successTitle: {
         fontSize: 24,
@@ -227,7 +229,7 @@ const styles = StyleSheet.create({
     },
     successMessage: {
         fontSize: 16,
-        color: '#ffffffff',
+        color: '#666',
         textAlign: 'center',
         marginBottom: 20,
     },
@@ -239,25 +241,30 @@ const styles = StyleSheet.create({
     },
     orderNumber: {
         fontSize: 14,
-        color: '#ffffffff',
+        color: '#888',
         fontWeight: '500',
     },
     orderTotal: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#4d7c40ff',
+        color: '#ff8700',
     },
     detailsContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.56)',
+        backgroundColor: '#fff',
         borderRadius: 15,
         marginHorizontal: 20,
         marginBottom: 20,
         padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+        elevation: 3,
     },
     detailsTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#ffffffff',
+        color: '#222',
         marginBottom: 15,
     },
     orderItem: {
@@ -268,18 +275,18 @@ const styles = StyleSheet.create({
     },
     itemName: {
         fontSize: 14,
-        color: '#ffffffff',
+        color: '#333',
         flex: 1,
     },
     itemQuantity: {
         fontSize: 14,
-        color: '#ffffffff',
+        color: '#888',
         marginHorizontal: 10,
     },
     itemPrice: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#ffffffff',
+        color: '#333',
     },
     divider: {
         height: 1,
@@ -294,19 +301,24 @@ const styles = StyleSheet.create({
     totalLabel: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#ffffffff',
+        color: '#222',
     },
     totalAmount: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#4d7c40ff',
+        color: '#ff8700',
     },
     infoContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.56)',
+        backgroundColor: '#fff',
         borderRadius: 15,
         marginHorizontal: 20,
         marginBottom: 20,
         padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+        elevation: 3,
     },
     infoItem: {
         flexDirection: 'row',
@@ -320,11 +332,11 @@ const styles = StyleSheet.create({
     infoTitle: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#ffffffff',
+        color: '#333',
     },
     infoSubtitle: {
         fontSize: 12,
-        color: '#ffffffff',
+        color: '#888',
         marginTop: 2,
     },
     actionButtons: {
@@ -338,7 +350,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     primaryButton: {
-        backgroundColor: '#D80000',
+        backgroundColor: '#ff8700',
         paddingHorizontal: 10,
         paddingVertical: 15,
         borderRadius: 25,
@@ -348,25 +360,23 @@ const styles = StyleSheet.create({
     },
     primaryButtonText: {
         color: 'white',
-        fontSize: 10,
+        fontSize: 13,
         fontWeight: 'bold',
     },
     secondaryButton: {
-        backgroundColor: 'transparent',
+        backgroundColor: '#fff',
         paddingHorizontal: 25,
         paddingVertical: 15,
         borderRadius: 25,
         borderWidth: 2,
-        borderColor: '#D80000',
+        borderColor: '#ff8700',
         flex: 1,
         marginRight: 10,
         alignItems: 'center',
-        backgroundColor: '#ffff',
-
     },
     secondaryButtonText: {
-        color: '#D80000',
-        fontSize: 10,
+        color: '#ff8700',
+        fontSize: 13,
         fontWeight: 'bold',
     },
 });
