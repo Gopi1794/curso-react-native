@@ -6,12 +6,11 @@ import {
     TouchableOpacity,
     StyleSheet,
     Animated,
-    Dimensions
+    Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Feather from '@expo/vector-icons/Feather';
-import Lottie from 'lottie-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { imageMap } from '../assets/utils/imageMap';
+import menuItemsData from '../assets/data/menuItems.json';
 
 const toUri = (val) => {
     if (typeof val === 'string') return val;
@@ -20,237 +19,302 @@ const toUri = (val) => {
 };
 
 const { width: screenWidth } = Dimensions.get('window');
-
-const lottie = {
-    discount: require('../assets/animations/discount.json'),
-};
-
-// Función para obtener imágenes de promos
-
+const CARD_WIDTH = screenWidth - 72;
+const CARD_HEIGHT = 215;
 
 export const PromoCard = memo(({ promo, onPress, isActive }) => {
-    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const scaleAnim = useRef(new Animated.Value(isActive ? 1 : 0.93)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
+            toValue: 1, duration: 500, useNativeDriver: true,
         }).start();
     }, []);
 
-    const handlePressIn = () => {
+    useEffect(() => {
         Animated.spring(scaleAnim, {
-            toValue: 0.95,
-            useNativeDriver: true,
+            toValue: isActive ? 1 : 0.93,
+            friction: 7, tension: 60, useNativeDriver: true,
         }).start();
+    }, [isActive]);
+
+    const imageKey = Array.isArray(promo.imageKey) ? promo.imageKey[0] : promo.imageKey;
+    const localItem = menuItemsData.find(m => {
+        const k = Array.isArray(m.imageKey) ? m.imageKey[0] : m.imageKey;
+        return k === imageKey;
+    });
+    const calories = promo.calories ?? localItem?.calories ?? null;
+    const weight = promo.weight ?? localItem?.weight ?? null;
+    const imgSrc = {
+        uri: (typeof imageKey === 'string' && imageKey.startsWith('http'))
+            ? imageKey
+            : toUri(imageMap[imageKey]),
     };
 
-    const handlePressOut = () => {
-        Animated.spring(scaleAnim, {
-            toValue: 1,
-            friction: 3,
-            useNativeDriver: true,
-        }).start();
-    };
+    const words = (promo.name || '').split(' ');
+    const nameFirst = words[0] ?? '';
+    const nameRest = words.slice(1).join(' ');
+
+    const priceStr = (promo.price || '$0').replace('$', '');
 
     return (
-        <Animated.View
-            style={[
-                styles.promoCardContainer,
-                {
-                    opacity: fadeAnim,
-                    transform: [{ scale: scaleAnim }]
-                }
-            ]}
-        >
-            <TouchableOpacity
-                style={[
-                    styles.promoCard,
-                    isActive && styles.promoCardActive
-                ]}
-                activeOpacity={0.9}
-                onPress={onPress}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-            >
-                {/* Badge de PROMO */}
-                <View style={styles.promoBadge}>
-                    <Lottie
-                        source={lottie.discount}
-                        autoPlay
-                        loop
-                        style={styles.discountAnimation}
-                    />
-                    <Text style={styles.promoBadgeText}>PROMO</Text>
+        <Animated.View style={[
+            styles.outerContainer,
+            { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
+        ]}>
+            {/* ── Card blanca ── */}
+            <View style={styles.card}>
+
+                {/* ── Top row ── */}
+                <View style={styles.topRow}>
+                    <View style={styles.timePill}>
+                        <Ionicons name="time-outline" size={12} color="#fff" />
+                        <Text style={styles.timePillText}>22 mins</Text>
+                    </View>
+                    <View style={styles.deliveryRow}>
+                        <Ionicons name="bicycle-outline" size={13} color="#888" />
+                        <Text style={styles.deliveryText}>Envío gratis</Text>
+                    </View>
                 </View>
 
+                {/* ── Nombre ── */}
+                <View style={styles.nameBlock}>
+                    <Text style={styles.nameLight}>{nameFirst} </Text>
+                    <Text style={styles.nameBold} numberOfLines={2}>{nameRest}</Text>
+                </View>
+
+                {/* ── Precio ── */}
+                <Text style={styles.price}>
+                    <Text style={styles.priceDollar}>$</Text>
+                    {priceStr}
+                </Text>
+
+                {/* ── Franja inferior ── */}
+                <View style={styles.bottomStrip}>
+                    <View style={styles.discountLeft}>
+                        <View style={styles.discountIconCircle}>
+                            <Text style={styles.discountIconText}>%</Text>
+                        </View>
+                        <View>
+                            <Text style={styles.specialLabel}>Oferta especial</Text>
+                            <Text style={styles.offText}>25% Off Precios</Text>
+                        </View>
+                    </View>
+
+                    <TouchableOpacity style={styles.cartBtn} onPress={onPress}>
+                        <Ionicons name="cart" size={19} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* ── Imagen circular (dentro de la card) ── */}
                 <Image
-                    source={{ uri: toUri(imageMap[Array.isArray(promo.imageKey) ? promo.imageKey[0] : promo.imageKey]) }}
-                    style={styles.promoImage}
+                    source={imgSrc}
+                    style={styles.floatingImage}
                     resizeMode="cover"
                 />
 
-                {/* Overlay con gradiente */}
-                <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.7)']}
-                    style={styles.promoOverlay}
-                />
-
-                {/* Información de la promo usando datos reales */}
-                <View style={styles.promoInfo}>
-                    <Text style={styles.promoTitle}>OFERTA ESPECIAL</Text>
-                    <Text style={styles.promoDescription}>
-                        {promo.descriptionText}
-                    </Text>
-                    <View style={styles.promoPriceContainer}>
-                        <Text style={styles.promoNewPrice}>{promo.price}</Text>
+                {/* ── Badges de calorías / peso ── */}
+                {(calories != null || weight != null) && (
+                    <View style={styles.badgesContainer}>
+                        {calories != null && (
+                            <View style={styles.badge}>
+                                <Ionicons name="flame" size={10} color="#ff8700" />
+                                <Text style={styles.badgeText}>{calories} cal</Text>
+                            </View>
+                        )}
+                        {weight != null && (
+                            <View style={[styles.badge, { marginTop: 4 }]}>
+                                <Ionicons name="barbell-outline" size={10} color="#888" />
+                                <Text style={[styles.badgeText, { color: '#555' }]}>{weight} g</Text>
+                            </View>
+                        )}
                     </View>
-                    <View style={styles.promoTimeContainer}>
-                        <Feather name="clock" size={14} color="#FFD700" />
-                        <Text style={styles.promoTimeText}>Oferta por tiempo limitado</Text>
-                    </View>
-                </View>
-
-                {/* Botón de acción */}
-                <TouchableOpacity
-                    style={styles.promoActionButton}
-                    onPress={onPress}
-                >
-                    <Text style={styles.promoActionText}>VER OFERTA</Text>
-                    <Feather name="arrow-right" size={16} color="white" />
-                </TouchableOpacity>
-            </TouchableOpacity>
+                )}
+            </View>
         </Animated.View>
     );
 });
 
 const styles = StyleSheet.create({
-    promoCardContainer: {
-        width: screenWidth - 80,
-        marginRight: 15,
+    outerContainer: {
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+        marginRight: 16,
+        overflow: 'visible',
     },
-    promoCard: {
-        height: 220,
-        borderRadius: 20,
-        overflow: 'hidden',
-        backgroundColor: 'white',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 6,
-        },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    promoCardActive: {
-        shadowColor: '#FF8000',
-        shadowOpacity: 1,
-    },
-    promoBadge: {
-        position: 'absolute',
-        top: 12,
-        left: 12,
-        backgroundColor: 'rgba(255, 128, 0, 0.95)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        zIndex: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 4,
-    },
-    discountAnimation: {
-        width: 25,
-        height: 25,
-        marginRight: 4,
-    },
-    promoBadgeText: {
-        color: 'white',
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
-    promoImage: {
+
+    // Card blanca
+    card: {
         width: '100%',
         height: '100%',
-    },
-    promoOverlay: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    promoInfo: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 16,
-        zIndex: 5,
-    },
-    promoTitle: {
-        color: '#FFD700',
-        fontSize: 12,
-        fontWeight: 'bold',
-        marginBottom: 4,
-    },
-    promoDescription: {
-        color: 'white',
-        fontSize: 12,
-        fontWeight: '600',
-        marginBottom: 8,
-    },
-    promoPriceContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    promoOldPrice: {
-        color: '#FF6B6B',
-        fontSize: 12,
-        fontWeight: '500',
-        textDecorationLine: 'line-through',
-        marginRight: 8,
-    },
-    promoNewPrice: {
-        color: '#4CD964',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    promoTimeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    promoTimeText: {
-        color: '#FFD700',
-        fontSize: 11,
-        fontWeight: '500',
-        marginLeft: 4,
-    },
-    promoActionButton: {
-        position: 'absolute',
-        top: 16,
-        right: 16,
-        backgroundColor: 'rgba(255, 128, 0, 0.95)',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        zIndex: 10,
+        backgroundColor: '#fff',
+        borderRadius: 22,
+        overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 6,
+        justifyContent: 'space-between',
     },
-    promoActionText: {
-        color: 'white',
+
+    // Top row
+    topRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 14,
+        paddingTop: 14,
+        paddingBottom: 4,
+    },
+    timePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: '#1C1C1E',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 20,
+    },
+    timePillText: {
+        color: '#fff',
+        fontSize: 11,
+        fontFamily: 'Poppins-SemiBold',
+    },
+    deliveryRow: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    deliveryText: {
+        color: '#888',
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+    },
+
+    // Nombre
+    nameBlock: {
+        paddingHorizontal: 14,
+        maxWidth: '58%',
+    },
+    nameLight: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 20,
+        color: '#111',
+        lineHeight: 26,
+    },
+    nameBold: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 20,
+        color: '#111',
+        lineHeight: 26,
+    },
+
+    // Precio
+    price: {
+        paddingHorizontal: 14,
+        fontFamily: 'Poppins-Bold',
+        fontSize: 28,
+        color: '#111',
+        lineHeight: 34,
+    },
+    priceDollar: {
+        fontSize: 16,
+        fontFamily: 'Poppins-SemiBold',
+        color: '#111',
+    },
+
+    // Franja inferior gris
+    bottomStrip: {
+        zIndex: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#f5f5f5c2',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+    },
+    discountLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    discountIconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#ff8700',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    discountIconText: {
+        color: '#fff',
+        fontSize: 13,
+        fontFamily: 'Poppins-Bold',
+    },
+    specialLabel: {
+        fontFamily: 'Poppins-Regular',
         fontSize: 10,
-        fontWeight: 'bold',
-        marginRight: 4,
+        color: '#888',
+    },
+    offText: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 13,
+        color: '#111',
+    },
+    cartBtn: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: '#ff8700',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#ff8700',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+
+    // Imagen circular (dentro de la card, top-right)
+    floatingImage: {
+        position: 'absolute',
+        right: -20,
+        top: -50,
+        width: 300,
+        height: 300,
+    },
+
+    // Badges calorías / peso
+    badgesContainer: {
+        position: 'absolute',
+        right: 14,
+        bottom: 58,
+        alignItems: 'flex-end',
+    },
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        backgroundColor: 'rgba(255,255,255,0.92)',
+        paddingHorizontal: 7,
+        paddingVertical: 3,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    badgeText: {
+        fontFamily: 'Poppins-SemiBold',
+        fontSize: 10,
+        color: '#ff8700',
     },
 });

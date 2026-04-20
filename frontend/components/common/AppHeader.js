@@ -19,7 +19,7 @@ const AppHeader = ({
             <View style={styles.headerContent}>
                 {showBackButton ? (
                     <TouchableOpacity onPress={onBack} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="white" />
+                        <Ionicons name="arrow-back" size={24} color="#222" />
                     </TouchableOpacity>
                 ) : (
                     <View style={styles.backButtonPlaceholder} />
@@ -38,13 +38,13 @@ const AppHeader = ({
 // ✅ AGREGAR ESTOS ESTILOS
 const styles = StyleSheet.create({
     header: {
-        backgroundColor: '#ff8000ff',
+        backgroundColor: '#fff',
         position: 'absolute',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
         shadowRadius: 8,
-        elevation: 8,
+        elevation: 4,
         top: 0,
         left: 0,
         right: 0,
@@ -64,11 +64,11 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: '#f5f5f5',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: '#e8e8e8',
     },
     backButtonPlaceholder: {
         width: 44,
@@ -80,9 +80,8 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontFamily: 'Poppins-Bold',
-        color: 'white',
+        color: '#222',
         fontSize: 20,
-
     },
     headerRight: {
         width: 44,

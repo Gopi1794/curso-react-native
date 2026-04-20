@@ -1,9 +1,7 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Dimensions } from 'react-native';
 import { PromoCard } from './PromoCard';
 import { PromoIndicator } from './PromoIndicator';
-import Feather from '@expo/vector-icons/Feather';
-import { Dimensions } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -13,9 +11,8 @@ export const PromoSection = memo(({
     onPromoPress,
     onPromoIndicatorPress,
     onPromoScroll,
-    promoFlatListRef
+    promoFlatListRef,
 }) => {
-
     const renderPromo = ({ item, index }) => (
         <PromoCard
             promo={item}
@@ -25,13 +22,13 @@ export const PromoSection = memo(({
     );
 
     return (
-        <View style={styles.promoSection}>
-            <View style={styles.promoHeader}>
-                <View style={styles.promoTitleContainer}>
-                    <Text style={styles.promoMainTitle}>PROMOCIONES DEL DÍA</Text>
-                    <Text style={styles.promoSubtitle}>Ofertas exclusivas por tiempo limitado</Text>
+        <View style={styles.section}>
+            {/* Header */}
+            <View style={styles.header}>
+                <View>
+                    <Text style={styles.title}>Promociones del día</Text>
+                    <Text style={styles.subtitle}>Ofertas exclusivas por tiempo limitado</Text>
                 </View>
-
                 <PromoIndicator
                     total={promos.length}
                     activeIndex={activePromoIndex}
@@ -39,77 +36,57 @@ export const PromoSection = memo(({
                 />
             </View>
 
-            {/* Slider de Promociones */}
+            {/* Slider */}
             <FlatList
                 ref={promoFlatListRef}
                 data={promos}
                 renderItem={renderPromo}
                 keyExtractor={item => item.id.toString()}
                 horizontal
-                pagingEnabled
+                pagingEnabled={false}
                 showsHorizontalScrollIndicator={false}
-                style={styles.promoSlider}
-                contentContainerStyle={styles.promoSliderContent}
+                style={styles.slider}
+                contentContainerStyle={styles.sliderContent}
                 onScroll={onPromoScroll}
-                scrollEventThrottle={32}
+                scrollEventThrottle={16}
                 decelerationRate="fast"
-                snapToInterval={screenWidth - 60}
-                snapToAlignment="center"
+                snapToInterval={screenWidth - 72 + 16}
+                snapToAlignment="start"
             />
-
-            <View style={styles.timerContainer}>
-                <Feather name="zap" size={16} color="#FF8000" />
-                <Text style={styles.timerText}>
-                    ¡No te lo pierdas! Ofertas terminan pronto
-                </Text>
-            </View>
         </View>
     );
 });
 
 const styles = StyleSheet.create({
-    promoSection: {
-        height: 380,
-        backgroundColor: '#ffffff2d',
-        paddingTop: 20,
+    section: {
+        paddingTop: 24,
+        paddingBottom: 8,
     },
-    promoHeader: {
+    header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         paddingHorizontal: 20,
-        marginBottom: 20,
+        marginBottom: 18,
     },
-    promoTitleContainer: {
-        flex: 1,
+    title: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 17,
+        color: '#111',
+        marginBottom: 2,
     },
-    promoMainTitle: {
-        fontWeight: 'bold',
-        color: '#FF8000',
-        fontSize: 14,
-        marginBottom: 4,
-    },
-    promoSubtitle: {
-        color: '#666',
+    subtitle: {
+        fontFamily: 'Poppins-Regular',
         fontSize: 12,
-        fontWeight: '500',
+        color: '#888',
     },
-    promoSlider: {
-        height: 220,
+    slider: {
+        overflow: 'visible',
     },
-    promoSliderContent: {
+    sliderContent: {
         paddingHorizontal: 20,
-    },
-    timerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 10,
-    },
-    timerText: {
-        color: '#666',
-        fontSize: 12,
-        fontWeight: '500',
-        marginLeft: 6,
+        paddingBottom: 24,
+        paddingTop: 20,
+        overflow: 'visible',
     },
 });

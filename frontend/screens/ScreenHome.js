@@ -95,15 +95,15 @@ const skeletonStyles = StyleSheet.create({
 
 // Mapea campos de la API al shape que esperan los componentes
 const mapMenuItem = (item) => ({
-    id:              item.id,
-    name:            item.nombre,
-    price:           `$${parseFloat(item.precio).toFixed(2)}`,
-    imageKey:        item.imagen_key,
-    category:        item.categoria,
+    id: item.id,
+    name: item.nombre,
+    price: `$${parseFloat(item.precio).toFixed(2)}`,
+    imageKey: item.imagen_key,
+    category: item.categoria,
     descriptionText: item.descripcion,
-    ingredientText:  item.ingredientes || [],
+    ingredientText: item.ingredientes || [],
     ingredientesDetalle: item.ingredientes_detalle || [],
-    disponible:      item.disponible,
+    disponible: item.disponible,
 });
 
 export const ScreenHome = ({ navigation }) => {
@@ -301,7 +301,7 @@ export const ScreenHome = ({ navigation }) => {
 
     return (
         <View style={{ flex: 1 }}>
-            <StatusBar barStyle="auto-content" translucent backgroundColor="#ff8000ff" />
+            <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
             {/* Fondo con gradiente */}
             <LinearGradient

@@ -279,8 +279,7 @@ export default function OrdersScreen({ navigation }) {
   }, [navigation]);
 
   const handleOrderPress = useCallback((order) => {
-    // Navegar al detalle del pedido si existe la pantalla
-    // navigation.navigate('OrderDetail', { orderId: order.id });
+    navigation.navigate('OrderDetail', { orderId: order.id });
   }, [navigation]);
 
   const handleExplore = useCallback(() => {

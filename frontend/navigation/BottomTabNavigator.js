@@ -1,8 +1,6 @@
-// navigation/BottomTabNavigator.js
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Platform, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import HomeStack from './HomeStack';
 import FavoritesStack from './FavoritesStack';
 import OrdersStack from './OrdersStack';
@@ -10,31 +8,19 @@ import ProfileStack from './ProfileStack';
 
 const Tab = createBottomTabNavigator();
 
-
+const TabIcon = ({ name, focused }) => (
+    <View style={focused ? styles.iconActive : styles.iconInactive}>
+        <Ionicons name={name} size={22} color={focused ? '#fff' : '#555'} />
+    </View>
+);
 
 export default function BottomTabNavigator() {
-
     return (
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
-                tabBarStyle: {
-                    position: 'absolute',
-                    backgroundColor: '#ff8800',
-                    height: 80,
-                    paddingTop: 12,
-                    borderTopWidth: 0,
-                    elevation: 0,
-                    shadowOpacity: 0,
-                },
-                tabBarBackground: () => (
-                    <BlurView
-                        intensity={0}
-                        tint="dark"
-                        style={StyleSheet.absoluteFill}
-                    />
-                ),
                 tabBarShowLabel: false,
+                tabBarStyle: styles.tabBar,
             }}
         >
             <Tab.Screen
@@ -42,13 +28,7 @@ export default function BottomTabNavigator() {
                 component={HomeStack}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <View style={focused ? styles.iconContainerActive : styles.iconContainer}>
-                            <Ionicons
-                                name={focused ? "home" : "home-outline"}
-                                size={focused ? 28 : 26}
-                                color={focused ? "#ffffffff" : "#ffffff"}
-                            />
-                        </View>
+                        <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
                     ),
                 }}
             />
@@ -57,13 +37,7 @@ export default function BottomTabNavigator() {
                 component={FavoritesStack}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <View style={focused ? styles.iconContainerActive : styles.iconContainer}>
-                            <Ionicons
-                                name={focused ? "heart" : "heart-outline"}
-                                size={focused ? 28 : 26}
-                                color={focused ? "#ffffffff" : "#ffffff"}
-                            />
-                        </View>
+                        <TabIcon name={focused ? 'storefront' : 'storefront-outline'} focused={focused} />
                     ),
                 }}
             />
@@ -72,13 +46,7 @@ export default function BottomTabNavigator() {
                 component={OrdersStack}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <View style={focused ? styles.iconContainerActive : styles.iconContainer}>
-                            <Ionicons
-                                name={focused ? "receipt" : "receipt-outline"}
-                                size={focused ? 28 : 26}
-                                color={focused ? "#ffffffff" : "#ffffff"}
-                            />
-                        </View>
+                        <TabIcon name={focused ? 'share-social' : 'share-social-outline'} focused={focused} />
                     ),
                 }}
             />
@@ -87,13 +55,7 @@ export default function BottomTabNavigator() {
                 component={ProfileStack}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <View style={focused ? styles.iconContainerActive : styles.iconContainer}>
-                            <Ionicons
-                                name={focused ? "person" : "person-outline"}
-                                size={focused ? 28 : 26}
-                                color={focused ? "#ffffffff" : "#ffffff"}
-                            />
-                        </View>
+                        <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
                     ),
                 }}
             />
@@ -102,25 +64,35 @@ export default function BottomTabNavigator() {
 }
 
 const styles = StyleSheet.create({
-    iconContainer: {
-        width: 50,
-        height: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'transparent',
-    },
-    iconContainerActive: {
-        width: 60,
-        height: 60,
-        alignItems: 'center',
-        justifyContent: 'center',
+    tabBar: {
+        position: 'absolute',
+        bottom: 28,
+        left: 20,
+        right: 20,
+        backgroundColor: '#fff',
+        borderRadius: 40,
+        height: 64,
+        borderTopWidth: 0,
+        elevation: 12,
         shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        transform: [{ scale: 1.1 }],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        paddingBottom: 0,
+        paddingHorizontal: 8,
+    },
+    iconActive: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#ff8700',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    iconInactive: {
+        width: 44,
+        height: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

@@ -44,16 +44,11 @@ const styles = StyleSheet.create({
     searchBar: {
         width: '100%',
         height: 46,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: '#f5f5f5',
         borderRadius: 25,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 2,
     },
     searchIcon: {
         marginRight: 8,

@@ -197,7 +197,7 @@ exports.getOrderById = async (req, res) => {
 
         // Verificar que el pedido existe y pertenece al usuario
         const pedidoResult = await db.query(
-            `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.notas,
+            `SELECT p.id, p.restaurante_id, p.estado, p.total, p.direccion_entrega, p.notas,
                     p.fecha_creacion, p.fecha_actualizacion,
                     r.nombre AS restaurante_nombre, r.direccion AS restaurante_direccion
              FROM pedidos p
