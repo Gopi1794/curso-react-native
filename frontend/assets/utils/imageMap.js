@@ -288,7 +288,7 @@ export const imageMap = {
     imgEmplatado10_4: `${BASE_URL}/img/categories-emplatados/imgEmplatado10_4.webp`,
 
     //Combos Imagenes
-    imgPromo1: `${BASE_URL}/img/categories-promos/imgPromo1.webp`,
+    imgPromo1: `${BASE_URL}/img/categories-burgers/imgBurger1.webp`,
     imgPromo1_0: `${BASE_URL}/img/categories-promos/imgPromo1_0.webp`,
     imgPromo1_1: `${BASE_URL}/img/categories-promos/imgPromo1_1.webp`,
     imgPromo1_2: `${BASE_URL}/img/categories-promos/imgPromo1_2.webp`,
