@@ -523,3 +523,113 @@ exports.resendVerification = async (req, res) => {
         });
     }
 };
+
+// ── FORGOT PASSWORD ───────────────────────────────────────
+// POST /api/auth/forgot-password
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'El email es requerido' });
+        }
+
+        const result = await db.query(
+            'SELECT id, nombre, email, estado FROM usuarios WHERE email = $1',
+            [email.trim().toLowerCase()]
+        );
+
+        // Respuesta genérica para no revelar si el email existe
+        if (result.rows.length === 0) {
+            return res.json({
+                success: true,
+                message: 'Si el email está registrado, recibirás un código en tu casilla.'
+            });
+        }
+
+        const user = result.rows[0];
+
+        if (user.estado !== 'activo') {
+            return res.json({
+                success: true,
+                message: 'Si el email está registrado, recibirás un código en tu casilla.'
+            });
+        }
+
+        const resetCode = generateVerificationCode();
+        const codeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        await db.query(
+            'UPDATE usuarios SET token_verificacion = $1, token_verificacion_expira = $2 WHERE id = $3',
+            [resetCode, codeExpires, user.id]
+        );
+
+        try {
+            await emailService.sendPasswordResetEmail(user.email, user.nombre, resetCode);
+        } catch (emailError) {
+            console.error('Error enviando email de reset:', emailError);
+        }
+
+        res.json({
+            success: true,
+            message: 'Si el email está registrado, recibirás un código en tu casilla.'
+        });
+
+    } catch (error) {
+        console.error('Error en forgotPassword:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
+// ── RESET PASSWORD ────────────────────────────────────────
+// POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+
+        if (!email || !code || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Email, código y nueva contraseña son requeridos' });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ success: false, message: 'La contraseña debe tener al menos 8 caracteres' });
+        }
+
+        if (newPassword.length > 72) {
+            return res.status(400).json({ success: false, message: 'La contraseña no puede exceder 72 caracteres' });
+        }
+
+        const result = await db.query(
+            'SELECT id, token_verificacion, token_verificacion_expira FROM usuarios WHERE email = $1',
+            [email.trim().toLowerCase()]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(400).json({ success: false, message: 'Código inválido o expirado' });
+        }
+
+        const user = result.rows[0];
+
+        if (!user.token_verificacion || user.token_verificacion !== code) {
+            return res.status(400).json({ success: false, message: 'Código incorrecto' });
+        }
+
+        if (new Date() > new Date(user.token_verificacion_expira)) {
+            return res.status(400).json({ success: false, message: 'El código expiró. Solicitá uno nuevo.', expired: true });
+        }
+
+        const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        await db.query(
+            'UPDATE usuarios SET password_hash = $1, token_verificacion = NULL, token_verificacion_expira = NULL WHERE id = $2',
+            [hashedPassword, user.id]
+        );
+
+        res.json({ success: true, message: 'Contraseña cambiada correctamente. Ya podés iniciar sesión.' });
+
+    } catch (error) {
+        console.error('Error en resetPassword:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};

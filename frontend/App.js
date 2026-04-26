@@ -18,31 +18,47 @@ import AppNavigator from './navigation/AppNavigator';
 // Componentes
 import ComponenteLogin from './components/LoginForm';
 import ComponenteRegister from './components/RegisterForm';
+import ForgotPasswordForm from './components/ForgotPasswordForm';
 import FlashMessageWrapper from './components/FlashMessageWrapper';
 import AnimatedSplashScreen from './screens/AnimatedSplashScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import SelectRestaurantScreen from './screens/SelectRestaurantScreen';
-import { LinearGradient } from 'expo-linear-gradient';
-
+import VerifyEmailScreen from './screens/VerifyEmailScreen';
 import API from './services/api';
 
 // Pantalla de Login
 function LoginScreen() {
   const [showRegister, setShowRegister] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showVerify, setShowVerify] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState('');
+
+  const handleBackToLogin = () => {
+    setShowRegister(false);
+    setShowForgotPassword(false);
+    setShowVerify(false);
+  };
+
+  const handleVerifyEmail = (email) => {
+    setVerifyEmail(email);
+    setShowRegister(false);
+    setShowVerify(true);
+  };
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#ff8000', '#ff8000']}
-        style={styles.backgroundGradient}
-      />
-
       <View style={styles.formOverlay}>
-        {showRegister ? (
-          <ComponenteRegister onBackToLogin={() => setShowRegister(false)} />
+        {showVerify ? (
+          <VerifyEmailScreen email={verifyEmail} onBack={handleBackToLogin} />
+        ) : showRegister ? (
+          <ComponenteRegister onBackToLogin={handleBackToLogin} onVerifyEmail={handleVerifyEmail} />
+        ) : showForgotPassword ? (
+          <ForgotPasswordForm onBackToLogin={handleBackToLogin} />
         ) : (
           <ComponenteLogin
             onShowRegister={() => setShowRegister(true)}
+            onForgotPassword={() => setShowForgotPassword(true)}
+            onVerifyEmail={handleVerifyEmail}
           />
         )}
       </View>
@@ -208,13 +224,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ff8000',
-  },
-  backgroundGradient: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
   },
   formOverlay: {
     flex: 1,

@@ -20,6 +20,8 @@ router.post('/logout', authController.logout);
 router.post('/google', authController.googleLogin);
 router.post('/verify-email', authLimiter, authController.verifyEmail);
 router.post('/resend-verification', authLimiter, authController.resendVerification);
+router.post('/forgot-password', authLimiter, authController.forgotPassword);
+router.post('/reset-password', authLimiter, authController.resetPassword);
 
 // Rutas protegidas
 router.get('/me', authMiddleware, authController.getUserProfile);

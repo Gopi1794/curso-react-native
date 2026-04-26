@@ -633,26 +633,20 @@ export const imageMap = {
     imgBebida10: `${BASE_URL}/img/categories-bebidas/imgBebida10.webp`,
 
     //promo del dia
-    imgPromoDia1: `${BASE_URL}/img/promodia/img-promodia1-1.webp`,
-    imgPromoDia1_0: `${BASE_URL}/img/promodia/img-promodia1_0.webp`,
+    imgPromoDia1:   `${BASE_URL}/img/promodia/img-promodia1.webp`,
     imgPromoDia1_1: `${BASE_URL}/img/promodia/img-promodia1_1.webp`,
     imgPromoDia1_2: `${BASE_URL}/img/promodia/img-promodia1_2.webp`,
     imgPromoDia1_3: `${BASE_URL}/img/promodia/img-promodia1_3.webp`,
-    imgPromoDia1_4: `${BASE_URL}/img/promodia/img-promodia1_4.webp`,
 
-    imgPromoDia2: `${BASE_URL}/img/promodia/img-promodia2-2.webp`,
-    imgPromoDia2_0: `${BASE_URL}/img/promodia/img-promodia2_0.webp`,
+    imgPromoDia2:   `${BASE_URL}/img/promodia/img-promodia2.webp`,
     imgPromoDia2_1: `${BASE_URL}/img/promodia/img-promodia2_1.webp`,
     imgPromoDia2_2: `${BASE_URL}/img/promodia/img-promodia2_2.webp`,
     imgPromoDia2_3: `${BASE_URL}/img/promodia/img-promodia2_3.webp`,
-    imgPromoDia2_4: `${BASE_URL}/img/promodia/img-promodia2_4.webp`,
 
-    imgPromoDia3: `${BASE_URL}/img/promodia/img-promodia3-3.webp`,
-    imgPromoDia3_0: `${BASE_URL}/img/promodia/img-promodia3_0.webp`,
+    imgPromoDia3:   `${BASE_URL}/img/promodia/img-promodia3.webp`,
     imgPromoDia3_1: `${BASE_URL}/img/promodia/img-promodia3_1.webp`,
     imgPromoDia3_2: `${BASE_URL}/img/promodia/img-promodia3_2.webp`,
     imgPromoDia3_3: `${BASE_URL}/img/promodia/img-promodia3_3.webp`,
-    imgPromoDia3_4: `${BASE_URL}/img/promodia/img-promodia3_4.webp`,
 };
 
 // React Native Image requires { uri: '...' } for remote URLs, not plain strings

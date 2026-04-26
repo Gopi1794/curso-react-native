@@ -4,7 +4,6 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    ImageBackground,
     StyleSheet,
     BackHandler,
     ActivityIndicator,
@@ -13,13 +12,21 @@ import {
     ScrollView,
 } from "react-native";
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 // ✅ TU NUEVA API (reemplaza Firebase)
 import API from '../services/api';
 import { useAppDispatch } from '../store/hooks';
 import { login } from '../store/slices/userSlice';
 import { showSuccessMessage, showErrorMessage } from './FlashMessageWrapper';
+
+const COLORS = {
+    primary: '#EA580C',
+    secondary: '#F97316',
+    error: '#DC2626',
+    inputBorder: '#EA580C',
+    inputFocused: '#F97316',
+};
 
 export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
     const [formData, setFormData] = useState({
@@ -38,6 +45,37 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
     const [focusedInput, setFocusedInput] = useState(null);
     const inputRefs = useRef({});
     const dispatch = useAppDispatch();
+
+    const autoCompleteMap = {
+        nombre: 'given-name',
+        apellido: 'family-name',
+        telefono: 'tel',
+        email: 'email',
+        password: 'new-password',
+    };
+
+    const textContentTypeMap = {
+        nombre: 'givenName',
+        apellido: 'familyName',
+        telefono: 'telephoneNumber',
+        email: 'emailAddress',
+        password: 'newPassword',
+    };
+
+    const validateFieldOnBlur = (field, value) => {
+        if (field === 'email' && value) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(value)) {
+                showErrorMessage("Email inválido", "Ingresá un correo electrónico válido");
+            }
+        }
+        if (field === 'telefono' && value) {
+            const digits = value.replace(/\D/g, '');
+            if (digits.length < 8) {
+                showErrorMessage("Teléfono inválido", "Ingresá al menos 8 dígitos");
+            }
+        }
+    };
 
     // Efecto para manejar el botón físico de atrás
     useEffect(() => {
@@ -222,7 +260,7 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
                     <Ionicons
                         name={field.icon}
                         size={20}
-                        color={isFocused ? "#ff8000" : "#888"}
+                        color={isFocused ? COLORS.inputFocused : "#888"}
                         style={styles.inputIcon}
                     />
                     <TextInput
@@ -241,8 +279,10 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
                             field.id === "email" ? "none" : "words"
                         }
                         editable={!loading}
+                        autoComplete={autoCompleteMap[field.id]}
+                        textContentType={textContentTypeMap[field.id]}
                         onFocus={() => setFocusedInput(field.id)}
-                        onBlur={() => setFocusedInput(null)}
+                        onBlur={() => { setFocusedInput(null); validateFieldOnBlur(field.id, formData[field.id]); }}
                         returnKeyType={field.returnKeyType}
                         onSubmitEditing={() => {
                             if (index < formFields.length - 1) {
@@ -282,17 +322,20 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
         >
-            <ImageBackground
-                source={require('../assets/img/back-app.jpg')}
+            <LinearGradient
+                colors={['#C2410C', '#EA580C', '#F97316']}
+                start={{ x: 0.2, y: 0 }}
+                end={{ x: 0.8, y: 1 }}
                 style={styles.background}
-                resizeMode="cover"
             >
+                <View style={styles.blob1} />
+                <View style={styles.blob2} />
                 <ScrollView
                     contentContainerStyle={styles.scrollContainer}
                     showsVerticalScrollIndicator={false}
                 >
                 <View style={styles.container}>
-                    <BlurView intensity={55} tint="dark" style={styles.blurContainer}>
+                    <BlurView intensity={35} tint="light" style={styles.blurContainer}>
                         <View style={styles.formContainer}>
                             {/* Header */}
                             <View style={styles.header}>
@@ -326,23 +369,26 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
 
                             {/* Submit Button */}
                             <TouchableOpacity
-                                style={[
-                                    styles.submitButton,
-                                    loading && styles.disabledButton,
-                                    progress < 100 && styles.incompleteButton
-                                ]}
+                                style={[styles.submitButtonWrapper, loading && styles.disabledButton]}
                                 onPress={handleSubmit}
-                                activeOpacity={0.8}
-                                disabled={loading || progress < 100}
+                                activeOpacity={0.85}
+                                disabled={loading}
                             >
-                                {loading ? (
-                                    <ActivityIndicator color="white" size="small" />
-                                ) : (
-                                    <>
-                                        <Text style={styles.submitButtonText}>Crear Cuenta</Text>
-                                        <Ionicons name="rocket-outline" size={20} color="white" />
-                                    </>
-                                )}
+                                <LinearGradient
+                                    colors={[COLORS.primary, COLORS.secondary]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.submitButton}
+                                >
+                                    {loading ? (
+                                        <ActivityIndicator color="white" size="small" />
+                                    ) : (
+                                        <>
+                                            <Text style={styles.submitButtonText}>Crear Cuenta</Text>
+                                            <Ionicons name="rocket-outline" size={20} color="white" />
+                                        </>
+                                    )}
+                                </LinearGradient>
                             </TouchableOpacity>
 
                             {/* Terms */}
@@ -365,7 +411,7 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
                     </BlurView>
                 </View>
                 </ScrollView>
-            </ImageBackground>
+            </LinearGradient>
         </KeyboardAvoidingView>
     );
 };
@@ -383,6 +429,26 @@ const styles = StyleSheet.create({
     },
     background: {
         flex: 1,
+    },
+    blob1: {
+        position: 'absolute',
+        width: 280,
+        height: 280,
+        borderRadius: 140,
+        backgroundColor: '#fff',
+        opacity: 0.1,
+        top: -70,
+        right: -70,
+    },
+    blob2: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: '#fff',
+        opacity: 0.07,
+        bottom: 100,
+        left: -50,
     },
     scrollContainer: {
         flexGrow: 1,
@@ -410,48 +476,47 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     formContainer: {
-        padding: 30,
-        gap: 20,
+        padding: 28,
+        gap: 16,
     },
     header: {
         flexDirection: "row",
         alignItems: 'center',
+        gap: 8,
     },
     backButton: {
-        left: 0,
-        top: 0,
         padding: 8,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255,255,255,0.12)',
     },
     title: {
-        left: 35,
+        flex: 1,
         fontFamily: "Poppins-Bold",
         fontSize: 20,
         color: "white",
-        textAlign: 'center',
-        marginBottom: 8,
         textShadowColor: 'rgba(0, 0, 0, 0.3)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 3,
     },
     progressContainer: {
-        marginBottom: 10,
+        marginBottom: 4,
     },
     progressBackground: {
-        height: 6,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        height: 5,
+        backgroundColor: 'rgba(255, 255, 255, 0.18)',
         borderRadius: 3,
         overflow: 'hidden',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     progressFill: {
         height: '100%',
-        backgroundColor: '#e1d902ff',
+        backgroundColor: '#EA580C',
         borderRadius: 3,
     },
     progressText: {
         fontFamily: "Poppins-Regular",
-        fontSize: 12,
-        color: "rgba(255, 255, 255, 0.7)",
+        fontSize: 11,
+        color: "rgba(255, 255, 255, 0.65)",
         textAlign: 'center',
     },
     inputGroup: {
@@ -460,8 +525,8 @@ const styles = StyleSheet.create({
     label: {
         fontFamily: "Poppins-SemiBold",
         color: "white",
-        fontSize: 14,
-        marginBottom: 8,
+        fontSize: 13,
+        marginBottom: 7,
         textShadowColor: 'rgba(0, 0, 0, 0.3)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 2,
@@ -469,50 +534,53 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
-        borderRadius: 15,
+        backgroundColor: "rgba(255, 255, 255, 0.96)",
+        borderRadius: 14,
         borderWidth: 2,
-        borderColor: "rgba(255, 255, 255, 0.2)",
-        paddingHorizontal: 16,
-        borderColor: "#ff8000",
-        shadowColor: "#ff8000",
-        shadowOffset: { width: 0, height: 0 },
+        paddingHorizontal: 14,
+        borderColor: "rgba(234,88,12,0.4)",
+        shadowColor: "#EA580C",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    inputFocused: {
+        borderColor: "#EA580C",
         shadowOpacity: 0.3,
         shadowRadius: 10,
         elevation: 5,
     },
-    inputFocused: {
-        borderColor: "#FF6B6B",
-    },
     inputIcon: {
-        marginRight: 12,
+        marginRight: 10,
     },
     input: {
         flex: 1,
+        paddingVertical: 14,
         fontFamily: "Poppins-Regular",
-        fontSize: 16,
-        color: "#333333",
+        fontSize: 15,
+        color: "#1a1a1a",
     },
     eyeIcon: {
-        padding: 4,
+        padding: 6,
+    },
+    submitButtonWrapper: {
+        width: "100%",
+        borderRadius: 25,
+        shadowColor: "#EA580C",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        elevation: 8,
     },
     submitButton: {
-        width: "100%",
-        backgroundColor: "#f53232ff",
         borderRadius: 25,
-        padding: 18,
+        paddingVertical: 17,
+        paddingHorizontal: 24,
         flexDirection: 'row',
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
-        shadowColor: "#FF6B6B",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    incompleteButton: {
-        backgroundColor: "#f53232ff",
     },
     disabledButton: {
         opacity: 0.6,
@@ -533,7 +601,7 @@ const styles = StyleSheet.create({
         lineHeight: 16,
     },
     termsLink: {
-        color: "#f53232ff",
+        color: "#F97316",
         textDecorationLine: 'underline',
     },
     loginContainer: {
@@ -549,7 +617,7 @@ const styles = StyleSheet.create({
     },
     loginLink: {
         fontFamily: "Poppins-SemiBold",
-        color: "#f53232ff",
+        color: "#F97316",
         fontSize: 14,
     },
 });

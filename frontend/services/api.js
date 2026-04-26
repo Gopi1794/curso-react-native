@@ -6,7 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 //   iOS simulator    : 'http://localhost:3000'
 //   Dispositivo físico: tu IP local, ej: 'http://192.168.1.100:3000'
 //   Ngrok            : 'https://xxxx.ngrok-free.dev'
-const API_BASE_URL = 'http://192.168.1.33:3000';
+const API_BASE_URL = 'http://192.168.1.41:3000';
 
 const TOKEN_KEY = 'userToken';
 
@@ -58,6 +58,16 @@ const auth = {
     resendVerification: (email) => request('/api/auth/resend-verification', {
         method: 'POST',
         body: JSON.stringify({ email }),
+    }),
+
+    forgotPassword: (email) => request('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+    }),
+
+    resetPassword: (email, code, newPassword) => request('/api/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ email, code, newPassword }),
     }),
 };
 

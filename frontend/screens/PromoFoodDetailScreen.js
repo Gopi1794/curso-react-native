@@ -238,7 +238,7 @@ const PromoFoodDetailScreen = ({ route }) => {
 
             {/* Fondo con gradiente más vibrante para promos */}
             <LinearGradient
-                colors={['#FF6B35', '#FF8E53', '#FFA726']}
+                colors={['#ffffff', '#ffffff', '#ffffff']}
                 style={styles.backgroundGradient}
             />
 

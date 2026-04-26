@@ -20,6 +20,7 @@ import WelcomePopup from '../components/WelcomePopup';
 
 // API
 import API from '../services/api';
+import menuItemsData from '../assets/data/menuItems.json';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { clearJustRegistered } from '../store/slices/userSlice';
@@ -100,6 +101,8 @@ const mapMenuItem = (item) => ({
     price: `$${parseFloat(item.precio).toFixed(2)}`,
     imageKey: item.imagen_key,
     category: item.categoria,
+    calories: item.calories ?? item.calorias ?? null,
+    weight: item.weight ?? item.peso ?? null,
     descriptionText: item.descripcion,
     ingredientText: item.ingredientes || [],
     ingredientesDetalle: item.ingredientes_detalle || [],
@@ -152,7 +155,8 @@ export const ScreenHome = ({ navigation }) => {
     ];
 
     // Promociones
-    const promos = menuItems.filter(item => item.category === "promoDia");
+    const promos = menuItems
+        .filter(item => item.category === "promoDia");
 
     // ✅ FUNCIÓN DE BÚSQUEDA MEJORADA
     const searchItems = useCallback((query, items) => {
@@ -222,10 +226,16 @@ export const ScreenHome = ({ navigation }) => {
 
     const handlePromoPress = useCallback((promo) => {
         const promoItem = menuItems.find(item => item.id === promo.id);
+        const localItem = menuItemsData.find(item => item.id === promo.id);
         if (promoItem) {
             navigation.navigate('PromoFoodDetail', {
-                foodItem: promoItem,
-                promoData: promo
+                foodItem: {
+                    ...promoItem,
+                    imageKey: Array.isArray(localItem?.imageKey) ? localItem.imageKey : promoItem.imageKey,
+                    includes: localItem?.includes ?? promoItem.includes,
+                    discountPercentage: localItem?.discountPercentage ?? promoItem.discountPercentage,
+                    originalPrice: localItem?.originalPrice ?? promoItem.originalPrice,
+                },
             });
         }
     }, [menuItems, navigation]);
