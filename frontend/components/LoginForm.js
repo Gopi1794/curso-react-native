@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
     View,
     Text,
     TextInput,
     TouchableOpacity,
     Image,
-    ImageBackground,
     StyleSheet,
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -13,6 +12,7 @@ import {
     ScrollView,
 } from "react-native";
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,14 +21,31 @@ import { useAppDispatch } from '../store/hooks';
 import { login } from '../store/slices/userSlice';
 import { showErrorMessage, showInfoMessage } from './FlashMessageWrapper';
 
-export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail }) => {
+const COLORS = {
+    primary: '#EA580C',
+    secondary: '#F97316',
+    error: '#DC2626',
+    inputBorder: '#EA580C',
+    inputFocused: '#F97316',
+};
+
+export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail, onForgotPassword }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [focusedInput, setFocusedInput] = useState(null);
     const [errors, setErrors] = useState({});
+    const passwordRef = useRef(null);
     const dispatch = useAppDispatch();
+
+    const validateEmailOnBlur = (val) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (val && !emailRegex.test(val)) {
+            setErrors(e => ({ ...e, email: 'Correo electrónico inválido' }));
+        }
+        setFocusedInput(null);
+    };
 
     const handleLogin = async () => {
         if (!email && !password) {
@@ -94,6 +111,10 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
         }
     };
 
+    const handleForgotPassword = () => {
+        onForgotPassword?.();
+    };
+
     const handleGoogleLogin = () => {
         showInfoMessage(
             "Próximamente",
@@ -117,22 +138,29 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
             style={styles.mainContainer}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-            <ImageBackground
-                source={require('../assets/img/back-app.jpg')}
+            <LinearGradient
+                colors={['#C2410C', '#EA580C', '#F97316']}
+                start={{ x: 0.2, y: 0 }}
+                end={{ x: 0.8, y: 1 }}
                 style={styles.background}
-                resizeMode="cover"
             >
+                <View style={styles.blob1} />
+                <View style={styles.blob2} />
                 <ScrollView
                     contentContainerStyle={styles.scrollContainer}
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.container}>
-                        <BlurView intensity={55} tint="dark" style={styles.blurContainer}>
+                        <BlurView intensity={35} tint="light" style={styles.blurContainer}>
                             <View style={styles.formContainer}>
-                                <Image
-                                    source={require('../assets/img/logoApp.png')}
-                                    style={styles.logo}
-                                />
+                                <View style={styles.heroSection}>
+                                    <Image
+                                        source={require('../assets/img/logoApp.png')}
+                                        style={styles.logo}
+                                    />
+                                    <Text style={styles.welcomeTitle}>¡Bienvenido!</Text>
+                                    <Text style={styles.welcomeSubtitle}>Tu comida favorita, en minutos</Text>
+                                </View>
 
                                 {/* Campo de Email */}
                                 <View style={styles.inputGroup}>
@@ -145,7 +173,7 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
                                         <Ionicons
                                             name="mail-outline"
                                             size={20}
-                                            color={errors.email ? "#FF6B6B" : focusedInput === 'email' ? "#FF6B6B" : "#888"}
+                                            color={errors.email ? COLORS.error : focusedInput === 'email' ? COLORS.inputFocused : "#888"}
                                             style={styles.inputIcon}
                                         />
                                         <TextInput
@@ -156,9 +184,13 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
                                             placeholderTextColor="#888"
                                             keyboardType="email-address"
                                             autoCapitalize="none"
+                                            autoComplete="email"
+                                            textContentType="emailAddress"
+                                            returnKeyType="next"
                                             editable={!loading}
                                             onFocus={() => setFocusedInput('email')}
-                                            onBlur={() => setFocusedInput(null)}
+                                            onBlur={() => validateEmailOnBlur(email)}
+                                            onSubmitEditing={() => passwordRef.current?.focus()}
                                         />
                                     </View>
                                     {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
@@ -166,7 +198,12 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
 
                                 {/* Campo de Contraseña */}
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Contraseña</Text>
+                                    <View style={styles.labelRow}>
+                                        <Text style={styles.label}>Contraseña</Text>
+                                        <TouchableOpacity onPress={handleForgotPassword} disabled={loading}>
+                                            <Text style={styles.forgotLink}>¿Olvidaste tu contraseña?</Text>
+                                        </TouchableOpacity>
+                                    </View>
                                     <View style={[
                                         styles.inputContainer,
                                         focusedInput === 'password' && styles.inputFocused,
@@ -175,19 +212,24 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
                                         <Ionicons
                                             name="lock-closed-outline"
                                             size={20}
-                                            color={errors.password ? "#FF6B6B" : focusedInput === 'password' ? "#FF6B6B" : "#888"}
+                                            color={errors.password ? COLORS.error : focusedInput === 'password' ? COLORS.inputFocused : "#888"}
                                             style={styles.inputIcon}
                                         />
                                         <TextInput
+                                            ref={passwordRef}
                                             style={styles.input}
                                             value={password}
                                             onChangeText={(text) => { setPassword(text); setErrors(e => ({ ...e, password: null })); }}
                                             placeholder="••••••••"
                                             placeholderTextColor="#888"
                                             secureTextEntry={!showPassword}
+                                            autoComplete="current-password"
+                                            textContentType="password"
+                                            returnKeyType="done"
                                             editable={!loading}
                                             onFocus={() => setFocusedInput('password')}
                                             onBlur={() => setFocusedInput(null)}
+                                            onSubmitEditing={handleLogin}
                                         />
                                         <TouchableOpacity
                                             onPress={() => setShowPassword(!showPassword)}
@@ -196,7 +238,7 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
                                             <Ionicons
                                                 name={showPassword ? "eye-off-outline" : "eye-outline"}
                                                 size={20}
-                                                color="#888"
+                                                color="#999"
                                             />
                                         </TouchableOpacity>
                                     </View>
@@ -206,29 +248,33 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
                                 {/* Error general (credenciales / conexión) */}
                                 {errors.general && (
                                     <View style={styles.generalErrorContainer}>
-                                        <Ionicons name="alert-circle-outline" size={16} color="#FF6B6B" />
+                                        <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
                                         <Text style={styles.generalErrorText}>{errors.general}</Text>
                                     </View>
                                 )}
 
                                 {/* Botón de Ingresar */}
                                 <TouchableOpacity
-                                    style={[
-                                        styles.primaryButton,
-                                        loading && styles.disabledButton
-                                    ]}
+                                    style={[styles.primaryButtonWrapper, loading && styles.disabledButton]}
                                     onPress={handleLogin}
-                                    activeOpacity={0.8}
+                                    activeOpacity={0.85}
                                     disabled={loading}
                                 >
-                                    {loading ? (
-                                        <ActivityIndicator color="white" size="small" />
-                                    ) : (
-                                        <>
-                                            <Text style={styles.buttonText}>Ingresar</Text>
-                                            <Ionicons name="arrow-forward" size={20} color="white" />
-                                        </>
-                                    )}
+                                    <LinearGradient
+                                        colors={[COLORS.primary, COLORS.secondary]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.primaryButton}
+                                    >
+                                        {loading ? (
+                                            <ActivityIndicator color="white" size="small" />
+                                        ) : (
+                                            <>
+                                                <Text style={styles.buttonText}>Ingresar</Text>
+                                                <Ionicons name="arrow-forward" size={20} color="white" />
+                                            </>
+                                        )}
+                                    </LinearGradient>
                                 </TouchableOpacity>
 
                                 {/* Botones de acceso rápido (solo desarrollo) */}
@@ -285,7 +331,7 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail 
                         </BlurView>
                     </View>
                 </ScrollView>
-            </ImageBackground>
+            </LinearGradient>
         </KeyboardAvoidingView>
     );
 };
@@ -303,6 +349,26 @@ const styles = StyleSheet.create({
     },
     background: {
         flex: 1,
+    },
+    blob1: {
+        position: 'absolute',
+        width: 260,
+        height: 260,
+        borderRadius: 130,
+        backgroundColor: '#fff',
+        opacity: 0.1,
+        top: -60,
+        right: -60,
+    },
+    blob2: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: '#fff',
+        opacity: 0.07,
+        bottom: 80,
+        left: -50,
     },
     scrollContainer: {
         flexGrow: 1,
@@ -330,79 +396,110 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     formContainer: {
-        padding: 30,
+        padding: 28,
         alignItems: "center",
-        gap: 20,
+        gap: 18,
+    },
+    heroSection: {
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 4,
+    },
+    welcomeTitle: {
+        fontFamily: "Poppins-Bold",
+        fontSize: 22,
+        color: "white",
+        textShadowColor: 'rgba(0,0,0,0.4)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+    },
+    welcomeSubtitle: {
+        fontFamily: "Poppins-Regular",
+        fontSize: 13,
+        color: "rgba(255,255,255,0.75)",
     },
     inputGroup: {
         width: "100%",
     },
+    labelRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
     label: {
         fontFamily: "Poppins-SemiBold",
         color: "white",
-        fontSize: 14,
-        marginBottom: 8,
+        fontSize: 13,
         textShadowColor: 'rgba(0, 0, 0, 0.3)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 2,
     },
+    forgotLink: {
+        fontFamily: "Poppins-Regular",
+        color: "rgba(255,255,255,0.7)",
+        fontSize: 12,
+        textDecorationLine: 'underline',
+    },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
-        borderRadius: 15,
+        backgroundColor: "rgba(255, 255, 255, 0.96)",
+        borderRadius: 14,
         borderWidth: 2,
-        borderColor: "rgba(255, 255, 255, 0.2)",
-        paddingHorizontal: 16,
-        borderColor: "#ff8000",
-        shadowColor: "#ff8000",
-        shadowOffset: { width: 0, height: 0 },
+        paddingHorizontal: 14,
+        borderColor: "rgba(234,88,12,0.4)",
+        shadowColor: "#EA580C",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    inputFocused: {
+        borderColor: "#EA580C",
         shadowOpacity: 0.3,
         shadowRadius: 10,
         elevation: 5,
     },
-    inputFocused: {
-        borderColor: "#FF6B6B",
-    },
     inputIcon: {
-        marginRight: 12,
+        marginRight: 10,
     },
     input: {
         flex: 1,
-        paddingVertical: 16,
+        paddingVertical: 15,
         fontFamily: "Poppins-Regular",
-        fontSize: 16,
-        color: "#333333",
+        fontSize: 15,
+        color: "#1a1a1a",
     },
     eyeIcon: {
-        padding: 4,
+        padding: 6,
+    },
+    primaryButtonWrapper: {
+        width: "100%",
+        borderRadius: 25,
+        shadowColor: "#EA580C",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        elevation: 8,
     },
     primaryButton: {
-        width: "100%",
-        backgroundColor: "#f53232ff",
         borderRadius: 25,
-        padding: 18,
+        paddingVertical: 17,
+        paddingHorizontal: 24,
         flexDirection: 'row',
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
-        shadowColor: "#FF6B6B",
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
     },
     disabledButton: {
         opacity: 0.6,
     },
     inputError: {
-        borderColor: '#FF6B6B',
+        borderColor: '#DC2626',
     },
     errorText: {
-        color: '#FF6B6B',
+        color: '#DC2626',
         fontSize: 12,
         fontFamily: 'Poppins-Regular',
         marginTop: 4,
@@ -411,7 +508,7 @@ const styles = StyleSheet.create({
     generalErrorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 107, 107, 0.15)',
+        backgroundColor: 'rgba(220, 38, 38, 0.12)',
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 8,
@@ -419,7 +516,7 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     generalErrorText: {
-        color: '#FF6B6B',
+        color: '#DC2626',
         fontSize: 13,
         fontFamily: 'Poppins-Regular',
         flex: 1,
@@ -508,7 +605,7 @@ const styles = StyleSheet.create({
     },
     registerLink: {
         fontFamily: "Poppins-SemiBold",
-        color: "#f53232ff",
+        color: "#F97316",
         fontSize: 14,
     },
     logo: {

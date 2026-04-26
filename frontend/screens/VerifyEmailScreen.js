@@ -22,8 +22,8 @@ import Spacing from '../constants/Spacing';
 
 const CODE_LENGTH = 6;
 
-export default function VerifyEmailScreen({ route, navigation }) {
-    const { email } = route.params;
+export default function VerifyEmailScreen({ route, navigation, email: emailProp, onBack }) {
+    const email = emailProp ?? route?.params?.email;
     const dispatch = useAppDispatch();
 
     const [code, setCode] = useState(Array(CODE_LENGTH).fill(''));
@@ -202,7 +202,7 @@ export default function VerifyEmailScreen({ route, navigation }) {
                         {/* Volver */}
                         <TouchableOpacity
                             style={styles.backButton}
-                            onPress={() => navigation.goBack()}
+                            onPress={() => onBack ? onBack() : navigation?.goBack()}
                         >
                             <Ionicons name="arrow-back" size={18} color={Colors.textSecondary} />
                             <Text style={styles.backText}>Volver al registro</Text>

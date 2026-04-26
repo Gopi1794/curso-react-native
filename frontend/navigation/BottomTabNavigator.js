@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
         right: 20,
         backgroundColor: '#fff',
         borderRadius: 40,
-        height: 64,
+        height: 74,
         borderTopWidth: 0,
         elevation: 12,
         shadowColor: '#000',
@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
     },
     iconActive: {
+        position: 'absolute',
         width: 44,
         height: 44,
         borderRadius: 22,

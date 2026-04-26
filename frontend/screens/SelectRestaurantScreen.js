@@ -9,10 +9,8 @@ import {
     Dimensions,
     StatusBar,
     Image,
-    ImageBackground,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch } from '../store/hooks';
 import { selectRestaurant } from '../store/slices/restaurantSlice';
@@ -168,15 +166,16 @@ export default function SelectRestaurantScreen() {
     };
 
     return (
-        <ImageBackground
-            source={require('../assets/img/back-app.jpg')}
+        <LinearGradient
+            colors={['#C2410C', '#EA580C', '#F97316']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
             style={styles.container}
-            resizeMode="cover"
         >
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-            {/* Header con blur */}
-            <BlurView intensity={60} tint="dark" style={styles.header}>
+            {/* Header */}
+            <View style={styles.header}>
                 <Image
                     source={require('../assets/img/logoApp.png')}
                     style={styles.logo}
@@ -185,10 +184,10 @@ export default function SelectRestaurantScreen() {
                     <Text style={styles.title}>Elegí tu local</Text>
                     <Text style={styles.subtitle}>Seleccioná la sucursal más cercana</Text>
                 </Animated.View>
-            </BlurView>
+            </View>
 
-            {/* Lista con blur */}
-            <BlurView intensity={40} tint="light" style={styles.listContainer}>
+            {/* Lista */}
+            <View style={styles.listContainer}>
                 {loading ? (
                     <View style={styles.list}>
                         <SkeletonCard />
@@ -210,8 +209,8 @@ export default function SelectRestaurantScreen() {
                         showsVerticalScrollIndicator={false}
                     />
                 )}
-            </BlurView>
-        </ImageBackground>
+            </View>
+        </LinearGradient>
     );
 }
 
@@ -247,9 +246,10 @@ const styles = StyleSheet.create({
     listContainer: {
         flex: 1,
         marginTop: -15,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         overflow: 'hidden',
+        backgroundColor: '#f9f9f9',
     },
     list: {
         padding: 16,

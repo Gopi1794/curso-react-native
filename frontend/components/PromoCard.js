@@ -40,9 +40,13 @@ export const PromoCard = memo(({ promo, onPress, isActive }) => {
     }, [isActive]);
 
     const imageKey = Array.isArray(promo.imageKey) ? promo.imageKey[0] : promo.imageKey;
+    console.log('[PromoCard] id:', promo.id, '| imageKey:', imageKey, '| resolvedUri:', toUri(imageMap[imageKey]));
+    const originalImageKey = Array.isArray(promo.originalImageKey)
+        ? promo.originalImageKey[0]
+        : promo.originalImageKey;
     const localItem = menuItemsData.find(m => {
         const k = Array.isArray(m.imageKey) ? m.imageKey[0] : m.imageKey;
-        return k === imageKey;
+        return m.id === promo.id || k === originalImageKey || k === imageKey;
     });
     const calories = promo.calories ?? localItem?.calories ?? null;
     const weight = promo.weight ?? localItem?.weight ?? null;
@@ -64,7 +68,7 @@ export const PromoCard = memo(({ promo, onPress, isActive }) => {
             { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
         ]}>
             {/* ── Card blanca ── */}
-            <View style={styles.card}>
+            <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.95}>
 
                 {/* ── Top row ── */}
                 <View style={styles.topRow}>
@@ -115,23 +119,19 @@ export const PromoCard = memo(({ promo, onPress, isActive }) => {
                 />
 
                 {/* ── Badges de calorías / peso ── */}
-                {(calories != null || weight != null) && (
-                    <View style={styles.badgesContainer}>
-                        {calories != null && (
-                            <View style={styles.badge}>
-                                <Ionicons name="flame" size={10} color="#ff8700" />
-                                <Text style={styles.badgeText}>{calories} cal</Text>
-                            </View>
-                        )}
-                        {weight != null && (
-                            <View style={[styles.badge, { marginTop: 4 }]}>
-                                <Ionicons name="barbell-outline" size={10} color="#888" />
-                                <Text style={[styles.badgeText, { color: '#555' }]}>{weight} g</Text>
-                            </View>
-                        )}
+                {calories != null && (
+                    <View style={styles.badgeCal}>
+                        <Ionicons name="flame" size={11} color="#ff8700" />
+                        <Text style={styles.badgeText}>{calories} cal</Text>
                     </View>
                 )}
-            </View>
+                {weight != null && (
+                    <View style={styles.badgeWeight}>
+                        <Ionicons name="barbell-outline" size={11} color="#888" />
+                        <Text style={[styles.badgeText, { color: '#555' }]}>{weight} g</Text>
+                    </View>
+                )}
+            </TouchableOpacity>
         </Animated.View>
     );
 });
@@ -183,7 +183,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins-SemiBold',
     },
     deliveryRow: {
+        zIndex: 1000,
         borderWidth: 1,
+        backgroundColor: '#fff',
         borderColor: '#ddd',
         paddingHorizontal: 10,
         paddingVertical: 5,
@@ -291,30 +293,48 @@ const styles = StyleSheet.create({
         height: 300,
     },
 
-    // Badges calorías / peso
-    badgesContainer: {
+    // Badges calorías / peso — stickers sueltos en el centro
+    badgeCal: {
         position: 'absolute',
-        right: 14,
-        bottom: 58,
-        alignItems: 'flex-end',
-    },
-    badge: {
+        left: '35%',
+        top: '25%',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 3,
-        backgroundColor: 'rgba(255,255,255,0.92)',
-        paddingHorizontal: 7,
-        paddingVertical: 3,
-        borderRadius: 10,
+        gap: 4,
+        backgroundColor: 'hsla(0, 0%, 100%, 0.93)',
+        paddingHorizontal: 9,
+        paddingVertical: 5,
+        borderRadius: 12,
+        shadowColor: '#ff8700',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.18,
+        shadowRadius: 4,
+        elevation: 4,
+        transform: [{ rotate: '-13deg' }],
+        zIndex: 20,
+    },
+    badgeWeight: {
+        position: 'absolute',
+        left: '35%',
+        top: '48%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(255,255,255,0.93)',
+        paddingHorizontal: 9,
+        paddingVertical: 5,
+        borderRadius: 12,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+        shadowRadius: 4,
+        elevation: 4,
+        transform: [{ rotate: '9deg' }],
+        zIndex: 20,
     },
     badgeText: {
         fontFamily: 'Poppins-SemiBold',
-        fontSize: 10,
+        fontSize: 11,
         color: '#ff8700',
     },
 });
