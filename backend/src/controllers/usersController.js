@@ -230,6 +230,78 @@ exports.uploadAvatar = async (req, res) => {
     }
 };
 
+// ── ADDRESSES ────────────────────────────────────────
+// GET /api/users/addresses
+exports.getAddresses = async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT id, etiqueta, direccion, ciudad, provincia, referencia,
+                    latitud, longitud, es_principal, fecha_creacion
+             FROM direcciones_usuarios
+             WHERE usuario_id = $1
+             ORDER BY es_principal DESC, fecha_creacion DESC`,
+            [req.user.userId]
+        );
+        res.json({ success: true, addresses: result.rows });
+    } catch (error) {
+        console.error('Error en getAddresses:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
+// POST /api/users/addresses
+exports.createAddress = async (req, res) => {
+    try {
+        const { etiqueta, direccion, ciudad = '', provincia = '', referencia = '', latitud = null, longitud = null, es_principal = false } = req.body;
+
+        if (!etiqueta || !etiqueta.trim()) {
+            return res.status(400).json({ success: false, message: 'El nombre de la dirección es requerido' });
+        }
+        if (!direccion || !direccion.trim()) {
+            return res.status(400).json({ success: false, message: 'La dirección es requerida' });
+        }
+
+        if (es_principal) {
+            await db.query(
+                'UPDATE direcciones_usuarios SET es_principal = FALSE WHERE usuario_id = $1',
+                [req.user.userId]
+            );
+        }
+
+        const result = await db.query(
+            `INSERT INTO direcciones_usuarios
+                (usuario_id, etiqueta, direccion, ciudad, provincia, referencia, latitud, longitud, es_principal)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             RETURNING *`,
+            [req.user.userId, etiqueta.trim(), direccion.trim(), ciudad, provincia, referencia, latitud, longitud, es_principal]
+        );
+
+        res.status(201).json({ success: true, address: result.rows[0] });
+    } catch (error) {
+        console.error('Error en createAddress:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
+// DELETE /api/users/addresses/:id
+exports.deleteAddress = async (req, res) => {
+    try {
+        const result = await db.query(
+            'DELETE FROM direcciones_usuarios WHERE id = $1 AND usuario_id = $2 RETURNING id',
+            [req.params.id, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Dirección no encontrada' });
+        }
+
+        res.json({ success: true, message: 'Dirección eliminada' });
+    } catch (error) {
+        console.error('Error en deleteAddress:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
 // ── GET STATS ────────────────────────────────────────────
 // GET /api/users/stats
 exports.getStats = async (req, res) => {

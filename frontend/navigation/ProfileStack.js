@@ -8,6 +8,7 @@ import CouponsScreen from '../screens/CouponsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import PrivacyScreen from '../screens/PrivacyScreen';
 import HelpScreen from '../screens/HelpScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createStackNavigator();
 
@@ -22,6 +23,7 @@ export default function ProfileStack() {
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Privacy" component={PrivacyScreen} />
             <Stack.Screen name="Help" component={HelpScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
         </Stack.Navigator>
     );
 }

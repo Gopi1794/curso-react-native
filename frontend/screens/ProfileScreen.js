@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 // Importar AppHeader
 import AppHeader from '../components/common/AppHeader';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/slices/userSlice';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -27,6 +27,12 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const dispatch = useAppDispatch();
+  const userInfo = useAppSelector((state) => state.user.userInfo);
+  const userName = userInfo ? `${userInfo.nombre ?? ''} ${userInfo.apellido ?? ''}`.trim() : 'Usuario';
+  const userEmail = userInfo?.email ?? 'usuario@email.com';
+  const avatarSource = userInfo?.avatar
+    ? (typeof userInfo.avatar === 'string' ? { uri: userInfo.avatar } : userInfo.avatar)
+    : require('../assets/img/usuario-img.jpg');
 
   const handleEditProfile = () => navigation.navigate('EditProfile');
   const handleAddresses = () => navigation.navigate('Addresses');
@@ -96,7 +102,7 @@ export default function ProfileScreen({ navigation }) {
           >
             <View style={styles.avatarContainer}>
               <Image
-                source={require('../assets/img/usuario-img.jpg')}
+                source={avatarSource}
                 style={styles.avatarImage}
                 resizeMode="cover"
               />
@@ -106,8 +112,8 @@ export default function ProfileScreen({ navigation }) {
               </View>
             </View>
 
-            <Text style={styles.userName}>Usuario</Text>
-            <Text style={styles.userEmail}>usuario@email.com</Text>
+            <Text style={styles.userName}>{userName}</Text>
+            <Text style={styles.userEmail}>{userEmail}</Text>
 
             {/* Stats del usuario */}
             <View style={styles.userStats}>

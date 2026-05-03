@@ -20,6 +20,7 @@ import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { clearCart, removeFromCart, updateQuantity } from '../store/slices/cartSlice';
+import API from '../services/api';
 import FlashMessageWrapper, { showSuccessMessage, showErrorMessage, showWarningMessage } from '../components/FlashMessageWrapper';
 import imageMap from '../assets/utils/imageMap';
 
@@ -29,6 +30,7 @@ const CartScreen = ({ navigation }) => {
     const dispatch = useAppDispatch();
     const insets = useSafeAreaInsets();
     const cartItems = useAppSelector(state => state.cart.items);
+    const selectedRestaurant = useAppSelector(state => state.restaurant.selected);
     const [showMercadoPago, setShowMercadoPago] = useState(false);
     const [checkoutUrl, setCheckoutUrl] = useState('');
     const [loading, setLoading] = useState(false);
@@ -170,16 +172,47 @@ const CartScreen = ({ navigation }) => {
         }
     };
 
-    const handlePaymentSuccess = () => {
+    const handlePaymentSuccess = async () => {
         setShowMercadoPago(false);
-        showSuccessMessage('Pago Exitoso', `Tu pedido de $${calculateTotal().toFixed(2)} ha sido confirmado`);
-        setTimeout(() => {
+        const total = calculateTotal();
+        const itemsSnapshot = [...cartItems];
+
+        const orderItems = itemsSnapshot.map(item => ({
+            menu_item_id: item.id,
+            nombre_item: item.name,
+            precio_unitario: item.price,
+            cantidad: item.quantity,
+            ingredientes_removidos: item.removedIngredients || [],
+        }));
+
+        if (!selectedRestaurant?.id) {
+            showErrorMessage('Error', 'No se pudo identificar el restaurante. Volvé al menú y reintentá.');
+            return;
+        }
+
+        try {
+            const res = await API.orders.create(
+                selectedRestaurant.id,
+                orderItems,
+                'Dirección registrada',
+                ''
+            );
+
+            if (!res.success) {
+                showErrorMessage('Error al crear pedido', res.message || 'Intentá de nuevo');
+                return;
+            }
+
             dispatch(clearCart());
+
             navigation.navigate('OrderConfirmation', {
-                orderTotal: calculateTotal(),
-                orderItems: cartItems
+                orderId: res.order?.id,
+                orderTotal: total,
+                orderItems: itemsSnapshot,
             });
-        }, 2000);
+        } catch (err) {
+            showErrorMessage('Error de conexión', 'No se pudo crear el pedido. Revisá tu conexión.');
+        }
     };
 
     const handlePaymentFailure = () => {

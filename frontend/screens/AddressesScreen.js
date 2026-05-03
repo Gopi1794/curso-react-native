@@ -9,30 +9,25 @@ import {
     TextInput,
     Alert,
     ActivityIndicator,
-    Image
+    ScrollView,
 } from 'react-native';
-// ↓↓↓ IMPORT CORRECTO DE REACT-NATIVE-MAPS ↓↓↓
 import MapView, { Marker, UrlTile } from 'react-native-maps';
 import AppHeader from '../components/common/AppHeader';
 import InstructionBanner from '../components/common/InstructionBanner';
 import { Ionicons } from '@expo/vector-icons';
 import { showSuccessMessage } from '../components/FlashMessageWrapper';
 import { Swipeable } from 'react-native-gesture-handler';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
-
-const STORAGE_KEY = 'user_addresses';
+import api from '../services/api';
 
 export default function AddressesScreen({ navigation }) {
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
-    const [editing, setEditing] = useState(null);
     const [label, setLabel] = useState('');
     const [details, setDetails] = useState('');
     const [coords, setCoords] = useState(null);
     const [isDefault, setIsDefault] = useState(false);
-    const [tempCoords, setTempCoords] = useState(null); // para seleccionar en el mapa dentro del modal
 
     const [search, setSearch] = useState('');
 
@@ -42,9 +37,21 @@ export default function AddressesScreen({ navigation }) {
 
     const loadAddresses = async () => {
         try {
-            const raw = await AsyncStorage.getItem(STORAGE_KEY);
-            const list = raw ? JSON.parse(raw) : [];
-            setAddresses(list);
+            const res = await api.users.getAddresses();
+            if (res.success) {
+                // Mapear columnas DB → estado local
+                setAddresses(res.addresses.map(a => ({
+                    id: String(a.id),
+                    label: a.etiqueta,
+                    details: a.direccion,
+                    coords: (a.latitud && a.longitud)
+                        ? { latitude: parseFloat(a.latitud), longitude: parseFloat(a.longitud) }
+                        : null,
+                    isDefault: a.es_principal,
+                })));
+            } else {
+                Alert.alert('Error', res.message || 'No se pudieron cargar las direcciones');
+            }
         } catch (e) {
             console.error('Error loading addresses', e);
             Alert.alert('Error', 'No se pudieron cargar las direcciones');
@@ -53,27 +60,13 @@ export default function AddressesScreen({ navigation }) {
         }
     };
 
-    const saveAddresses = async (list) => {
-        try {
-            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-            setAddresses(list);
-        } catch (e) {
-            console.error('Error saving addresses', e);
-            Alert.alert('Error', 'No se pudieron guardar las direcciones');
-        }
-    };
-
     const openAdd = () => {
-        setEditing(null);
         setLabel('');
         setDetails('');
         setCoords(null);
-        setTempCoords(null);
         setIsDefault(false);
         setModalVisible(true);
     };
-
-    // Edit option removed — editing via inline UI disabled
 
     const handleDelete = (id) => {
         Alert.alert('Eliminar', '¿Eliminar esta dirección?', [
@@ -81,38 +74,56 @@ export default function AddressesScreen({ navigation }) {
             {
                 text: 'Eliminar',
                 style: 'destructive',
-                onPress: () => {
-                    const filtered = addresses.filter(a => a.id !== id);
-                    saveAddresses(filtered);
+                onPress: async () => {
                     try {
-                        showSuccessMessage('Dirección eliminada');
-                    } catch (e) { /* noop if flash message not configured */ }
+                        const res = await api.users.deleteAddress(id);
+                        if (res.success) {
+                            setAddresses(prev => prev.filter(a => a.id !== id));
+                            showSuccessMessage('Dirección eliminada');
+                        } else {
+                            Alert.alert('Error', res.message || 'No se pudo eliminar');
+                        }
+                    } catch (e) {
+                        console.error('Error deleting address', e);
+                        Alert.alert('Error', 'No se pudo eliminar la dirección');
+                    }
                 }
             }
         ]);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!label.trim()) {
             Alert.alert('Validación', 'Ingresa un nombre para la dirección');
             return;
         }
-
-        // Si se marca como predeterminada, limpiar otras predeterminadas
-        const clearDefault = (list) => list.map(x => ({ ...x, isDefault: false }));
-
-        if (editing) {
-            let updated = addresses.map(a => a.id === editing.id ? { ...a, label, details, coords, isDefault } : a);
-            if (isDefault) updated = clearDefault(updated).map(a => a.id === editing.id ? { ...a, isDefault: true } : a);
-            saveAddresses(updated);
-        } else {
-            let newItem = { id: Date.now().toString(), label, details, coords, isDefault };
-            let list = [newItem, ...addresses];
-            if (isDefault) list = clearDefault(list).map(a => a.id === newItem.id ? { ...a, isDefault: true } : a);
-            saveAddresses(list);
+        if (!details.trim()) {
+            Alert.alert('Validación', 'Ingresa una dirección');
+            return;
         }
 
-        setModalVisible(false);
+        try {
+            const payload = {
+                etiqueta: label.trim(),
+                direccion: details.trim(),
+                ciudad: '',
+                latitud: coords ? coords.latitude : null,
+                longitud: coords ? coords.longitude : null,
+                es_principal: isDefault,
+            };
+
+            const res = await api.users.createAddress(payload);
+            if (res.success) {
+                setModalVisible(false);
+                loadAddresses();
+                showSuccessMessage('Dirección guardada');
+            } else {
+                Alert.alert('Error', res.message || 'No se pudo guardar');
+            }
+        } catch (e) {
+            console.error('Error saving address', e);
+            Alert.alert('Error', 'No se pudo guardar la dirección');
+        }
     };
 
     const renderRightActions = (id) => (
@@ -249,24 +260,39 @@ export default function AddressesScreen({ navigation }) {
 
             <Modal visible={modalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalWrapper}>
-                    <View style={styles.modal}>
-                        <Text style={styles.modalTitle}>{editing ? 'Editar Dirección' : 'Agregar Dirección'}</Text>
-                        <TextInput placeholder="Nombre (ej. Casa)" value={label} onChangeText={setLabel} style={styles.input} />
-                        <TextInput placeholder="Detalles / Dirección" value={details} onChangeText={setDetails} style={[styles.input, { height: 80 }]} multiline />
-                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 8 }}>
+                    <ScrollView contentContainerStyle={styles.modal} keyboardShouldPersistTaps="handled">
+                        <Text style={styles.modalTitle}>Agregar Dirección</Text>
+
+                        <TextInput
+                            placeholder="Nombre (ej. Casa)"
+                            value={label}
+                            onChangeText={setLabel}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Detalles / Dirección"
+                            value={details}
+                            onChangeText={setDetails}
+                            style={[styles.input, { height: 80 }]}
+                            multiline
+                        />
+
+                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
                             <TouchableOpacity style={styles.smallButton} onPress={useCurrentLocation}>
-                                <Text style={styles.smallButtonText}>Usar ubicación actual</Text>
+                                <Ionicons name="locate" size={14} color="#fff" />
+                                <Text style={[styles.smallButtonText, { marginLeft: 4 }]}>Mi ubicación</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.smallButton, { backgroundColor: '#ccc' }]} onPress={() => { setCoords(null); setDetails(''); }}>
                                 <Text style={[styles.smallButtonText, { color: '#333' }]}>Limpiar</Text>
                             </TouchableOpacity>
                         </View>
 
-                        {/* Selector de ubicación embebido en el modal */}
-                        <Text style={{ marginBottom: 6 }}>Toca en el mapa para seleccionar la ubicación:</Text>
+                        <Text style={{ marginBottom: 6, color: '#555', fontSize: 13 }}>
+                            {coords ? '📍 Ubicación seleccionada — tocá para mover el pin' : 'Tocá en el mapa para marcar la ubicación:'}
+                        </Text>
                         <View style={styles.modalMapWrapper}>
                             <MapView
-                                style={[StyleSheet.absoluteFillObject]}
+                                style={StyleSheet.absoluteFillObject}
                                 initialRegion={coords ? {
                                     latitude: coords.latitude,
                                     longitude: coords.longitude,
@@ -278,63 +304,49 @@ export default function AddressesScreen({ navigation }) {
                                     latitudeDelta: 1,
                                     longitudeDelta: 1,
                                 }}
-                                onPress={(e) => {
+                                onPress={async (e) => {
                                     const { latitude, longitude } = e.nativeEvent.coordinate;
-                                    setTempCoords({ latitude, longitude });
-                                }}
-                            >
-                                <UrlTile urlTemplate="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png" maximumZ={19} />
-                                {tempCoords && <Marker coordinate={tempCoords} pinColor="#ff8000" />}
-                            </MapView>
-                        </View>
-
-                        <View style={{ flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 6 }}>
-                            <TouchableOpacity
-                                style={styles.smallButton}
-                                onPress={async () => {
-                                    if (!tempCoords) {
-                                        Alert.alert('Selecciona una ubicación', 'Toca en el mapa para elegir la ubicación');
-                                        return;
-                                    }
-                                    setCoords(tempCoords);
+                                    setCoords({ latitude, longitude });
                                     try {
-                                        const rev = await Location.reverseGeocodeAsync(tempCoords);
+                                        const rev = await Location.reverseGeocodeAsync({ latitude, longitude });
                                         if (rev && rev.length) {
                                             const place = rev[0];
                                             const addressString = [place.name, place.street, place.city, place.region, place.postalCode]
                                                 .filter(Boolean)
                                                 .join(', ');
-                                            setDetails(addressString || `${tempCoords.latitude.toFixed(5)}, ${tempCoords.longitude.toFixed(5)}`);
+                                            setDetails(addressString || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
                                         } else {
-                                            setDetails(`${tempCoords.latitude.toFixed(5)}, ${tempCoords.longitude.toFixed(5)}`);
+                                            setDetails(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
                                         }
-                                    } catch (e) {
-                                        console.warn('Reverse geocode failed', e);
-                                        setDetails(`${tempCoords.latitude.toFixed(5)}, ${tempCoords.longitude.toFixed(5)}`);
+                                    } catch {
+                                        setDetails(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
                                     }
                                 }}
                             >
-                                <Text style={styles.smallButtonText}>Usar ubicación seleccionada</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.smallButton, { backgroundColor: '#eee' }]} onPress={() => setTempCoords(null)}>
-                                <Text style={[styles.smallButtonText, { color: '#333' }]}>Cancelar selección</Text>
-                            </TouchableOpacity>
+                                <UrlTile urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maximumZ={19} />
+                                {coords && <Marker coordinate={coords} pinColor="#ff8000" />}
+                            </MapView>
                         </View>
 
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                            <TouchableOpacity onPress={() => setIsDefault(!isDefault)} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Ionicons name={isDefault ? 'star' : 'star-outline'} size={18} color={isDefault ? '#f1c40f' : '#666'} />
-                                <Text style={{ marginLeft: 8 }}>{isDefault ? 'Predeterminada' : 'Marcar como predeterminada'}</Text>
-                            </TouchableOpacity>
-
-
-                        </View>
+                        <TouchableOpacity
+                            onPress={() => setIsDefault(!isDefault)}
+                            style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 4 }}
+                        >
+                            <Ionicons name={isDefault ? 'star' : 'star-outline'} size={18} color={isDefault ? '#f1c40f' : '#666'} />
+                            <Text style={{ marginLeft: 8, color: '#333' }}>
+                                {isDefault ? 'Predeterminada' : 'Marcar como predeterminada'}
+                            </Text>
+                        </TouchableOpacity>
 
                         <View style={styles.modalActions}>
-                            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}><Text>Cancelar</Text></TouchableOpacity>
-                            <TouchableOpacity onPress={handleSave} style={styles.saveButton}><Text style={{ color: 'white' }}>Guardar</Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
+                                <Text>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+                                <Text style={{ color: 'white' }}>Guardar</Text>
+                            </TouchableOpacity>
                         </View>
-                    </View>
+                    </ScrollView>
                 </View>
             </Modal>
         </View>
@@ -353,7 +365,7 @@ const styles = StyleSheet.create({
 
     addButton: { position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: '#ff8000', alignItems: 'center', justifyContent: 'center', elevation: 6 },
     modalWrapper: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 20 },
-    modal: { backgroundColor: 'white', borderRadius: 12, padding: 16 },
+    modal: { backgroundColor: 'white', borderRadius: 12, padding: 16, flexGrow: 1 },
     modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
     input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, marginBottom: 10 },
     smallButton: { backgroundColor: '#ff8000', padding: 10, borderRadius: 8, flex: 1, alignItems: 'center', justifyContent: 'center' },

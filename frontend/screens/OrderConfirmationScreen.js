@@ -7,48 +7,28 @@ import {
     TouchableOpacity,
     StyleSheet,
     StatusBar,
-    Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Lottie from 'lottie-react-native';
 
 const OrderConfirmationScreen = ({ route, navigation }) => {
-    const { orderTotal, orderItems } = route.params || {};
+    const { orderTotal, orderItems, orderId } = route.params || {};
 
     const handleBackToHome = () => {
         navigation.navigate('Home');
     };
 
     const handleViewOrders = () => {
-        navigation.navigate('Orders');
+        if (orderId) {
+            navigation.navigate('Orders', {
+                screen: 'OrderDetail',
+                params: { orderId },
+            });
+        } else {
+            navigation.navigate('Orders');
+        }
     };
-    const simulatePayment = () => {
-        Alert.alert(
-            'Confirmar Pedido',
-            `¿Proceder con el pago de $${calculateTotal().toFixed(2)}?`,
-            [
-                {
-                    text: 'Cancelar',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Confirmar Pago',
-                    onPress: () => {
-                        // Navegar a la pantalla de confirmación
-                        navigation.navigate('OrderConfirmation', {
-                            orderTotal: calculateTotal(),
-                            orderItems: cartItems
-                        });
-
-                        // Limpiar el carrito después de navegar
-                        setCartItems([]);
-                    }
-                }
-            ]
-        );
-    };
-
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -88,7 +68,7 @@ const OrderConfirmationScreen = ({ route, navigation }) => {
                     </Text>
 
                     <View style={styles.orderSummary}>
-                        <Text style={styles.orderNumber}>Orden #{(Math.random() * 10000).toFixed(0)}</Text>
+                        <Text style={styles.orderNumber}>Orden #{orderId ?? '—'}</Text>
                         <Text style={styles.orderTotal}>Total: ${orderTotal?.toFixed(2) || '0.00'}</Text>
                     </View>
                 </View>

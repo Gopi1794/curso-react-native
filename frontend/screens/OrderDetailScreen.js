@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import API from '../services/api';
+import ReviewBottomSheet from '../components/ReviewBottomSheet';
 
 const ORANGE = '#ff8700';
 
@@ -119,8 +120,9 @@ function AvatarInitials({ name }) {
 }
 
 // ── Card del repartidor ───────────────────────────────────
-function DeliveryCard({ estado }) {
+function DeliveryCard({ estado, onViewMap }) {
   const showActions = ['preparando', 'en_camino'].includes(estado);
+  const showMapBtn  = ['preparando', 'en_camino'].includes(estado);
   const repartidor  = { nombre: 'Carlos Méndez', rating: '4.8' };
   const subtitle    = {
     preparando: 'Pronto saldrá a entregar',
@@ -151,6 +153,13 @@ function DeliveryCard({ estado }) {
           </View>
         )}
       </View>
+
+      {showMapBtn && (
+        <TouchableOpacity style={styles.mapBtn} onPress={onViewMap}>
+          <Ionicons name="map-outline" size={15} color="#fff" />
+          <Text style={styles.mapBtnText}>Ver en mapa</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -204,6 +213,8 @@ export default function OrderDetailScreen({ route, navigation }) {
   const [error,        setError]        = useState(null);
   const [headerH,      setHeaderH]      = useState((StatusBar.currentHeight || 40) + 90);
   const [navigatingId, setNavigatingId] = useState(null);
+  const [showReview,   setShowReview]   = useState(false);
+  const [reviewDone,   setReviewDone]   = useState(false);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -308,7 +319,12 @@ export default function OrderDetailScreen({ route, navigation }) {
             )}
           </View>
 
-          {showDelivery && <DeliveryCard estado={order.estado} />}
+          {showDelivery && (
+            <DeliveryCard
+              estado={order.estado}
+              onViewMap={() => navigation.navigate('OrderTracking', { orderId: order.id })}
+            />
+          )}
 
           {/* Resumen */}
           <View style={styles.card}>
@@ -370,8 +386,38 @@ export default function OrderDetailScreen({ route, navigation }) {
           </View>
 
           {showTip && <TipSection />}
+
+          {order.estado === 'entregado' && (
+            <View style={styles.card}>
+              {reviewDone ? (
+                <View style={styles.reviewDoneRow}>
+                  <Ionicons name="checkmark-circle" size={22} color="#34C759" />
+                  <Text style={styles.reviewDoneText}>Ya calificaste este pedido</Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.sectionTitle}>¿Cómo estuvo tu pedido?</Text>
+                  <Text style={styles.reviewSubtitle}>Contanos tu experiencia con cada plato</Text>
+                  <TouchableOpacity
+                    style={styles.reviewBtn}
+                    onPress={() => setShowReview(true)}
+                  >
+                    <Ionicons name="star-outline" size={15} color="#fff" />
+                    <Text style={styles.reviewBtnText}>Calificar pedido</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
         </ScrollView>
       )}
+
+      <ReviewBottomSheet
+        visible={showReview}
+        onClose={() => setShowReview(false)}
+        onSubmit={() => { setShowReview(false); setReviewDone(true); }}
+        items={order?.items || []}
+      />
     </View>
   );
 }
@@ -487,4 +533,63 @@ const styles = StyleSheet.create({
     justifyContent: 'center', paddingVertical: 8,
   },
   tipConfirmedText: { fontFamily: 'Poppins-SemiBold', color: ORANGE, fontSize: 14 },
+
+  // Reseña
+  reviewSubtitle: {
+    fontFamily: 'Poppins-Regular',
+    color: '#888',
+    fontSize: 12,
+    marginTop: -6,
+    marginBottom: 14,
+  },
+  reviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: ORANGE,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    alignSelf: 'flex-start',
+    shadowColor: ORANGE,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  reviewBtnText: {
+    fontFamily: 'Poppins-SemiBold',
+    color: '#fff',
+    fontSize: 14,
+  },
+  reviewDoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  reviewDoneText: {
+    fontFamily: 'Poppins-SemiBold',
+    color: '#34C759',
+    fontSize: 14,
+  },
+
+  // Botón mapa
+  mapBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    backgroundColor: ORANGE,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  mapBtnText: {
+    fontFamily: 'Poppins-SemiBold',
+    color: '#fff',
+    fontSize: 13,
+  },
 });

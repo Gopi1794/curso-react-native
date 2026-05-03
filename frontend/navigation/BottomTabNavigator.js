@@ -37,7 +37,7 @@ export default function BottomTabNavigator() {
                 component={FavoritesStack}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon name={focused ? 'storefront' : 'storefront-outline'} focused={focused} />
+                        <TabIcon name={focused ? 'heart' : 'heart-outline'} focused={focused} />
                     ),
                 }}
             />
@@ -46,7 +46,7 @@ export default function BottomTabNavigator() {
                 component={OrdersStack}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon name={focused ? 'share-social' : 'share-social-outline'} focused={focused} />
+                        <TabIcon name={focused ? 'receipt' : 'receipt-outline'} focused={focused} />
                     ),
                 }}
             />
@@ -67,32 +67,40 @@ const styles = StyleSheet.create({
     tabBar: {
         position: 'absolute',
         bottom: 28,
+        marginHorizontal: 80,
+        paddingLeft: 20,
         left: 20,
         right: 20,
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+        borderColor: '#ff8000',
+        borderWidth: 2,
         borderRadius: 40,
         height: 74,
+        width: 300,
         borderTopWidth: 0,
         elevation: 12,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 4, height: 4 },
         shadowOpacity: 0.12,
         shadowRadius: 16,
-        paddingBottom: 0,
-        paddingHorizontal: 8,
+
     },
     iconActive: {
         position: 'absolute',
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 64,
+        height: 64,
+        top: 0,
+        borderRadius: 50,
         backgroundColor: '#ff8700',
         alignItems: 'center',
         justifyContent: 'center',
     },
     iconInactive: {
+        position: 'absolute',
+        color: '#ff8700',
         width: 44,
         height: 44,
+        top: 8,
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -1,132 +1,150 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
-import { View, Text, Image, StyleSheet, FlatList, Dimensions, TouchableOpacity, Animated } from "react-native";
-import { ActionButton } from './ActionButton';
-
-const { width: screenWidth } = Dimensions.get('window');
-
+import React, { useRef, useCallback, useMemo, useState } from "react";
+import {
+    View, Text, Image, StyleSheet,
+    FlatList, Dimensions, TouchableOpacity, Animated,
+} from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { imageMap } from '../assets/utils/imageMap';
 
+const { width: screenWidth } = Dimensions.get('window');
+const CARD_WIDTH  = screenWidth - 32;
+const CARD_HEIGHT = 165;
+const LEFT_W      = CARD_WIDTH * 0.50;   // ~50 % izquierda
+
 const toImageSource = (val) => {
+    if (!val) return null;
     if (typeof val === 'string') return { uri: val };
-    if (val && val.uri) return { uri: val.uri };
+    if (val.uri) return { uri: val.uri };
     return null;
 };
 
-// Componente memoizado para cada sugerencia
-const SugerenciaItem = React.memo(({ sugerencia, onPress }) => {
+/* Decoración: tres rayitas diagonales violeta tipo "destello" */
+const SparkleLines = () => (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <View style={[styles.stroke, { top: 28, left: 14, height: 18, opacity: 0.75 }]} />
+        <View style={[styles.stroke, { top: 48, left: 24, height: 12, opacity: 0.45 }]} />
+        <View style={[styles.stroke, { top: 36, left:  6, height:  9, opacity: 0.30 }]} />
+    </View>
+);
+
+const SugerenciaCard = React.memo(({ item, onPress }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
-    const handlePressIn = () => {
-        Animated.spring(scaleAnim, {
-            toValue: 0.88,
-            tension: 100,
-            friction: 5,
-            useNativeDriver: true,
-        }).start();
-    };
+    const pressIn  = () => Animated.spring(scaleAnim, { toValue: 0.97, tension: 120, friction: 6, useNativeDriver: true }).start();
+    const pressOut = () => Animated.spring(scaleAnim, { toValue: 1,    tension: 50,  friction: 4, useNativeDriver: true }).start();
 
-    const handlePressOut = () => {
-        Animated.spring(scaleAnim, {
-            toValue: 1,
-            tension: 40,
-            friction: 3,
-            useNativeDriver: true,
-        }).start();
-    };
+    const name        = (item.name        || '').toUpperCase();
+    const subtitle    = item.descriptionText || item.price || '';
 
     return (
-        <Animated.View style={[styles.sugerenciaItemContainer, { transform: [{ scale: scaleAnim }] }]}>
+        <Animated.View style={[styles.cardWrapper, { transform: [{ scale: scaleAnim }] }]}>
             <TouchableOpacity
-                style={styles.sugerenciaItemInner}
-                onPress={onPress}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
                 activeOpacity={1}
-                accessibilityLabel={`Ver ${sugerencia.name}`}
-                accessibilityRole="button"
+                onPress={onPress}
+                onPressIn={pressIn}
+                onPressOut={pressOut}
+                style={styles.card}
             >
-                <Image
-                    style={styles.sugerenciaImage}
-                    source={sugerencia.image}
-                    resizeMode="cover"
-                />
-
-                <View style={styles.sugerenciaCard}>
-                    <Text style={styles.sugerenciaText} numberOfLines={2}>
-                        {sugerencia.name}
-                    </Text>
-                    <View style={styles.sugerenciaButtonDecor}>
-                        <ActionButton
-                            onPress={onPress}
-                            size="medium"
-                            variant="suggestion"
-                            accessibilityLabel=""
-                            style={styles.sugerenciaButton}
-                        />
+                {/* ════ PANEL IZQUIERDO – violeta con curva ════ */}
+                <LinearGradient
+                    colors={['#8B6BBF', '#7B5EA7', '#6A4E96']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.leftPanel}
+                >
+                    {/* Badge pill */}
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>Sugerencia</Text>
                     </View>
+
+                    {/* Subtítulo */}
+                    <Text style={styles.subtitle} numberOfLines={1}>
+                        Plato del día
+                    </Text>
+
+                    {/* Nombre grande */}
+                    <Text style={styles.foodName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+                        {name}
+                    </Text>
+
+                    {/* Línea naranja */}
+                    <View style={styles.accentLine} />
+
+                    {/* Descripción / precio */}
+                    <Text style={styles.descText} numberOfLines={2}>
+                        {subtitle}
+                    </Text>
+                </LinearGradient>
+
+                {/* ════ PANEL DERECHO – crema con imagen ════ */}
+                <View style={styles.rightPanel}>
+                    {/* Rayitas decorativas */}
+                    <SparkleLines />
+
+                    {/* Imagen del plato — sobresale arriba */}
+                    {item.image && (
+                        <Image
+                            source={item.image}
+                            style={styles.foodImage}
+                            resizeMode="contain"
+                        />
+                    )}
+
+                    {/* Botón flecha naranja diagonal ↗ */}
+                    <TouchableOpacity style={styles.arrowBtn} onPress={onPress} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                        <View style={{ transform: [{ rotate: '-45deg' }] }}>
+                            <Ionicons name="arrow-forward" size={19} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
                 </View>
             </TouchableOpacity>
         </Animated.View>
     );
 });
 
-export const ListSugerencias = ({ navigation, menuItems = [] }) => {
-    const flatListRef = useRef(null);
-    const [activeIndex, setActiveIndex] = useState(0);
+/* ─── Claves de los 3 platos sugeridos ─── */
+const SUGERENCIA_KEYS = ['imgBurger5', 'imgEmplatado4', 'imgHelado9'];
 
-    // 3 platos fijos que tienen carrusel de imágenes (sufijos _0, _1, etc.)
-    const SUGERENCIA_KEYS = ['imgBurger5', 'imgEmplatado4', 'imgHelado9'];
+export const ListSugerencias = ({ navigation, menuItems = [] }) => {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const flatListRef = useRef(null);
 
     const sugerenciasData = useMemo(() => {
         return SUGERENCIA_KEYS
             .map(key => {
                 const item = menuItems.find(m => {
-                    const mKey = Array.isArray(m.imageKey) ? m.imageKey[0] : m.imageKey;
-                    return mKey === key;
+                    const k = Array.isArray(m.imageKey) ? m.imageKey[0] : m.imageKey;
+                    return k === key;
                 });
                 if (!item) return null;
-                return {
-                    ...item,
-                    image: toImageSource(imageMap[key]),
-                };
+                return { ...item, image: toImageSource(imageMap[key]) };
             })
             .filter(Boolean);
     }, [menuItems]);
 
     const handlePress = useCallback((foodItem) => {
-        if (navigation && foodItem.id) {
-            navigation.navigate('FoodDetail', { foodItem });
-        }
+        navigation?.navigate('FoodDetail', { foodItem });
     }, [navigation]);
 
-    const handleScroll = useCallback((event) => {
-        const contentOffsetX = event.nativeEvent.contentOffset.x;
-        const index = Math.round(contentOffsetX / (screenWidth - 40));
-        setActiveIndex(index);
+    const handleScroll = useCallback((e) => {
+        setActiveIndex(Math.round(e.nativeEvent.contentOffset.x / (CARD_WIDTH + 14)));
     }, []);
 
-    const renderSugerencia = useCallback(({ item }) => (
-        <SugerenciaItem
-            sugerencia={item}
-            onPress={() => handlePress(item)}
-        />
+    const renderItem = useCallback(({ item }) => (
+        <SugerenciaCard item={item} onPress={() => handlePress(item)} />
     ), [handlePress]);
 
-    if (sugerenciasData.length === 0) return null;
+    if (!sugerenciasData.length) return null;
 
     return (
-        <View style={styles.sugerenciasSection}>
-            <View style={styles.sugerenciasHeader}>
-                <Text style={styles.sugerenciasTitle}>SUGERENCIAS</Text>
-                <View style={styles.sugerenciasIndicators}>
-                    {sugerenciasData.map((_, index) => (
-                        <View
-                            key={index}
-                            style={[
-                                styles.indicator,
-                                activeIndex === index && styles.indicatorActive
-                            ]}
-                        />
+        <View style={styles.section}>
+            {/* Encabezado */}
+            <View style={styles.header}>
+                <Text style={styles.sectionTitle}>SUGERENCIAS</Text>
+                <View style={styles.dots}>
+                    {sugerenciasData.map((_, i) => (
+                        <View key={i} style={[styles.dot, activeIndex === i && styles.dotActive]} />
                     ))}
                 </View>
             </View>
@@ -134,16 +152,15 @@ export const ListSugerencias = ({ navigation, menuItems = [] }) => {
             <FlatList
                 ref={flatListRef}
                 data={sugerenciasData}
-                renderItem={renderSugerencia}
+                renderItem={renderItem}
                 keyExtractor={item => item.id.toString()}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollViewContent}
+                contentContainerStyle={styles.listPad}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 decelerationRate="fast"
-                snapToInterval={screenWidth - 40}
+                snapToInterval={CARD_WIDTH + 14}
                 snapToAlignment="start"
             />
         </View>
@@ -151,95 +168,158 @@ export const ListSugerencias = ({ navigation, menuItems = [] }) => {
 };
 
 const styles = StyleSheet.create({
-    sugerenciasSection: {
-        position: 'relative',
-        backgroundColor: 'transparent',
-        height: 180,
+    section: {
+        height: CARD_HEIGHT + 52,
     },
-    sugerenciasHeader: {
+
+    /* Encabezado */
+    header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingHorizontal: 30,
-        marginBottom: 15,
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        marginBottom: 12,
     },
-    sugerenciasTitle: {
+    sectionTitle: {
         fontFamily: 'Poppins-Bold',
-        fontWeight: 'bold',
-        color: '#ff8000',
         fontSize: 16,
+        color: '#ff8700',
     },
-    sugerenciasIndicators: {
-        flexDirection: 'row',
-        gap: 10,
-    },
-    indicator: {
-        width: 8,
-        height: 8,
-        borderRadius: 50,
+    dots: { flexDirection: 'row', gap: 7 },
+    dot: {
+        width: 8, height: 8, borderRadius: 4,
         backgroundColor: '#E0E0E0',
     },
-    indicatorActive: {
-        backgroundColor: '#ff8700',
-        borderColor: '#ffff',
-        borderWidth: 2,
-        width: 16,
+    dotActive: {
+        width: 20, backgroundColor: '#ff8700',
     },
-    scrollView: {
-        height: 140,
+
+    /* Lista */
+    listPad: { paddingHorizontal: 16 },
+
+    /* Card wrapper — sombra aquí para que no recorte */
+    cardWrapper: {
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+        marginRight: 14,
+        borderRadius: 24,
+        shadowColor: '#4A3470',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.22,
+        shadowRadius: 16,
+        elevation: 8,
     },
-    scrollViewContent: {
-        paddingHorizontal: 10,
-    },
-    sugerenciaItemContainer: {
-        width: screenWidth - 50,
-        height: 120,
-        marginRight: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    sugerenciaItemInner: {
+
+    /* Card interior */
+    card: {
         width: '100%',
         height: '100%',
         flexDirection: 'row',
+        borderRadius: 24,
+        overflow: 'hidden',
+        backgroundColor: '#F5EFE6',   // fallback crema visible antes de que renderice
+    },
+
+    /* ── Panel izquierdo violeta ── */
+    leftPanel: {
+        width: LEFT_W + 30,           // un poco más ancho para que la curva no corte el texto
+        height: '100%',
+        borderTopRightRadius: 110,
+        borderBottomRightRadius: 110,
+        paddingLeft: 20,
+        paddingRight: 36,             // padding extra por la curva
+        paddingVertical: 18,
+        justifyContent: 'center',
+        zIndex: 2,
+    },
+
+    badge: {
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(255,255,255,0.22)',
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        marginBottom: 6,
+    },
+    badgeText: {
+        color: '#fff',
+        fontSize: 11,
+        fontFamily: 'Poppins-SemiBold',
+    },
+
+    subtitle: {
+        color: 'rgba(255,255,255,0.68)',
+        fontSize: 11,
+        fontFamily: 'Poppins-Regular',
+        marginBottom: 3,
+    },
+
+    foodName: {
+        color: '#fff',
+        fontSize: 20,
+        fontFamily: 'Poppins-Bold',
+        lineHeight: 24,
+        letterSpacing: 0.3,
+        marginBottom: 7,
+    },
+
+    accentLine: {
+        width: 30,
+        height: 3,
+        backgroundColor: '#ff8700',
+        borderRadius: 2,
+        marginBottom: 7,
+    },
+
+    descText: {
+        color: 'rgba(255,255,255,0.72)',
+        fontSize: 10,
+        fontFamily: 'Poppins-Regular',
+        lineHeight: 14,
+    },
+
+    /* ── Panel derecho crema ── */
+    rightPanel: {
+        flex: 1,
+        backgroundColor: '#F5EFE6',
+        overflow: 'visible',          // imagen puede salir un poco
+        justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
     },
-    sugerenciaImage: {
+
+    foodImage: {
+        width: '110%',
+        height: '115%',               // crece un toque para efecto de "desborde"
+        marginTop: -10,
+    },
+
+    /* Rayitas decorativas tipo destello */
+    stroke: {
         position: 'absolute',
-        width: 120,
-        height: 120,
-        zIndex: 1,
+        width: 3,
+        borderRadius: 2,
+        backgroundColor: '#9B7EC8',
+        transform: [{ rotate: '15deg' }],
     },
-    sugerenciaCard: {
-        flex: 1,
-        height: 80,
-        backgroundColor: 'rgba(217, 217, 217, 1)',
+
+    /* Botón naranja ↗ */
+    arrowBtn: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        width: 40,
+        height: 40,
         borderRadius: 20,
-        marginLeft: 80,
-        marginRight: 0,
-        flexDirection: 'row',
+        backgroundColor: '#ff8700',
+        justifyContent: 'center',
         alignItems: 'center',
-        paddingLeft: 50,
-        paddingRight: 8,
-        shadowColor: '#FF8000',
+        shadowColor: '#ff8700',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 12,
-        elevation: 4,
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 6,
     },
-    sugerenciaText: {
-        flex: 1,
-        textShadowColor: 'rgba(0, 0, 0, 0.25)',
-        fontFamily: 'Poppins-Bold',
-        fontWeight: 'bold',
-        color: 'gray',
-        fontSize: 13,
-        lineHeight: 18,
-    },
-    sugerenciaButtonDecor: {
-        marginLeft: 8,
-    },
-    sugerenciaButton: {},
 });
 
 export default ListSugerencias;
