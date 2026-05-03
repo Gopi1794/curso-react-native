@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Store
 import { store } from './store';
 import { Provider } from 'react-redux';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Navegación
 import AppNavigator from './navigation/AppNavigator';
@@ -18,52 +19,48 @@ import AppNavigator from './navigation/AppNavigator';
 // Componentes
 import ComponenteLogin from './components/LoginForm';
 import ComponenteRegister from './components/RegisterForm';
-import ForgotPasswordForm from './components/ForgotPasswordForm';
 import FlashMessageWrapper from './components/FlashMessageWrapper';
 import AnimatedSplashScreen from './screens/AnimatedSplashScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import SelectRestaurantScreen from './screens/SelectRestaurantScreen';
-import VerifyEmailScreen from './screens/VerifyEmailScreen';
+import { LinearGradient } from 'expo-linear-gradient';
+
 import API from './services/api';
+import VerifyEmailScreen from './screens/VerifyEmailScreen';
+import { useTheme } from './contexts/ThemeContext';
 
 // Pantalla de Login
 function LoginScreen() {
   const [showRegister, setShowRegister] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [showVerify, setShowVerify] = useState(false);
-  const [verifyEmail, setVerifyEmail] = useState('');
-
-  const handleBackToLogin = () => {
-    setShowRegister(false);
-    setShowForgotPassword(false);
-    setShowVerify(false);
-  };
-
-  const handleVerifyEmail = (email) => {
-    setVerifyEmail(email);
-    setShowRegister(false);
-    setShowVerify(true);
-  };
+  const [verifyEmail, setVerifyEmail] = useState(null);
 
   return (
     <View style={styles.container}>
+      <LinearGradient
+        colors={['#c300ff', '#ff8000']}
+        style={styles.backgroundGradient}
+      />
+
       <View style={styles.formOverlay}>
-        {showVerify ? (
-          <VerifyEmailScreen email={verifyEmail} onBack={handleBackToLogin} />
+        {verifyEmail ? (
+          <VerifyEmailScreen
+            route={{ params: { email: verifyEmail } }}
+            navigation={{
+              goBack: () => setVerifyEmail(null),
+            }}
+          />
         ) : showRegister ? (
-          <ComponenteRegister onBackToLogin={handleBackToLogin} onVerifyEmail={handleVerifyEmail} />
-        ) : showForgotPassword ? (
-          <ForgotPasswordForm onBackToLogin={handleBackToLogin} />
+          <ComponenteRegister
+            onBackToLogin={() => setShowRegister(false)}
+            onVerifyEmail={(email) => setVerifyEmail(email)}
+          />
         ) : (
           <ComponenteLogin
             onShowRegister={() => setShowRegister(true)}
-            onForgotPassword={() => setShowForgotPassword(true)}
-            onVerifyEmail={handleVerifyEmail}
+            onVerifyEmail={(email) => setVerifyEmail(email)}
           />
         )}
       </View>
-
-      <StatusBar style="light" hidden={true} translucent />
     </View>
   );
 }
@@ -72,10 +69,11 @@ function MainApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [firebaseReady, setFirebaseReady] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false); // ✅ NUEVO
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const isLoggedIn = useAppSelector((state) => state.user.isLoggedIn);
   const selectedRestaurant = useAppSelector((state) => state.restaurant.selected);
   const dispatch = useAppDispatch();
+  const { isDark } = useTheme();
 
   // Verificar si es la primera vez que abre la app
   useEffect(() => {
@@ -191,7 +189,7 @@ function MainApp() {
   if (isLoggedIn) {
     return (
       <NavigationContainer>
-        <StatusBar style="white" />
+        <StatusBar style={isDark ? 'light' : 'dark'} translucent />
         <AppNavigator />
         <FlashMessageWrapper />
       </NavigationContainer>
@@ -214,9 +212,11 @@ export default function App() {
 
   return (
     <Provider store={store}>
-      <PaperProvider>
-        <MainApp />
-      </PaperProvider>
+      <ThemeProvider>
+        <PaperProvider>
+          <MainApp />
+        </PaperProvider>
+      </ThemeProvider>
     </Provider>
   );
 }
@@ -224,6 +224,13 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ff8000',
+  },
+  backgroundGradient: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
   },
   formOverlay: {
     flex: 1,

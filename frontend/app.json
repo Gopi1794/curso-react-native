@@ -25,7 +25,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.tucompany.tufoodapp",
-      "versionCode": 1
+      "versionCode": 1,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDx-s7e10DunTXmOp_BmWc3eLbk8roFnxU"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",

@@ -25,5 +25,8 @@ router.put('/profile',         usersController.updateProfile);
 router.put('/change-password', usersController.changePassword);
 router.get('/stats',           usersController.getStats);
 router.post('/avatar',         upload.single('avatar'), usersController.uploadAvatar);
+router.get('/addresses',       usersController.getAddresses);
+router.post('/addresses',      usersController.createAddress);
+router.delete('/addresses/:id', usersController.deleteAddress);
 
 module.exports = router;

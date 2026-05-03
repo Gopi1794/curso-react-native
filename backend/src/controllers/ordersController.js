@@ -292,3 +292,87 @@ exports.cancelOrder = async (req, res) => {
         });
     }
 };
+
+// ── GET ORDER TRACKING ─────────────────────────────────────
+// GET /api/orders/:id/tracking
+const RESTAURANTE_COORDS = { lat: -34.6100, lng: -58.3900 };
+const DESTINO_COORDS     = { lat: -34.5980, lng: -58.3750 };
+
+exports.getTracking = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (isNaN(id)) {
+            return res.status(400).json({ success: false, message: 'ID de pedido inválido' });
+        }
+
+        const result = await db.query(
+            `SELECT p.estado, p.fecha_en_camino
+             FROM pedidos p
+             WHERE p.id = $1 AND p.usuario_id = $2`,
+            [id, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+        }
+
+        const { estado, fecha_en_camino } = result.rows[0];
+
+        const minutosTranscurridos = fecha_en_camino
+            ? (Date.now() - new Date(fecha_en_camino)) / 60000
+            : 0;
+        const progress = Math.min(minutosTranscurridos / 20, 0.95);
+
+        const repartidorLat = RESTAURANTE_COORDS.lat + (DESTINO_COORDS.lat - RESTAURANTE_COORDS.lat) * progress;
+        const repartidorLng = RESTAURANTE_COORDS.lng + (DESTINO_COORDS.lng - RESTAURANTE_COORDS.lng) * progress;
+
+        res.json({
+            success: true,
+            estado,
+            repartidor: {
+                nombre: 'Carlos Méndez',
+                rating: '4.8',
+                lat: repartidorLat,
+                lng: repartidorLng,
+            },
+            restaurante: RESTAURANTE_COORDS,
+            destino: DESTINO_COORDS,
+        });
+
+    } catch (error) {
+        console.error('Error en getTracking:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
+// ── UPDATE ORDER STATUS (demo/dev only) ────────────────────
+// PUT /api/orders/:id/status
+// Body: { "estado": "en_camino" }
+exports.updateStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { estado } = req.body;
+
+        const VALID_STATES = ['pendiente', 'preparando', 'en_camino', 'entregado', 'cancelado'];
+        if (!estado || !VALID_STATES.includes(estado)) {
+            return res.status(400).json({ success: false, message: `Estado inválido. Válidos: ${VALID_STATES.join(', ')}` });
+        }
+
+        const query = estado === 'en_camino'
+            ? `UPDATE pedidos SET estado = $1, fecha_en_camino = NOW() WHERE id = $2 RETURNING id, estado, fecha_en_camino`
+            : `UPDATE pedidos SET estado = $1 WHERE id = $2 RETURNING id, estado`;
+
+        const result = await db.query(query, [estado, id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+        }
+
+        res.json({ success: true, order: result.rows[0] });
+
+    } catch (error) {
+        console.error('Error en updateStatus:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};

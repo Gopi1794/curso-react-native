@@ -6,7 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 //   iOS simulator    : 'http://localhost:3000'
 //   Dispositivo físico: tu IP local, ej: 'http://192.168.1.100:3000'
 //   Ngrok            : 'https://xxxx.ngrok-free.dev'
-const API_BASE_URL = 'http://192.168.1.41:3000';
+const API_BASE_URL = 'http://192.168.1.37:3000';
 
 const TOKEN_KEY = 'userToken';
 
@@ -86,6 +86,15 @@ const users = {
     }),
 
     getStats: () => request('/api/users/stats'),
+
+    getAddresses: () => request('/api/users/addresses'),
+
+    createAddress: (data) => request('/api/users/addresses', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    }),
+
+    deleteAddress: (id) => request(`/api/users/addresses/${id}`, { method: 'DELETE' }),
 };
 
 // ── RESTAURANTS ───────────────────────────────────────────
@@ -120,6 +129,13 @@ const orders = {
     getById: (id) => request(`/api/orders/${id}`),
 
     cancel: (id) => request(`/api/orders/${id}/cancel`, { method: 'PUT' }),
+
+    getTracking: (id) => request(`/api/orders/${id}/tracking`),
+
+    updateStatus: (id, estado) => request(`/api/orders/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ estado }),
+    }),
 };
 
 // ── PAYMENTS ──────────────────────────────────────────────
