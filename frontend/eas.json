@@ -9,14 +9,14 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease -PnewArchEnabled=true"
+        "gradleCommand": ":app:assembleDebug"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease -PnewArchEnabled=true"
+        "gradleCommand": ":app:assembleDebug"
       }
     },
     "production": {
