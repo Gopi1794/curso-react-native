@@ -10,4 +10,4 @@ web-build/
 *.key
 *.mobileprovision
 *.orig.*
-android/app/build/
+android/
