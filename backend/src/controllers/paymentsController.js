@@ -305,10 +305,11 @@ exports.createPreference = async (req, res) => {
             },
         });
 
+        const useSandbox = process.env.MP_SANDBOX === 'true';
         res.json({
             success: true,
             preference_id: result.id,
-            init_point: result.init_point,
+            init_point: useSandbox ? result.sandbox_init_point : result.init_point,
             sandbox_init_point: result.sandbox_init_point,
         });
 
