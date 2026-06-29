@@ -1,9 +1,9 @@
 // navigation/FavoritesStack.js
 import { createStackNavigator } from '@react-navigation/stack';
-import FavoritesScreen from '../screens/FavoritesScreen';
-import FoodDetailScreen from '../screens/FoodDetailScreen';
-import TicketScreen from '../screens/TicketScreen';
-import TicketDetailScreen from '../screens/TicketDetailScreen';
+import FavoritesScreen from '../screens/favorites/FavoritesScreen';
+import FoodDetailScreen from '../screens/food/FoodDetailScreen';
+import TicketScreen from '../screens/tickets/TicketScreen';
+import TicketDetailScreen from '../screens/tickets/TicketDetailScreen';
 
 const Stack = createStackNavigator();
 

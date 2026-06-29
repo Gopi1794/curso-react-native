@@ -96,6 +96,7 @@ const MenuItem = memo(({ item, onAddToCart }) => {
 const styles = StyleSheet.create({
     menuItemContainer: {
         marginRight: 22,
+        marginTop: 15,
     },
     menuItem: {
         flex: 1,

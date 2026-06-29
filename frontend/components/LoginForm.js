@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
     View,
     Text,
@@ -11,15 +11,19 @@ import {
     Platform,
     ScrollView,
 } from "react-native";
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API from '../services/api';
 import { useAppDispatch } from '../store/hooks';
 import { login } from '../store/slices/userSlice';
 import { showErrorMessage, showInfoMessage } from './FlashMessageWrapper';
+import { registerForPushNotifications } from '../services/pushNotifications';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const COLORS = {
     primary: '#EA580C',
@@ -38,6 +42,24 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
     const [errors, setErrors] = useState({});
     const passwordRef = useRef(null);
     const dispatch = useAppDispatch();
+
+    const googleConfigured = !!(
+        process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
+        process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+    );
+
+    const [, googleResponse, promptAsync] = Google.useAuthRequest({
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'not-configured',
+        androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || 'not-configured',
+        iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'not-configured',
+    });
+
+    useEffect(() => {
+        if (googleResponse?.type === 'success') {
+            const accessToken = googleResponse.authentication?.accessToken;
+            if (accessToken) handleGoogleAuthResponse(accessToken);
+        }
+    }, [googleResponse]);
 
     const validateEmailOnBlur = (val) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -98,6 +120,13 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
             }));
 
             await AsyncStorage.setItem('showWelcomePopup', 'true');
+
+            registerForPushNotifications()
+                .then((pushToken) => {
+                    if (pushToken) API.notifications.savePushToken(pushToken).catch(() => {});
+                })
+                .catch(() => {});
+
             onLoginSuccess?.();
 
         } catch (error) {
@@ -115,11 +144,48 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
         onForgotPassword?.();
     };
 
+    const handleGoogleAuthResponse = async (accessToken) => {
+        setLoading(true);
+        try {
+            const result = await API.auth.googleLogin(null, accessToken);
+            if (!result.success) {
+                showErrorMessage('Error con Google', result.message || 'No se pudo iniciar sesión');
+                return;
+            }
+            await API.token.save(result.token);
+            dispatch(login({
+                id: result.user.id,
+                uuid: result.user.uuid,
+                nombre: result.user.nombre,
+                apellido: result.user.apellido,
+                email: result.user.email,
+                telefono: result.user.telefono,
+                rol: result.user.rol,
+                estado: result.user.estado,
+                avatar: require('../assets/img/usuario-img.jpg'),
+                token: result.token,
+            }));
+            await AsyncStorage.setItem('showWelcomePopup', 'true');
+            registerForPushNotifications()
+                .then((pushToken) => {
+                    if (pushToken) API.notifications.savePushToken(pushToken).catch(() => {});
+                })
+                .catch(() => {});
+            onLoginSuccess?.();
+        } catch (error) {
+            console.error('Error en Google login:', error);
+            showErrorMessage('Error', 'No se pudo conectar con el servidor');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleGoogleLogin = () => {
-        showInfoMessage(
-            "Próximamente",
-            "El inicio de sesión con Google estará disponible pronto"
-        );
+        if (!googleConfigured) {
+            showInfoMessage('No disponible', 'El login con Google no está configurado aún.');
+            return;
+        }
+        promptAsync();
     };
 
     // Usuarios de prueba para desarrollo (opcional)
@@ -138,20 +204,13 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
             style={styles.mainContainer}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-            <LinearGradient
-                colors={['#C2410C', '#EA580C', '#F97316']}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 1 }}
-                style={styles.background}
-            >
-                <View style={styles.blob1} />
-                <View style={styles.blob2} />
+            <View style={{ flex: 1 }}>
                 <ScrollView
                     contentContainerStyle={styles.scrollContainer}
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.container}>
-                        <BlurView intensity={35} tint="light" style={styles.blurContainer}>
+                        <View style={styles.blurContainer}>
                             <View style={styles.formContainer}>
                                 <View style={styles.heroSection}>
                                     <Image
@@ -307,11 +366,11 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
                                 <TouchableOpacity
                                     style={[
                                         styles.googleButton,
-                                        loading && styles.disabledButton
+                                        (loading || !googleConfigured) && styles.disabledButton
                                     ]}
                                     onPress={handleGoogleLogin}
                                     activeOpacity={0.8}
-                                    disabled={loading}
+                                    disabled={loading || !googleConfigured}
                                 >
                                     <Image
                                         style={styles.googleLogo}
@@ -328,15 +387,14 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
                                     </TouchableOpacity>
                                 </View>
                             </View>
-                        </BlurView>
+                        </View>
                     </View>
                 </ScrollView>
-            </LinearGradient>
+            </View>
         </KeyboardAvoidingView>
     );
 };
 
-// Los estilos se mantienen igual...
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
@@ -347,29 +405,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         zIndex: 10,
     },
-    background: {
-        flex: 1,
-    },
-    blob1: {
-        position: 'absolute',
-        width: 260,
-        height: 260,
-        borderRadius: 130,
-        backgroundColor: '#fff',
-        opacity: 0.1,
-        top: -60,
-        right: -60,
-    },
-    blob2: {
-        position: 'absolute',
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        backgroundColor: '#fff',
-        opacity: 0.07,
-        bottom: 80,
-        left: -50,
-    },
     scrollContainer: {
         flexGrow: 1,
         justifyContent: 'center',
@@ -378,13 +413,6 @@ const styles = StyleSheet.create({
         paddingTop: 40,
     },
     container: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
-        shadowRadius: 12,
-        elevation: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
         width: '100%',
         maxWidth: 400,
         alignSelf: 'center',
@@ -394,6 +422,7 @@ const styles = StyleSheet.create({
     blurContainer: {
         borderRadius: 30,
         overflow: 'hidden',
+        backgroundColor: 'rgba(0, 0, 0, 0.40)',
     },
     formContainer: {
         padding: 28,

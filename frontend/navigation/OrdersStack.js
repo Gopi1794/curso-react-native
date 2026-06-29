@@ -1,8 +1,8 @@
 import { createStackNavigator } from '@react-navigation/stack';
-import OrdersScreen from '../screens/OrdersScreen';
-import OrderDetailScreen from '../screens/OrderDetailScreen';
-import OrderTrackingScreen from '../screens/OrderTrackingScreen';
-import FoodDetailScreen from '../screens/FoodDetailScreen';
+import OrdersScreen from '../screens/orders/OrdersScreen';
+import OrderDetailScreen from '../screens/orders/OrderDetailScreen';
+import OrderTrackingScreen from '../screens/orders/OrderTrackingScreen';
+import FoodDetailScreen from '../screens/food/FoodDetailScreen';
 
 const Stack = createStackNavigator();
 

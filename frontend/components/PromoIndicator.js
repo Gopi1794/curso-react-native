@@ -31,13 +31,12 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     indicatorWrapper: {
-        padding: 4,
+        padding: 10,
     },
     promoIndicator: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        transition: 'all 0.3s ease',
     },
     promoIndicatorActive: {
         backgroundColor: '#FF8000',

@@ -31,8 +31,8 @@ const SparkleLines = () => (
 const SugerenciaCard = React.memo(({ item, onPress }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
-    const pressIn  = () => Animated.spring(scaleAnim, { toValue: 0.97, tension: 120, friction: 6, useNativeDriver: true }).start();
-    const pressOut = () => Animated.spring(scaleAnim, { toValue: 1,    tension: 50,  friction: 4, useNativeDriver: true }).start();
+    const pressIn  = useCallback(() => Animated.spring(scaleAnim, { toValue: 0.97, tension: 120, friction: 6, useNativeDriver: true }).start(), []);
+    const pressOut = useCallback(() => Animated.spring(scaleAnim, { toValue: 1,    tension: 50,  friction: 4, useNativeDriver: true }).start(), []);
 
     const name        = (item.name        || '').toUpperCase();
     const subtitle    = item.descriptionText || item.price || '';
@@ -92,11 +92,11 @@ const SugerenciaCard = React.memo(({ item, onPress }) => {
                     )}
 
                     {/* Botón flecha naranja diagonal ↗ */}
-                    <TouchableOpacity style={styles.arrowBtn} onPress={onPress} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                    <View style={styles.arrowBtn}>
                         <View style={{ transform: [{ rotate: '-45deg' }] }}>
                             <Ionicons name="arrow-forward" size={19} color="#fff" />
                         </View>
-                    </TouchableOpacity>
+                    </View>
                 </View>
             </TouchableOpacity>
         </Animated.View>
@@ -109,6 +109,7 @@ const SUGERENCIA_KEYS = ['imgBurger5', 'imgEmplatado4', 'imgHelado9'];
 export const ListSugerencias = ({ navigation, menuItems = [] }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const flatListRef = useRef(null);
+    const ITEM_STRIDE = CARD_WIDTH + 14;
 
     const sugerenciasData = useMemo(() => {
         return SUGERENCIA_KEYS
@@ -128,8 +129,19 @@ export const ListSugerencias = ({ navigation, menuItems = [] }) => {
     }, [navigation]);
 
     const handleScroll = useCallback((e) => {
-        setActiveIndex(Math.round(e.nativeEvent.contentOffset.x / (CARD_WIDTH + 14)));
-    }, []);
+        setActiveIndex(Math.round(e.nativeEvent.contentOffset.x / ITEM_STRIDE));
+    }, [ITEM_STRIDE]);
+
+    const getItemLayout = useCallback((_, index) => ({
+        length: ITEM_STRIDE,
+        offset: ITEM_STRIDE * index,
+        index,
+    }), [ITEM_STRIDE]);
+
+    const handleDotPress = useCallback((index) => {
+        flatListRef.current?.scrollToOffset({ offset: ITEM_STRIDE * index, animated: true });
+        setActiveIndex(index);
+    }, [ITEM_STRIDE]);
 
     const renderItem = useCallback(({ item }) => (
         <SugerenciaCard item={item} onPress={() => handlePress(item)} />
@@ -144,7 +156,15 @@ export const ListSugerencias = ({ navigation, menuItems = [] }) => {
                 <Text style={styles.sectionTitle}>SUGERENCIAS</Text>
                 <View style={styles.dots}>
                     {sugerenciasData.map((_, i) => (
-                        <View key={i} style={[styles.dot, activeIndex === i && styles.dotActive]} />
+                        <TouchableOpacity
+                            key={i}
+                            onPress={() => handleDotPress(i)}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Sugerencia ${i + 1}`}
+                        >
+                            <View style={[styles.dot, activeIndex === i && styles.dotActive]} />
+                        </TouchableOpacity>
                     ))}
                 </View>
             </View>
@@ -160,8 +180,9 @@ export const ListSugerencias = ({ navigation, menuItems = [] }) => {
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 decelerationRate="fast"
-                snapToInterval={CARD_WIDTH + 14}
+                snapToInterval={ITEM_STRIDE}
                 snapToAlignment="start"
+                getItemLayout={getItemLayout}
             />
         </View>
     );
@@ -169,7 +190,7 @@ export const ListSugerencias = ({ navigation, menuItems = [] }) => {
 
 const styles = StyleSheet.create({
     section: {
-        height: CARD_HEIGHT + 52,
+        minHeight: CARD_HEIGHT + 52,
     },
 
     /* Encabezado */
@@ -272,10 +293,10 @@ const styles = StyleSheet.create({
     },
 
     descText: {
-        color: 'rgba(255,255,255,0.72)',
-        fontSize: 10,
+        color: 'rgba(255,255,255,0.80)',
+        fontSize: 12,
         fontFamily: 'Poppins-Regular',
-        lineHeight: 14,
+        lineHeight: 16,
     },
 
     /* ── Panel derecho crema ── */

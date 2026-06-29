@@ -1,12 +1,13 @@
 // navigation/HomeStack.js
 import { createStackNavigator } from '@react-navigation/stack';
-import ScreenHome from '../screens/ScreenHome';
-import FoodDetailScreen from '../screens/FoodDetailScreen';
-import PromoFoodDetailScreen from '../screens/PromoFoodDetailScreen';
-import TicketScreen from '../screens/TicketScreen';
-import TicketDetailScreen from '../screens/TicketDetailScreen';
-import CartScreen from '../screens/CartScreen';
-import OrderConfirmationScreen from '../screens/OrderConfirmationScreen';
+import ScreenHome from '../screens/home/ScreenHome';
+import FoodDetailScreen from '../screens/food/FoodDetailScreen';
+import PromoFoodDetailScreen from '../screens/food/PromoFoodDetailScreen';
+import TicketScreen from '../screens/tickets/TicketScreen';
+import TicketDetailScreen from '../screens/tickets/TicketDetailScreen';
+import CartScreen from '../screens/cart/CartScreen';
+import AllPromosScreen from '../screens/home/AllPromosScreen';
+import OrderConfirmationScreen from '../screens/orders/OrderConfirmationScreen';
 
 const Stack = createStackNavigator();
 
@@ -19,6 +20,7 @@ export default function HomeStack() {
             <Stack.Screen name="Tickets" component={TicketScreen} />
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
             <Stack.Screen name="Cart" component={CartScreen} />
+            <Stack.Screen name="AllPromos" component={AllPromosScreen} />
             <Stack.Screen
                 name="OrderConfirmation"
                 component={OrderConfirmationScreen}

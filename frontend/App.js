@@ -1,10 +1,14 @@
 import 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Image } from 'react-native';
-import { useState, useEffect } from 'react';
+import { StyleSheet, View, Image, Animated, Dimensions } from 'react-native';
+import { Asset } from 'expo-asset';
+import { useState, useEffect, useRef } from 'react';
 import { useAppSelector, useAppDispatch } from './store/hooks';
-import { login } from './store/slices/userSlice';
+import { login, setFavorites } from './store/slices/userSlice';
+import { hydrateCart } from './store/slices/cartSlice';
+import { selectRestaurant } from './store/slices/restaurantSlice';
+import { CART_STORAGE_KEY } from './store';
 import { Provider as PaperProvider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,48 +23,77 @@ import AppNavigator from './navigation/AppNavigator';
 // Componentes
 import ComponenteLogin from './components/LoginForm';
 import ComponenteRegister from './components/RegisterForm';
+import ForgotPasswordForm from './components/ForgotPasswordForm';
+import AnimatedAuthBackground from './components/AnimatedAuthBackground';
 import FlashMessageWrapper from './components/FlashMessageWrapper';
-import AnimatedSplashScreen from './screens/AnimatedSplashScreen';
-import OnboardingScreen from './screens/OnboardingScreen';
-import SelectRestaurantScreen from './screens/SelectRestaurantScreen';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import AnimatedSplashScreen from './screens/onboarding/AnimatedSplashScreen';
+import OnboardingScreen from './screens/onboarding/OnboardingScreen';
+import SelectRestaurantScreen from './screens/restaurant/SelectRestaurantScreen';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import API from './services/api';
-import VerifyEmailScreen from './screens/VerifyEmailScreen';
+import { registerForPushNotifications } from './services/pushNotifications';
+import VerifyEmailScreen from './screens/auth/VerifyEmailScreen';
 import { useTheme } from './contexts/ThemeContext';
 
 // Pantalla de Login
 function LoginScreen() {
   const [showRegister, setShowRegister] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState(null);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const { width } = Dimensions.get('window');
+
+  const transition = (action, direction = 'forward') => {
+    const outTo  = direction === 'forward' ? -width : width;
+    const inFrom = direction === 'forward' ?  width : -width;
+
+    Animated.timing(slideAnim, {
+      toValue: outTo,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      action();
+      slideAnim.setValue(inFrom);
+      requestAnimationFrame(() => {
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          bounciness: 3,
+          speed: 14,
+          useNativeDriver: true,
+        }).start();
+      });
+    });
+  };
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#c300ff', '#ff8000']}
-        style={styles.backgroundGradient}
-      />
-
-      <View style={styles.formOverlay}>
+      <AnimatedAuthBackground style={StyleSheet.absoluteFill} />
+      <Animated.View style={[styles.formOverlay, { transform: [{ translateX: slideAnim }] }]}>
         {verifyEmail ? (
           <VerifyEmailScreen
             route={{ params: { email: verifyEmail } }}
-            navigation={{
-              goBack: () => setVerifyEmail(null),
-            }}
+            navigation={{ goBack: () => transition(() => setVerifyEmail(null), 'back') }}
+            onBack={() => transition(() => setVerifyEmail(null), 'back')}
+          />
+        ) : showForgot ? (
+          <ForgotPasswordForm
+            onBackToLogin={() => transition(() => setShowForgot(false), 'back')}
           />
         ) : showRegister ? (
           <ComponenteRegister
-            onBackToLogin={() => setShowRegister(false)}
-            onVerifyEmail={(email) => setVerifyEmail(email)}
+            onBackToLogin={() => transition(() => setShowRegister(false), 'back')}
+            onVerifyEmail={(email) => transition(() => setVerifyEmail(email), 'forward')}
           />
         ) : (
           <ComponenteLogin
-            onShowRegister={() => setShowRegister(true)}
-            onVerifyEmail={(email) => setVerifyEmail(email)}
+            onShowRegister={() => transition(() => setShowRegister(true), 'forward')}
+            onVerifyEmail={(email) => transition(() => setVerifyEmail(email), 'forward')}
+            onForgotPassword={() => transition(() => setShowForgot(true), 'forward')}
           />
         )}
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -94,10 +127,16 @@ function MainApp() {
     try {
       const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
       if (!hasSeenOnboarding) {
+        // Precargamos las imágenes antes de mostrar el onboarding
+        await Asset.loadAsync([
+          require('./assets/img/onboarding/slide1.jpg'),
+          require('./assets/img/onboarding/slide2.jpg'),
+          require('./assets/img/onboarding/slide3.jpg'),
+        ]);
         setShowOnboarding(true);
       }
     } catch (error) {
-      console.log('Error checking onboarding:', error);
+      setShowOnboarding(true); // Si falla el preload, mostramos igual
     }
   };
 
@@ -126,6 +165,38 @@ function MainApp() {
           avatar: require('./assets/img/usuario-img.jpg'),
           token: savedToken,
         }));
+
+        // Restaurar restaurante seleccionado desde AsyncStorage
+        try {
+          const saved = await AsyncStorage.getItem('selectedRestaurant');
+          if (saved) dispatch(selectRestaurant(JSON.parse(saved)));
+        } catch {}
+
+        // Restaurar carrito guardado desde AsyncStorage
+        try {
+          const savedCart = await AsyncStorage.getItem(CART_STORAGE_KEY);
+          if (savedCart) dispatch(hydrateCart(JSON.parse(savedCart)));
+        } catch {}
+
+        // Cargar favoritos desde la DB en segundo plano
+        API.favorites.getAll().then(res => {
+          if (res.success) {
+            dispatch(setFavorites(res.data.map(row => ({
+              id: row.id,
+              name: row.nombre,
+              price: row.precio,
+              imageKey: row.imagen_key,
+              descriptionText: row.descripcion,
+            }))));
+          }
+        }).catch(() => {});
+
+        // Registrar push token en segundo plano
+        registerForPushNotifications()
+          .then((pushToken) => {
+            if (pushToken) API.notifications.savePushToken(pushToken).catch(() => {});
+          })
+          .catch(() => {});
       } else {
         // Token inválido o expirado — limpiar
         await API.token.remove();
@@ -185,11 +256,38 @@ function MainApp() {
     );
   }
 
+  const linking = {
+    prefixes: ['tuappfood://', 'https://tuappfood.com'],
+    config: {
+      screens: {
+        HomeTab: {
+          screens: {
+            Home: 'home',
+            FoodDetail: 'food/:foodItemId',
+          },
+        },
+        OrdersTab: {
+          screens: {
+            Orders: 'orders',
+            OrderDetail: 'orders/:orderId',
+            OrderTracking: 'tracking/:orderId',
+          },
+        },
+        ProfileTab: {
+          screens: {
+            Profile: 'profile',
+            EditProfile: 'profile/edit',
+          },
+        },
+      },
+    },
+  };
+
   // Usuario logueado con restaurante seleccionado - mostrar app principal
   if (isLoggedIn) {
     return (
-      <NavigationContainer>
-        <StatusBar style={isDark ? 'light' : 'dark'} translucent />
+      <NavigationContainer linking={linking}>
+        <StatusBar style="light" translucent backgroundColor="transparent" />
         <AppNavigator />
         <FlashMessageWrapper />
       </NavigationContainer>
@@ -207,17 +305,18 @@ function MainApp() {
 
 export default function App() {
   useEffect(() => {
-    console.log('✅ App iniciada - Firebase configurado');
   }, []);
 
   return (
-    <Provider store={store}>
-      <ThemeProvider>
-        <PaperProvider>
-          <MainApp />
-        </PaperProvider>
-      </ThemeProvider>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <ThemeProvider>
+          <PaperProvider>
+            <MainApp />
+          </PaperProvider>
+        </ThemeProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }
 
@@ -225,6 +324,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
+    backgroundColor: '#EA580C',
     justifyContent: 'center',
     backgroundColor: '#ff8000',
   },

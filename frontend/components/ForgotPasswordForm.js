@@ -10,10 +10,11 @@ import {
     Platform,
     ScrollView,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import API from '../services/api';
+import { useAppDispatch } from '../store/hooks';
+import { login } from '../store/slices/userSlice';
 import { showSuccessMessage, showErrorMessage } from './FlashMessageWrapper';
 
 const COLORS = {
@@ -23,6 +24,7 @@ const COLORS = {
 };
 
 export default function ForgotPasswordForm({ onBackToLogin }) {
+    const dispatch = useAppDispatch();
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [code, setCode] = useState('');
@@ -85,8 +87,20 @@ export default function ForgotPasswordForm({ onBackToLogin }) {
         try {
             const response = await API.auth.resetPassword(email.trim().toLowerCase(), code.trim(), newPassword);
             if (response.success) {
-                showSuccessMessage('¡Listo!', 'Tu contraseña fue cambiada. Ya podés iniciar sesión.');
-                onBackToLogin();
+                await API.token.save(response.token);
+                dispatch(login({
+                    id: response.user.id,
+                    uuid: response.user.uuid,
+                    nombre: response.user.nombre,
+                    apellido: response.user.apellido,
+                    email: response.user.email,
+                    telefono: response.user.telefono,
+                    rol: response.user.rol,
+                    estado: response.user.estado,
+                    avatar: require('../assets/img/usuario-img.jpg'),
+                    token: response.token,
+                }));
+                showSuccessMessage('¡Listo!', 'Contraseña cambiada. Bienvenido de vuelta.');
             } else {
                 if (response.expired) {
                     showErrorMessage('Código expirado', 'Solicitá un nuevo código');
@@ -113,21 +127,14 @@ export default function ForgotPasswordForm({ onBackToLogin }) {
             style={styles.mainContainer}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <LinearGradient
-                colors={['#C2410C', '#EA580C', '#F97316']}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 1 }}
-                style={styles.background}
-            >
-                <View style={styles.blob1} />
-                <View style={styles.blob2} />
+            <View style={{ flex: 1 }}>
                 <ScrollView
                     contentContainerStyle={styles.scrollContainer}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
                     <View style={styles.container}>
-                        <BlurView intensity={35} tint="light" style={styles.blurContainer}>
+                        <View style={styles.blurContainer}>
                             <View style={styles.formContainer}>
 
                                 {/* Header */}
@@ -325,10 +332,10 @@ export default function ForgotPasswordForm({ onBackToLogin }) {
                                 </TouchableOpacity>
 
                             </View>
-                        </BlurView>
+                        </View>
                     </View>
                 </ScrollView>
-            </LinearGradient>
+            </View>
         </KeyboardAvoidingView>
     );
 }
@@ -340,19 +347,6 @@ const styles = StyleSheet.create({
         top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 10,
     },
-    background: { flex: 1 },
-    blob1: {
-        position: 'absolute',
-        width: 260, height: 260, borderRadius: 130,
-        backgroundColor: '#fff', opacity: 0.1,
-        top: -60, right: -60,
-    },
-    blob2: {
-        position: 'absolute',
-        width: 200, height: 200, borderRadius: 100,
-        backgroundColor: '#fff', opacity: 0.07,
-        bottom: 80, left: -50,
-    },
     scrollContainer: {
         flexGrow: 1,
         justifyContent: 'center',
@@ -360,26 +354,17 @@ const styles = StyleSheet.create({
         paddingVertical: 40,
     },
     container: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
-        shadowRadius: 12,
-        elevation: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
         width: '100%',
         maxWidth: 400,
         alignSelf: 'center',
         borderRadius: 30,
         overflow: 'hidden',
     },
-    blurContainer: { borderRadius: 30, overflow: 'hidden' },
+    blurContainer: { borderRadius: 30, overflow: 'hidden', backgroundColor: 'rgba(0,0,0,0.40)' },
     formContainer: { padding: 28, gap: 18 },
     header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
     backButton: {
         padding: 8,
-        borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.12)',
         marginTop: 2,
     },
     headerText: { flex: 1 },
