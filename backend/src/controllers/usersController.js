@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const db = require('../config/database');
 const supabase = require('../config/supabase');
+const { sendPasswordChangedEmail } = require('../services/emailService');
 
 // ── GET PROFILE ───────────────────────────────────────────
 // GET /api/users/profile
@@ -104,10 +105,17 @@ exports.changePassword = async (req, res) => {
             });
         }
 
-        if (newPassword.length < 6) {
+        if (newPassword.length < 8) {
             return res.status(400).json({
                 success: false,
-                message: 'La nueva contraseña debe tener al menos 6 caracteres'
+                message: 'La nueva contraseña debe tener al menos 8 caracteres'
+            });
+        }
+
+        if (newPassword.length > 72) {
+            return res.status(400).json({
+                success: false,
+                message: 'La contraseña no puede exceder 72 caracteres'
             });
         }
 
@@ -145,10 +153,13 @@ exports.changePassword = async (req, res) => {
         const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
         const newHash = await bcrypt.hash(newPassword, saltRounds);
 
-        await db.query(
-            'UPDATE usuarios SET password_hash = $1 WHERE id = $2',
+        const updateResult = await db.query(
+            'UPDATE usuarios SET password_hash = $1 WHERE id = $2 RETURNING email, nombre',
             [newHash, req.user.userId]
         );
+
+        const { email, nombre } = updateResult.rows[0];
+        sendPasswordChangedEmail(email, nombre).catch(() => {});
 
         res.json({
             success: true,
@@ -304,6 +315,48 @@ exports.deleteAddress = async (req, res) => {
 
 // ── GET STATS ────────────────────────────────────────────
 // GET /api/users/stats
+// ── DELETE ACCOUNT ───────────────────────────────────────
+// DELETE /api/users/account
+exports.deleteAccount = async (req, res) => {
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).json({ success: false, message: 'Confirmá tu contraseña para eliminar la cuenta' });
+    }
+
+    const client = await db.getClient();
+    try {
+        await client.query('BEGIN');
+
+        const result = await client.query(
+            'SELECT password_hash FROM usuarios WHERE id = $1',
+            [req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+
+        const isValid = await bcrypt.compare(password, result.rows[0].password_hash);
+        if (!isValid) {
+            await client.query('ROLLBACK');
+            return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+        }
+
+        await client.query('DELETE FROM usuarios WHERE id = $1', [req.user.userId]);
+        await client.query('COMMIT');
+
+        res.json({ success: true, message: 'Cuenta eliminada correctamente' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error en deleteAccount:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    } finally {
+        client.release();
+    }
+};
+
 exports.getStats = async (req, res) => {
     try {
         const userId = req.user.userId;

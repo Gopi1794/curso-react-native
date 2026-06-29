@@ -64,6 +64,10 @@ exports.createOrUpdate = async (req, res) => {
             return res.status(400).json({ success: false, message: 'El comentario no puede estar vacío' });
         }
 
+        if (comentario.trim().length > 500) {
+            return res.status(400).json({ success: false, message: 'El comentario no puede superar los 500 caracteres' });
+        }
+
         // Verificar que el plato exista
         const menuCheck = await db.query('SELECT id FROM menu_items WHERE id = $1', [menuItemId]);
         if (menuCheck.rows.length === 0) {

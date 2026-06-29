@@ -84,12 +84,18 @@ exports.createOrder = async (req, res) => {
         let total = 0;
         const orderItems = items.map(item => {
             const menuItem = priceMap[item.menu_item_id];
-            const subtotal = parseFloat(menuItem.precio) * item.cantidad;
+            const precio = parseFloat(menuItem.precio);
+
+            if (isNaN(precio) || precio < 0) {
+                throw new Error(`Precio inválido para el ítem "${menuItem.nombre}"`);
+            }
+
+            const subtotal = precio * item.cantidad;
             total += subtotal;
             return {
                 menu_item_id: item.menu_item_id,
                 nombre_item: menuItem.nombre,
-                precio_unitario: parseFloat(menuItem.precio),
+                precio_unitario: precio,
                 cantidad: item.cantidad,
                 ingredientes_removidos: item.ingredientes_removidos || []
             };
@@ -140,6 +146,9 @@ exports.createOrder = async (req, res) => {
 
     } catch (error) {
         await client.query('ROLLBACK');
+        if (error.message?.startsWith('Precio inválido')) {
+            return res.status(422).json({ success: false, message: error.message });
+        }
         console.error('Error en createOrder:', error);
         res.status(500).json({
             success: false,
@@ -360,10 +369,10 @@ exports.updateStatus = async (req, res) => {
         }
 
         const query = estado === 'en_camino'
-            ? `UPDATE pedidos SET estado = $1, fecha_en_camino = NOW() WHERE id = $2 RETURNING id, estado, fecha_en_camino`
-            : `UPDATE pedidos SET estado = $1 WHERE id = $2 RETURNING id, estado`;
+            ? `UPDATE pedidos SET estado = $1, fecha_en_camino = NOW() WHERE id = $2 AND usuario_id = $3 RETURNING id, estado, fecha_en_camino`
+            : `UPDATE pedidos SET estado = $1 WHERE id = $2 AND usuario_id = $3 RETURNING id, estado`;
 
-        const result = await db.query(query, [estado, id]);
+        const result = await db.query(query, [estado, id, req.user.userId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Pedido no encontrado' });

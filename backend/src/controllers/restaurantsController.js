@@ -98,7 +98,7 @@ exports.getMenu = async (req, res) => {
         // Construir query: usar vista de disponibilidad + ingredientes desde tablas nuevas
         let query = `
             SELECT mi.id, mi.nombre, mi.precio, mi.categoria, mi.descripcion, mi.imagen_key,
-                   mi.calorias, mi.peso,
+                   mi.calorias, mi.peso, mi.ingredientes AS ingredientes_raw,
                    COALESCE(vd.disponible, TRUE) AS disponible
             FROM menu_items mi
             LEFT JOIN vista_disponibilidad_platos vd
@@ -143,11 +143,20 @@ exports.getMenu = async (req, res) => {
         }
 
         // Armar respuesta con ingredientes embebidos
-        const items = result.rows.map(item => ({
-            ...item,
-            ingredientes: (ingredientesMap[item.id] || []).map(i => i.nombre),
-            ingredientes_detalle: ingredientesMap[item.id] || []
-        }));
+        const items = result.rows.map(item => {
+            const normalized = ingredientesMap[item.id];
+            const fallbackRaw = Array.isArray(item.ingredientes_raw) ? item.ingredientes_raw : [];
+
+            const ingredientes = normalized
+                ? normalized.map(i => i.nombre)
+                : fallbackRaw;
+
+            const ingredientes_detalle = normalized
+                ? normalized
+                : fallbackRaw.map(nombre => ({ nombre, es_removible: true }));
+
+            return { ...item, ingredientes, ingredientes_detalle };
+        });
 
         res.json({
             success: true,

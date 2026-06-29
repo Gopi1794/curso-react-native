@@ -28,6 +28,53 @@ exports.getAll = async (req, res) => {
     }
 };
 
+// ── VALIDATE BY CODE ──────────────────────────────────────
+// POST /api/cupones/validate
+// Body: { codigo }
+exports.validateByCode = async (req, res) => {
+    try {
+        const { codigo } = req.body;
+
+        if (!codigo || typeof codigo !== 'string' || codigo.trim().length === 0) {
+            return res.status(400).json({ success: false, message: 'Código requerido' });
+        }
+
+        const result = await db.query(
+            `SELECT id, titulo, oferta, codigo
+             FROM cupones
+             WHERE UPPER(codigo) = UPPER($1)
+               AND activo = TRUE
+               AND valido_hasta >= CURRENT_DATE`,
+            [codigo.trim()]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Cupón inválido o vencido' });
+        }
+
+        const cupon = result.rows[0];
+
+        // El campo "oferta" contiene el texto del descuento, ej: "10%"
+        // Extraemos el número para que el frontend pueda calcular
+        const match = cupon.oferta?.match(/(\d+)/);
+        const discount_percent = match ? parseInt(match[1]) : 10;
+
+        res.json({
+            success: true,
+            cupon: {
+                id: cupon.id,
+                titulo: cupon.titulo,
+                oferta: cupon.oferta,
+                discount_percent,
+            },
+        });
+
+    } catch (error) {
+        console.error('Error en validateByCode cupon:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
 // ── GET CUPON BY ID ───────────────────────────────────────
 // GET /api/cupones/:id
 exports.getById = async (req, res) => {
