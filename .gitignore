@@ -61,3 +61,4 @@ web-build/
 frontend/extracted_apks/
 *.jar
 tools/*.jar
+!frontend/android/gradle/wrapper/gradle-wrapper.jar
