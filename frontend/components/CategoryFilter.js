@@ -10,6 +10,7 @@ export const CategoryFilter = memo(({
     const renderCategory = ({ item }) => (
         <CategoryButton
             label={item.label}
+            icon={item.icon}
             isActive={selectedCategory === item.label}
             onPress={() => onCategoryPress(item.label)}
         />

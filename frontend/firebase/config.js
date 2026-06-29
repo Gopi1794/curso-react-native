@@ -5,22 +5,20 @@ import 'firebase/compat/firestore';
 import 'firebase/compat/storage'; // Opcional para almacenamiento
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBWUWQlo8VBOa23fjZRfudf8Q9Gq486fTY",
-    authDomain: "turestauranteapp-529da.firebaseapp.com",
-    projectId: "turestauranteapp-529da",
-    storageBucket: "turestauranteapp-529da.firebasestorage.app",
-    messagingSenderId: "279555469009",
-    appId: "1:279555469009:web:41c57e8ec409673ec1dff0",
-    measurementId: "G-N728HKQJBN"
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Inicializar solo una vez
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    console.log('🔥 Firebase COMPAT inicializado correctamente');
 } else {
-    firebase.app(); // Usar app existente
-    console.log('🔥 Firebase COMPAT ya estaba inicializado');
+    firebase.app();
 }
 
 // Exportar servicios

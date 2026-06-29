@@ -1,18 +1,17 @@
 // components/FlashMessageWrapper.js
 import React from 'react';
 import FlashMessage, { showMessage } from 'react-native-flash-message';
-import { StatusBar } from 'react-native';
 const FlashMessageWrapper = () => {
     return (
         <FlashMessage
-            position="top"
+            position="bottom"
             animated={true}
-            statusBarHeight={StatusBar.currentHeight}
             floating={true}
             duration={3000}
             style={{
-                borderRadius: 10,
-
+                borderRadius: 12,
+                marginHorizontal: 16,
+                marginBottom: 16,
             }}
             titleStyle={{
                 fontSize: 16,

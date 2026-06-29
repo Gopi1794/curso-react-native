@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
@@ -12,8 +12,16 @@ export const HeaderSection = ({
     searchQuery,
     onSearchChange,
     onClearSearch,
+    scrollY,
 }) => {
     const insets = useSafeAreaInsets();
+
+    const headingHeight = scrollY
+        ? scrollY.interpolate({ inputRange: [0, 50], outputRange: [46, 0], extrapolate: 'clamp' })
+        : 46;
+    const headingOpacity = scrollY
+        ? scrollY.interpolate({ inputRange: [0, 40], outputRange: [1, 0], extrapolate: 'clamp' })
+        : 1;
     const dispatch = useAppDispatch();
 
     const cartItems          = useAppSelector(state => state.cart.items);
@@ -72,11 +80,13 @@ export const HeaderSection = ({
                 </View>
             </View>
 
-            {/* Heading */}
-            <Text style={styles.heading}>
-                {'¿Qué se te antoja '}
-                <Text style={styles.headingAccent}>Hoy?</Text>
-            </Text>
+            {/* Heading — colapsa al hacer scroll */}
+            <Animated.View style={{ height: headingHeight, opacity: headingOpacity, overflow: 'hidden' }}>
+                <Text style={styles.heading}>
+                    {'¿Qué se te antoja '}
+                    <Text style={styles.headingAccent}>Hoy?</Text>
+                </Text>
+            </Animated.View>
 
             {/* Barra de búsqueda */}
             <SearchBar

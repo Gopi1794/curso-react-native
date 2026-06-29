@@ -1,11 +1,15 @@
 import React, { memo } from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export const CategoryButton = memo(({
     label,
+    icon,
     isActive = false,
     onPress
 }) => {
+    const iconColor = isActive ? '#fff' : '#988c8d';
+
     return (
         <TouchableOpacity
             style={[
@@ -14,13 +18,21 @@ export const CategoryButton = memo(({
             ]}
             onPress={onPress}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityState={{ selected: isActive }}
         >
-            <Text style={[
-                styles.categoryText,
-                isActive && styles.categoryTextActive
-            ]}>
-                {label}
-            </Text>
+            <View style={styles.inner}>
+                {icon && (
+                    <Ionicons name={icon} size={12} color={iconColor} style={styles.icon} />
+                )}
+                <Text style={[
+                    styles.categoryText,
+                    isActive && styles.categoryTextActive
+                ]}>
+                    {label}
+                </Text>
+            </View>
         </TouchableOpacity>
     );
 });
@@ -35,6 +47,14 @@ const styles = StyleSheet.create({
         height: 40,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    inner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    icon: {
+        marginTop: 1,
     },
     categoryButtonActive: {
         backgroundColor: '#ff8000',

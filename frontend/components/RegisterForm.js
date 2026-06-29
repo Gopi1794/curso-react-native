@@ -10,8 +10,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
+    Image,
 } from "react-native";
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 // ✅ TU NUEVA API (reemplaza Firebase)
@@ -44,6 +44,7 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
     const [progress, setProgress] = useState(0);
     const [focusedInput, setFocusedInput] = useState(null);
     const inputRefs = useRef({});
+    const scrollRef = useRef(null);
     const dispatch = useAppDispatch();
 
     const autoCompleteMap = {
@@ -281,7 +282,12 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
                         editable={!loading}
                         autoComplete={autoCompleteMap[field.id]}
                         textContentType={textContentTypeMap[field.id]}
-                        onFocus={() => setFocusedInput(field.id)}
+                        onFocus={() => {
+                            setFocusedInput(field.id);
+                            if (index >= formFields.length - 2) {
+                                setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+                            }
+                        }}
                         onBlur={() => { setFocusedInput(null); validateFieldOnBlur(field.id, formData[field.id]); }}
                         returnKeyType={field.returnKeyType}
                         onSubmitEditing={() => {
@@ -300,9 +306,10 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
                     />
                     {field.type === "password" && (
                         <TouchableOpacity
-                            onPress={() => setShowPassword(!showPassword)}
+                            onPressIn={() => setShowPassword(v => !v)}
                             style={styles.eyeIcon}
                             disabled={loading}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
                             <Ionicons
                                 name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -319,34 +326,35 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
     return (
         <KeyboardAvoidingView
             style={styles.mainContainer}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <LinearGradient
-                colors={['#C2410C', '#EA580C', '#F97316']}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 1 }}
-                style={styles.background}
-            >
-                <View style={styles.blob1} />
-                <View style={styles.blob2} />
+            <View style={{ flex: 1 }}>
                 <ScrollView
+                    ref={scrollRef}
                     contentContainerStyle={styles.scrollContainer}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
                 <View style={styles.container}>
-                    <BlurView intensity={35} tint="light" style={styles.blurContainer}>
+                    <View style={styles.blurContainer}>
                         <View style={styles.formContainer}>
-                            {/* Header */}
-                            <View style={styles.header}>
-                                <TouchableOpacity
-                                    style={styles.backButton}
-                                    onPress={onBackToLogin}
-                                    disabled={loading}
-                                >
-                                    <Ionicons name="arrow-back" size={24} color="white" />
-                                </TouchableOpacity>
-                                <Text style={styles.title}>Crear Cuenta</Text>
+                            {/* Back button */}
+                            <TouchableOpacity
+                                style={styles.backButton}
+                                onPress={onBackToLogin}
+                                disabled={loading}
+                            >
+                                <Ionicons name="arrow-back" size={24} color="white" />
+                            </TouchableOpacity>
+
+                            {/* Logo */}
+                            <View style={styles.heroSection}>
+                                <Image
+                                    source={require('../assets/img/logoApp.png')}
+                                    style={styles.logo}
+                                />
+                                <Text style={styles.welcomeTitle}>Crear Cuenta</Text>
+                                <Text style={styles.welcomeSubtitle}>Registrate y pedí en minutos</Text>
                             </View>
 
                             {/* Progress Bar */}
@@ -408,10 +416,10 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </BlurView>
+                    </View>
                 </View>
                 </ScrollView>
-            </LinearGradient>
+            </View>
         </KeyboardAvoidingView>
     );
 };
@@ -427,29 +435,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         zIndex: 10,
     },
-    background: {
-        flex: 1,
-    },
-    blob1: {
-        position: 'absolute',
-        width: 280,
-        height: 280,
-        borderRadius: 140,
-        backgroundColor: '#fff',
-        opacity: 0.1,
-        top: -70,
-        right: -70,
-    },
-    blob2: {
-        position: 'absolute',
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        backgroundColor: '#fff',
-        opacity: 0.07,
-        bottom: 100,
-        left: -50,
-    },
     scrollContainer: {
         flexGrow: 1,
         justifyContent: 'center',
@@ -458,13 +443,6 @@ const styles = StyleSheet.create({
         paddingTop: 40,
     },
     container: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
-        shadowRadius: 12,
-        elevation: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
         width: '100%',
         maxWidth: 400,
         alignSelf: 'center',
@@ -474,29 +452,42 @@ const styles = StyleSheet.create({
     blurContainer: {
         borderRadius: 30,
         overflow: 'hidden',
+        backgroundColor: 'rgba(0, 0, 0, 0.40)',
     },
     formContainer: {
         padding: 28,
+        alignItems: 'center',
         gap: 16,
     },
-    header: {
-        flexDirection: "row",
+    heroSection: {
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
+        marginBottom: 4,
+    },
+    logo: {
+        width: 101,
+        height: 103,
+    },
+    welcomeTitle: {
+        fontFamily: "Poppins-Bold",
+        fontSize: 22,
+        color: "white",
+        textShadowColor: 'rgba(0,0,0,0.4)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+    },
+    welcomeSubtitle: {
+        fontFamily: "Poppins-Regular",
+        fontSize: 13,
+        color: "rgba(255,255,255,0.75)",
     },
     backButton: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
         padding: 8,
         borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.12)',
-    },
-    title: {
-        flex: 1,
-        fontFamily: "Poppins-Bold",
-        fontSize: 20,
-        color: "white",
-        textShadowColor: 'rgba(0, 0, 0, 0.3)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 3,
+        zIndex: 10,
     },
     progressContainer: {
         marginBottom: 4,
@@ -526,7 +517,7 @@ const styles = StyleSheet.create({
         fontFamily: "Poppins-SemiBold",
         color: "white",
         fontSize: 13,
-        marginBottom: 7,
+        marginBottom: 8,
         textShadowColor: 'rgba(0, 0, 0, 0.3)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 2,

@@ -26,6 +26,7 @@
       },
       "package": "com.tucompany.tufoodapp",
       "versionCode": 1,
+      "softwareKeyboardLayoutMode": "pan",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyDx-s7e10DunTXmOp_BmWc3eLbk8roFnxU"
@@ -38,7 +39,8 @@
     },
     "plugins": [
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "tsconfigPaths": false

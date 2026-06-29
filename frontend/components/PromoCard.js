@@ -20,16 +20,31 @@ const toUri = (val) => {
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth - 72;
-const CARD_HEIGHT = 215;
+const CARD_HEIGHT = 230;
+const BOTTOM_STRIP_H = 52;
+const IMAGE_AREA_H = CARD_HEIGHT - BOTTOM_STRIP_H;
 
-export const PromoCard = memo(({ promo, onPress, isActive }) => {
+export const PromoCard = memo(({ promo, onPress, isActive, width }) => {
     const scaleAnim = useRef(new Animated.Value(isActive ? 1 : 0.93)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const floatCal = useRef(new Animated.Value(0)).current;
+    const floatWeight = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
-            toValue: 1, duration: 500, useNativeDriver: true,
+            toValue: 1, duration: 250, useNativeDriver: true,
         }).start();
+
+        const drift = (val, to, dur) =>
+            Animated.timing(val, { toValue: to, duration: dur, useNativeDriver: true });
+
+        Animated.loop(
+            Animated.sequence([
+                Animated.parallel([drift(floatCal, -5, 1800), drift(floatWeight, 4, 2200)]),
+                Animated.parallel([drift(floatCal, 3, 1600), drift(floatWeight, -5, 2000)]),
+                Animated.parallel([drift(floatCal, 0, 1700), drift(floatWeight, 0, 1900)]),
+            ])
+        ).start();
     }, []);
 
     useEffect(() => {
@@ -40,97 +55,131 @@ export const PromoCard = memo(({ promo, onPress, isActive }) => {
     }, [isActive]);
 
     const imageKey = Array.isArray(promo.imageKey) ? promo.imageKey[0] : promo.imageKey;
-    console.log('[PromoCard] id:', promo.id, '| imageKey:', imageKey, '| resolvedUri:', toUri(imageMap[imageKey]));
     const originalImageKey = Array.isArray(promo.originalImageKey)
         ? promo.originalImageKey[0]
         : promo.originalImageKey;
+
     const localItem = menuItemsData.find(m => {
         const k = Array.isArray(m.imageKey) ? m.imageKey[0] : m.imageKey;
         return m.id === promo.id || k === originalImageKey || k === imageKey;
     });
+
     const calories = promo.calories ?? localItem?.calories ?? null;
     const weight = promo.weight ?? localItem?.weight ?? null;
+    const originalPrice = promo.originalPrice ?? localItem?.originalPrice ?? null;
+    const discountPct = localItem?.discountPercentage ?? promo.discountPercentage ?? null;
+
     const imgSrc = {
         uri: (typeof imageKey === 'string' && imageKey.startsWith('http'))
             ? imageKey
             : toUri(imageMap[imageKey]),
     };
 
-    const words = (promo.name || '').split(' ');
-    const nameFirst = words[0] ?? '';
-    const nameRest = words.slice(1).join(' ');
+    const priceStr = (promo.price || '$0').toString().replace('$', '');
+    const originalPriceStr = originalPrice
+        ? originalPrice.toString().replace('$', '')
+        : null;
 
-    const priceStr = (promo.price || '$0').replace('$', '');
+    const nameWords = (promo.name || '').toUpperCase().split(' ');
+    const nameFontSize = nameWords.length >= 3 ? 12 : 18;
+    const nameLineHeight = nameWords.length >= 3 ? 16 : 23;
 
     return (
         <Animated.View style={[
             styles.outerContainer,
             { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
+            width ? { width } : null,
         ]}>
-            {/* ── Card blanca ── */}
-            <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.95}>
+            <TouchableOpacity
+                style={[styles.card, width ? { width } : null]}
+                onPress={onPress}
+                activeOpacity={0.95}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver promoción ${promo.name}`}
+            >
 
-                {/* ── Top row ── */}
+                {/* ── Top row: pills ── */}
                 <View style={styles.topRow}>
                     <View style={styles.timePill}>
                         <Ionicons name="time-outline" size={12} color="#fff" />
                         <Text style={styles.timePillText}>22 mins</Text>
                     </View>
-                    <View style={styles.deliveryRow}>
-                        <Ionicons name="bicycle-outline" size={13} color="#888" />
+                    <View style={styles.deliveryPill}>
+                        <Ionicons name="bicycle-outline" size={13} color="#666" />
                         <Text style={styles.deliveryText}>Envío gratis</Text>
                     </View>
                 </View>
 
-                {/* ── Nombre ── */}
+                {/* ── Nombre: una palabra por renglón ── */}
                 <View style={styles.nameBlock}>
-                    <Text style={styles.nameLight}>{nameFirst} </Text>
-                    <Text style={styles.nameBold} numberOfLines={2}>{nameRest}</Text>
+                    {nameWords.map((word, i) => (
+                        <Text
+                            key={i}
+                            style={[styles.nameLine, { fontSize: nameFontSize, lineHeight: nameLineHeight }]}
+                            numberOfLines={1}
+                        >
+                            {word}
+                        </Text>
+                    ))}
                 </View>
 
-                {/* ── Precio ── */}
-                <Text style={styles.price}>
-                    <Text style={styles.priceDollar}>$</Text>
-                    {priceStr}
-                </Text>
+                {/* ── Precios ── */}
+                <View style={styles.priceRow}>
+                    <Text style={styles.price}>
+                        <Text style={styles.priceDollar}>$</Text>
+                        {priceStr}
+                    </Text>
+                    {originalPriceStr && (
+                        <Text style={styles.originalPrice}>${originalPriceStr}</Text>
+                    )}
+                </View>
+
+                {/* ── Imagen: lado derecho desde arriba hasta el strip ── */}
+                <Image
+                    source={imgSrc}
+                    style={styles.foodImage}
+                    resizeMode="cover"
+                />
+
+                {/* ── Badges flotantes ── */}
+                {calories != null && (
+                    <Animated.View style={[
+                        styles.badgeCal,
+                        { transform: [{ rotate: '-13deg' }, { translateY: floatCal }] },
+                    ]}>
+                        <Ionicons name="flame" size={11} color="#ff8700" />
+                        <Text style={styles.badgeTextOrange}>{calories} cal</Text>
+                    </Animated.View>
+                )}
+                {weight != null && (
+                    <Animated.View style={[
+                        styles.badgeWeight,
+                        { transform: [{ rotate: '9deg' }, { translateY: floatWeight }] },
+                    ]}>
+                        <Ionicons name="barbell-outline" size={11} color="#666" />
+                        <Text style={styles.badgeTextGray}>{weight} g</Text>
+                    </Animated.View>
+                )}
 
                 {/* ── Franja inferior ── */}
                 <View style={styles.bottomStrip}>
                     <View style={styles.discountLeft}>
-                        <View style={styles.discountIconCircle}>
-                            <Text style={styles.discountIconText}>%</Text>
+                        <View style={styles.discountCircle}>
+                            <Text style={styles.discountIcon}>%</Text>
                         </View>
                         <View>
                             <Text style={styles.specialLabel}>Oferta especial</Text>
-                            <Text style={styles.offText}>25% Off Precios</Text>
+                            <Text style={styles.offText}>
+                                {discountPct ? `${discountPct}% Off Precios` : '25% Off Precios'}
+                            </Text>
                         </View>
                     </View>
 
-                    <TouchableOpacity style={styles.cartBtn} onPress={onPress}>
+                    <View style={styles.cartBtn}>
                         <Ionicons name="cart" size={19} color="#fff" />
-                    </TouchableOpacity>
+                    </View>
                 </View>
 
-                {/* ── Imagen circular (dentro de la card) ── */}
-                <Image
-                    source={imgSrc}
-                    style={styles.floatingImage}
-                    resizeMode="cover"
-                />
-
-                {/* ── Badges de calorías / peso ── */}
-                {calories != null && (
-                    <View style={styles.badgeCal}>
-                        <Ionicons name="flame" size={11} color="#ff8700" />
-                        <Text style={styles.badgeText}>{calories} cal</Text>
-                    </View>
-                )}
-                {weight != null && (
-                    <View style={styles.badgeWeight}>
-                        <Ionicons name="barbell-outline" size={11} color="#888" />
-                        <Text style={[styles.badgeText, { color: '#555' }]}>{weight} g</Text>
-                    </View>
-                )}
             </TouchableOpacity>
         </Animated.View>
     );
@@ -141,32 +190,30 @@ const styles = StyleSheet.create({
         width: CARD_WIDTH,
         height: CARD_HEIGHT,
         marginRight: 16,
-        overflow: 'visible',
     },
 
-    // Card blanca
     card: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#fff',
+        backgroundColor: '#FFF7ED',
         borderRadius: 22,
         overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.10,
         shadowRadius: 16,
         elevation: 6,
-        justifyContent: 'space-between',
     },
 
-    // Top row
+    // ── Top row ──
     topRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 14,
         paddingTop: 14,
-        paddingBottom: 4,
+        paddingBottom: 6,
+        zIndex: 10,
     },
     timePill: {
         flexDirection: 'row',
@@ -182,126 +229,81 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontFamily: 'Poppins-SemiBold',
     },
-    deliveryRow: {
-        zIndex: 1000,
-        borderWidth: 1,
+    deliveryPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
         backgroundColor: '#fff',
+        borderWidth: 1,
         borderColor: '#ddd',
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
+        zIndex: 10,
     },
     deliveryText: {
-        color: '#888',
-        fontSize: 12,
+        color: '#666',
+        fontSize: 11,
         fontFamily: 'Poppins-Regular',
     },
 
-    // Nombre
+    // ── Nombre ──
     nameBlock: {
         paddingHorizontal: 14,
-        maxWidth: '58%',
+        paddingBottom: 2,
+        maxWidth: '52%',
+        zIndex: 10,
     },
-    nameLight: {
-        fontFamily: 'Poppins-Regular',
-        fontSize: 20,
-        color: '#111',
-        lineHeight: 26,
-    },
-    nameBold: {
+    nameLine: {
         fontFamily: 'Poppins-Bold',
-        fontSize: 20,
+        fontSize: 18,
         color: '#111',
-        lineHeight: 26,
+        lineHeight: 23,
     },
 
-    // Precio
-    price: {
+    // ── Precio ──
+    priceRow: {
         paddingHorizontal: 14,
+        zIndex: 10,
+    },
+    price: {
         fontFamily: 'Poppins-Bold',
         fontSize: 28,
-        color: '#111',
+        color: '#FF6B00',
         lineHeight: 34,
     },
     priceDollar: {
         fontSize: 16,
         fontFamily: 'Poppins-SemiBold',
-        color: '#111',
+        color: '#FF6B00',
     },
-
-    // Franja inferior gris
-    bottomStrip: {
-        zIndex: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#f5f5f5c2',
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-    },
-    discountLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    discountIconCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#ff8700',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    discountIconText: {
-        color: '#fff',
-        fontSize: 13,
-        fontFamily: 'Poppins-Bold',
-    },
-    specialLabel: {
+    originalPrice: {
         fontFamily: 'Poppins-Regular',
-        fontSize: 10,
-        color: '#888',
-    },
-    offText: {
-        fontFamily: 'Poppins-Bold',
         fontSize: 13,
-        color: '#111',
-    },
-    cartBtn: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        backgroundColor: '#ff8700',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#ff8700',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 6,
+        color: '#aaa',
+        textDecorationLine: 'line-through',
+        lineHeight: 18,
     },
 
-    // Imagen circular (dentro de la card, top-right)
-    floatingImage: {
+    // ── Imagen: mitad derecha desde arriba hasta el strip ──
+    foodImage: {
         position: 'absolute',
-        right: -20,
-        top: -50,
-        width: 300,
-        height: 300,
+        right: 10,
+        top: 10,
+        width: CARD_WIDTH * 0.58,
+        height: IMAGE_AREA_H + 10,
+        zIndex: 1,
     },
 
-    // Badges calorías / peso — stickers sueltos en el centro
+    // ── Badges — siempre dentro de la zona de imagen (derecha) ──
     badgeCal: {
         position: 'absolute',
-        left: '35%',
-        top: '25%',
+        left: '30%',
+        top: '14%',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: 'hsla(0, 0%, 100%, 0.93)',
+        backgroundColor: 'rgba(255,255,255,0.95)',
         paddingHorizontal: 9,
         paddingVertical: 5,
         borderRadius: 12,
@@ -309,32 +311,94 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.18,
         shadowRadius: 4,
-        elevation: 4,
-        transform: [{ rotate: '-13deg' }],
+        elevation: 5,
         zIndex: 20,
     },
     badgeWeight: {
         position: 'absolute',
-        left: '35%',
+        left: '28%',
         top: '48%',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: 'rgba(255,255,255,0.93)',
+        backgroundColor: 'rgba(255,255,255,0.95)',
         paddingHorizontal: 9,
         paddingVertical: 5,
         borderRadius: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.10,
         shadowRadius: 4,
-        elevation: 4,
-        transform: [{ rotate: '9deg' }],
+        elevation: 5,
         zIndex: 20,
     },
-    badgeText: {
+    badgeTextOrange: {
         fontFamily: 'Poppins-SemiBold',
         fontSize: 11,
         color: '#ff8700',
+    },
+    badgeTextGray: {
+        fontFamily: 'Poppins-SemiBold',
+        fontSize: 11,
+        color: '#555',
+    },
+
+    // ── Franja inferior ──
+    bottomStrip: {
+        position: 'absolute',
+        bottom: 6,
+        left: 6,
+        right: 6,
+        height: BOTTOM_STRIP_H,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(232, 230, 230, 0.96)',
+        paddingHorizontal: 14,
+        borderRadius: 15,
+        zIndex: 15,
+    },
+    discountLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    discountCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#FF6B00',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    discountIcon: {
+        color: '#fff',
+        fontSize: 13,
+        fontFamily: 'Poppins-Bold',
+    },
+    specialLabel: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 10,
+        color: '#000000',
+        lineHeight: 14,
+    },
+    offText: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 13,
+        color: '#111',
+        lineHeight: 17,
+    },
+    cartBtn: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: '#FF6B00',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#FF6B00',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 6,
     },
 });

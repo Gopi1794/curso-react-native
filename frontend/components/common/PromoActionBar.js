@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 export const PromoActionBar = ({
     quantity,
@@ -85,7 +86,7 @@ export const PromoActionBar = ({
                 style={styles.addToCartButton}
                 onPress={handleAddToCartPress} // ✅ Usar la función corregida
             >
-                <Feather name="shopping-cart" size={20} color="white" />
+                <Ionicons name="bag-handle-outline" size={22} color="white" />
                 <View style={styles.buttonTextContainer}>
                     <Text style={styles.addToCartText}>
                         {buttonText}

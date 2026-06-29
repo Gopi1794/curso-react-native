@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── URL base ──────────────────────────────────────────────
 // Cambiá esto según dónde corra el backend:
@@ -6,27 +7,62 @@ import * as SecureStore from 'expo-secure-store';
 //   iOS simulator    : 'http://localhost:3000'
 //   Dispositivo físico: tu IP local, ej: 'http://192.168.1.100:3000'
 //   Ngrok            : 'https://xxxx.ngrok-free.dev'
-const API_BASE_URL = 'http://192.168.1.37:3000';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.35:3000';
+
 
 const TOKEN_KEY = 'userToken';
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// ── Cache offline ─────────────────────────────────────────
+const CACHE_PREFIX = '@api_cache:';
+const cacheSet = (key, data) => AsyncStorage.setItem(CACHE_PREFIX + key, JSON.stringify(data)).catch(() => { });
+const cacheGet = async (key) => {
+    try {
+        const raw = await AsyncStorage.getItem(CACHE_PREFIX + key);
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+};
+
+const requestWithCache = async (cacheKey, fn) => {
+    try {
+        const result = await fn();
+        cacheSet(cacheKey, result);
+        return result;
+    } catch (err) {
+        const cached = await cacheGet(cacheKey);
+        if (cached) return { ...cached, _fromCache: true };
+        throw err;
+    }
+};
+
 // ── Helper base ───────────────────────────────────────────
-const request = async (endpoint, options = {}) => {
+const request = async (endpoint, options = {}, retries = 2) => {
     const token = await SecureStore.getItemAsync(TOKEN_KEY);
 
     const headers = {
         'Content-Type': 'application/json',
+        'bypass-tunnel-reminder': 'true',
         ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-    });
+    const method = options.method?.toUpperCase() || 'GET';
+    const isReadOnly = method === 'GET';
 
-    const data = await response.json();
-    return data;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                ...options,
+                headers,
+            });
+            const data = await response.json();
+            return data;
+        } catch (err) {
+            if (!isReadOnly || attempt === retries) throw err;
+            await sleep(500 * (attempt + 1));
+        }
+    }
 };
 
 // ── AUTH ──────────────────────────────────────────────────
@@ -85,6 +121,11 @@ const users = {
         body: JSON.stringify({ currentPassword, newPassword }),
     }),
 
+    deleteAccount: (password) => request('/api/users/account', {
+        method: 'DELETE',
+        body: JSON.stringify({ password }),
+    }),
+
     getStats: () => request('/api/users/stats'),
 
     getAddresses: () => request('/api/users/addresses'),
@@ -99,13 +140,15 @@ const users = {
 
 // ── RESTAURANTS ───────────────────────────────────────────
 const restaurants = {
-    getAll: () => request('/api/restaurants'),
+    getAll: () => requestWithCache('restaurants', () => request('/api/restaurants')),
 
     getById: (id) => request(`/api/restaurants/${id}`),
 
     getMenu: (id, category = null) => {
         const query = category ? `?category=${category}` : '';
-        return request(`/api/restaurants/${id}/menu${query}`);
+        return requestWithCache(`menu:${id}:${category || ''}`, () =>
+            request(`/api/restaurants/${id}/menu${query}`)
+        );
     },
 
     getMenuItem: (restaurantId, itemId) =>
@@ -154,6 +197,11 @@ const payments = {
         body: JSON.stringify({ pedido_id: pedidoId, metodo_pago_id: metodoPagoId }),
     }),
 
+    createPreference: (pedidoId) => request('/api/payments/mp-preference', {
+        method: 'POST',
+        body: JSON.stringify({ pedido_id: pedidoId }),
+    }),
+
     getHistory: () => request('/api/payments/history'),
 };
 
@@ -169,10 +217,49 @@ const comentarios = {
     remove: (menuItemId) => request(`/api/menu-items/${menuItemId}/comentarios`, { method: 'DELETE' }),
 };
 
+// ── FAVORITES ────────────────────────────────────────────
+const favorites = {
+    getAll: () => request('/api/favorites'),
+
+    add: (menuItemId) => request('/api/favorites', {
+        method: 'POST',
+        body: JSON.stringify({ menu_item_id: menuItemId }),
+    }),
+
+    remove: (menuItemId) => request(`/api/favorites/${menuItemId}`, { method: 'DELETE' }),
+};
+
 // ── CUPONES ───────────────────────────────────────────────
 const cupones = {
     getAll: () => request('/api/cupones'),
     getById: (id) => request(`/api/cupones/${id}`),
+    validate: (codigo) => request('/api/cupones/validate', {
+        method: 'POST',
+        body: JSON.stringify({ codigo }),
+    }),
+};
+
+// ── NOTIFICATIONS ─────────────────────────────────────────
+const notifications = {
+    savePushToken: (pushToken) => request('/api/users/push-token', {
+        method: 'PUT',
+        body: JSON.stringify({ pushToken }),
+    }),
+
+    getPreferences: () => request('/api/users/notification-preferences'),
+
+    updatePreferences: (prefs) => request('/api/users/notification-preferences', {
+        method: 'PUT',
+        body: JSON.stringify(prefs),
+    }),
+};
+
+// ── SUPPORT ───────────────────────────────────────────────
+const support = {
+    chat: (messages) => request('/api/support/chat', {
+        method: 'POST',
+        body: JSON.stringify({ messages }),
+    }),
 };
 
 // ── Token helpers (SecureStore) ──────────────────────────
@@ -183,4 +270,4 @@ const token = {
 };
 
 export { API_BASE_URL as API_URL };
-export default { auth, users, restaurants, orders, payments, comentarios, cupones, token };
+export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, token };

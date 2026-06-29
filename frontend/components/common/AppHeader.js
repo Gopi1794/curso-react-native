@@ -4,21 +4,29 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    StatusBar
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AppHeader = ({
     title,
+    subtitle,
     onBack,
     showBackButton = true,
     rightComponent
 }) => {
+    const insets = useSafeAreaInsets();
+
     return (
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
             <View style={styles.headerContent}>
                 {showBackButton ? (
-                    <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                    <TouchableOpacity
+                        onPress={onBack}
+                        style={styles.backButton}
+                        accessibilityRole="button"
+                        accessibilityLabel="Volver"
+                    >
                         <Ionicons name="arrow-back" size={24} color="#222" />
                     </TouchableOpacity>
                 ) : (
@@ -27,6 +35,9 @@ const AppHeader = ({
 
                 <View style={styles.headerTitleContainer}>
                     <Text style={styles.headerTitle}>{title}</Text>
+                    {subtitle ? (
+                        <Text style={styles.headerSubtitle}>{subtitle}</Text>
+                    ) : null}
                 </View>
 
                 {rightComponent || <View style={styles.headerRight} />}
@@ -35,7 +46,6 @@ const AppHeader = ({
     );
 };
 
-// ✅ AGREGAR ESTOS ESTILOS
 const styles = StyleSheet.create({
     header: {
         backgroundColor: '#fff',
@@ -51,14 +61,13 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: 15,
         borderBottomRightRadius: 15,
         zIndex: 1000,
-        paddingTop: StatusBar.currentHeight || 20,
     },
     headerContent: {
         paddingHorizontal: 20,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 10,
+        paddingBottom: 10,
     },
     backButton: {
         width: 44,
@@ -74,14 +83,18 @@ const styles = StyleSheet.create({
         width: 44,
     },
     headerTitleContainer: {
-        flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
     },
     headerTitle: {
         fontFamily: 'Poppins-Bold',
         color: '#222',
         fontSize: 20,
+    },
+    headerSubtitle: {
+        fontFamily: 'Poppins-Regular',
+        color: '#888',
+        fontSize: 12,
+        marginTop: 1,
     },
     headerRight: {
         width: 44,
