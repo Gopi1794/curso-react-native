@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../config/database');
 const emailService = require('../services/emailService');
+const { revokeToken } = require('../middleware/authMiddleware');
 
 // Genera código de 6 dígitos
 const generateVerificationCode = () => {
@@ -113,17 +114,21 @@ exports.register = async (req, res) => {
         const user = result.rows[0];
 
         // 10. Enviar email de verificación
+        let emailSent = true;
         try {
             await emailService.sendVerificationEmail(user.email, user.nombre, verificationCode);
         } catch (emailError) {
             console.error('Error enviando email de verificación:', emailError);
-            // No fallar el registro si el email no se envía
+            emailSent = false;
         }
 
         res.status(201).json({
             success: true,
-            message: 'Registro exitoso. Revisá tu email para verificar tu cuenta.',
+            message: emailSent
+                ? 'Registro exitoso. Revisá tu email para verificar tu cuenta.'
+                : 'Registro exitoso, pero no pudimos enviar el email de verificación. Podés solicitarlo de nuevo desde la pantalla de inicio de sesión.',
             requiresVerification: true,
+            emailSent,
             email: user.email
         });
 
@@ -244,9 +249,10 @@ exports.login = async (req, res) => {
 };
 
 // ── LOGOUT ────────────────────────────────────────────────
-// JWT es stateless: el cliente descarta el token.
-// En Fase 3 se puede agregar una blacklist si se requiere invalidación server-side.
 exports.logout = (req, res) => {
+    if (req.token) {
+        revokeToken(req.token);
+    }
     res.json({
         success: true,
         message: 'Sesión cerrada correctamente'
@@ -622,11 +628,31 @@ exports.resetPassword = async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
         await db.query(
-            'UPDATE usuarios SET password_hash = $1, token_verificacion = NULL, token_verificacion_expira = NULL WHERE id = $2',
+            'UPDATE usuarios SET password_hash = $1, token_verificacion = NULL, token_verificacion_expira = NULL, email_verificado = TRUE WHERE id = $2',
             [hashedPassword, user.id]
         );
 
-        res.json({ success: true, message: 'Contraseña cambiada correctamente. Ya podés iniciar sesión.' });
+        const token = jwt.sign(
+            { userId: user.id, uuid: user.uuid, email: user.email, rol: user.rol },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+        );
+
+        res.json({
+            success: true,
+            message: 'Contraseña cambiada correctamente.',
+            token,
+            user: {
+                id: user.id,
+                uuid: user.uuid,
+                nombre: user.nombre,
+                apellido: user.apellido,
+                email: user.email,
+                telefono: user.telefono,
+                rol: user.rol,
+                estado: user.estado,
+            },
+        });
 
     } catch (error) {
         console.error('Error en resetPassword:', error);

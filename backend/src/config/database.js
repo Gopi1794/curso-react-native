@@ -11,7 +11,7 @@ const pool = new Pool({
     database: process.env.DB_NAME || "foodapp_db",
     user:     process.env.DB_USER || "postgres",
     password: process.env.DB_PASSWORD,
-    ssl:      { rejectUnauthorized: false },
+    ssl:      process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,

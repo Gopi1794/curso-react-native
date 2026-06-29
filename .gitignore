@@ -21,6 +21,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# ── Crash dumps de la JVM (Android/Gradle) ───────────────
+hs_err_pid*.log
+replay_pid*.log
+hs_err_pid*
+replay_pid*
+
 # ── OS ───────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
@@ -44,10 +50,14 @@ web-build/
 *.key
 *.mobileprovision
 
-# ── Backups ─────────────────────────────────────────────
+# ── Backups y archivos temporales ───────────────────────
 *.backup
 *.orig.*
+*.tmp.*
+*.tmp
 
 # ── APKs y archivos grandes ────────────────────────────
 *.apk
 frontend/extracted_apks/
+*.jar
+tools/*.jar

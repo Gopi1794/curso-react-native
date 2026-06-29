@@ -27,7 +27,7 @@ const pool = new Pool({
     database: process.env.DB_NAME     || 'foodapp_db',
     user:     process.env.DB_USER     || 'postgres',
     password: process.env.DB_PASSWORD,
-    ssl:      { rejectUnauthorized: false },
+    ssl:      process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
 const parsePrice = (priceStr) => parseFloat(String(priceStr).replace('$', '').trim());

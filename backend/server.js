@@ -1,5 +1,5 @@
 // ARCHIVO LEGACY — no usar. El servidor activo es src/index.js
-// ADVERTENCIA: este archivo contiene credenciales hardcodeadas y no debe commitearse ni ejecutarse.
+// Este archivo es solo referencia histórica. NO ejecutar ni commitear.
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -8,13 +8,13 @@ const app = express();
 const PORT = 3000;
 
 // ============ CONFIGURACIÓN POSTGRESQL ============
-// ⚠️ IMPORTANTE: Usa TUS credenciales de pgAdmin
+// Las credenciales deben venir de variables de entorno (.env)
 const pool = new Pool({
-    host: 'localhost',            // Mismo que en pgAdmin
-    port: 5432,                   // Puerto default
-    user: 'postgres',             // Tu usuario
-    password: 'Cachipun.1994',    // Tu contraseña EXACTA
-    database: 'foodapp_db',          // Base de datos creada
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT) || 5432,
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD,           // NUNCA hardcodear
+    database: process.env.DB_NAME || 'foodapp_db',
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000

@@ -1,4 +1,10 @@
 const db = require('../config/database');
+const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+
+const getMpClient = () => new MercadoPagoConfig({
+    accessToken: process.env.MP_ACCESS_TOKEN,
+    options: { timeout: 5000 },
+});
 
 // ── GET METHODS ───────────────────────────────────────────
 // GET /api/payments/methods
@@ -186,10 +192,20 @@ exports.pay = async (req, res) => {
             });
         }
 
-        // 3. Simular procesamiento del gateway externo
-        // En producción: await MercadoPago.pay({ amount: pedido.total, ... })
+        // 3. Procesamiento del gateway externo
+        if (process.env.NODE_ENV === 'production' && !process.env.PAYMENT_GATEWAY_URL) {
+            await client.query('ROLLBACK');
+            return res.status(503).json({
+                success: false,
+                message: 'Pasarela de pagos no configurada. Contactá al administrador.'
+            });
+        }
+
+        // TODO: reemplazar con integración real (MercadoPago, Stripe, etc.)
+        // const pagoResult = await MercadoPago.pay({ amount: pedido.total, method: metodo.tipo });
+        // const pagoExitoso = pagoResult.status === 'approved';
         const referencia = `REF-${Date.now()}-${pedido_id}`;
-        const pagoExitoso = true; // simulado
+        const pagoExitoso = process.env.NODE_ENV !== 'production'; // simulado solo en dev
 
         if (!pagoExitoso) {
             await client.query('ROLLBACK');
@@ -227,6 +243,129 @@ exports.pay = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
     } finally {
         client.release();
+    }
+};
+
+// ── CREATE MP PREFERENCE ──────────────────────────────────
+// POST /api/payments/mp-preference
+exports.createPreference = async (req, res) => {
+    const { pedido_id } = req.body;
+
+    if (!pedido_id) {
+        return res.status(400).json({ success: false, message: 'Se requiere pedido_id' });
+    }
+
+    try {
+        const pedidoResult = await db.query(
+            `SELECT pd.id, pd.total, pd.estado,
+                    json_agg(json_build_object(
+                        'id', pi.menu_item_id,
+                        'nombre', pi.nombre_item,
+                        'precio', pi.precio_unitario,
+                        'cantidad', pi.cantidad
+                    )) AS items
+             FROM pedidos pd
+             JOIN pedido_items pi ON pi.pedido_id = pd.id
+             WHERE pd.id = $1 AND pd.usuario_id = $2
+             GROUP BY pd.id`,
+            [pedido_id, req.user.userId]
+        );
+
+        if (pedidoResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+        }
+
+        const pedido = pedidoResult.rows[0];
+
+        if (pedido.estado !== 'pendiente') {
+            return res.status(409).json({ success: false, message: 'El pedido ya fue procesado' });
+        }
+
+        const preference = new Preference(getMpClient());
+
+        const mpItems = pedido.items.map(item => ({
+            id: String(item.id),
+            title: item.nombre,
+            unit_price: parseFloat(item.precio),
+            quantity: item.cantidad,
+            currency_id: 'ARS',
+        }));
+
+        const result = await preference.create({
+            body: {
+                items: mpItems,
+                back_urls: {
+                    success: 'tuappfood://payment/success',
+                    failure: 'tuappfood://payment/failure',
+                    pending: 'tuappfood://payment/pending',
+                },
+                notification_url: process.env.MP_NOTIFICATION_URL,
+                external_reference: String(pedido_id),
+                statement_descriptor: 'Tu App Food',
+            },
+        });
+
+        res.json({
+            success: true,
+            preference_id: result.id,
+            init_point: result.init_point,
+            sandbox_init_point: result.sandbox_init_point,
+        });
+
+    } catch (error) {
+        console.error('Error en createPreference:', error);
+        res.status(500).json({ success: false, message: 'Error al crear preferencia de pago' });
+    }
+};
+
+// ── WEBHOOK ───────────────────────────────────────────────
+// POST /api/payments/webhook
+exports.mpWebhook = async (req, res) => {
+    const { type, data } = req.body;
+
+    // MP envía ping de validación sin datos — respondemos 200 inmediatamente
+    if (!type || !data?.id) return res.sendStatus(200);
+
+    if (type !== 'payment') return res.sendStatus(200);
+
+    try {
+        const mpPayment = new Payment(getMpClient());
+        const payment = await mpPayment.get({ id: data.id });
+
+        if (payment.status !== 'approved') return res.sendStatus(200);
+
+        const pedidoId = parseInt(payment.external_reference);
+        if (!pedidoId) return res.sendStatus(200);
+
+        const client = await db.getClient();
+        try {
+            await client.query('BEGIN');
+
+            await client.query(
+                `INSERT INTO pagos (pedido_id, usuario_id, monto, estado, referencia)
+                 SELECT $1, usuario_id, $2, 'completado', $3
+                 FROM pedidos WHERE id = $1
+                 ON CONFLICT DO NOTHING`,
+                [pedidoId, payment.transaction_amount, String(payment.id)]
+            );
+
+            await client.query(
+                "UPDATE pedidos SET estado = 'preparando' WHERE id = $1 AND estado = 'pendiente'",
+                [pedidoId]
+            );
+
+            await client.query('COMMIT');
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('Error en mpWebhook:', error);
+        res.sendStatus(500);
     }
 };
 

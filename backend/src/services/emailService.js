@@ -70,6 +70,90 @@ exports.sendVerificationEmail = async (email, nombre, code) => {
 exports.resendVerificationEmail = exports.sendVerificationEmail;
 
 /**
+ * Aviso de seguridad: contraseña cambiada
+ */
+exports.sendPasswordChangedEmail = async (email, nombre) => {
+    const now = new Date().toLocaleString('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        dateStyle: 'long',
+        timeStyle: 'short',
+    });
+
+    const mailOptions = {
+        from: process.env.SMTP_FROM,
+        to: email,
+        subject: 'Tu contraseña fue cambiada — Tu App Food',
+        html: `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#ff8800,#ff5500);padding:28px 24px;text-align:center;">
+              <img src="https://bbavirgboqyvqhxvuarp.supabase.co/storage/v1/object/public/bucketFoodApp/branding/logoApp.png"
+                   alt="Tu App Food" width="60" height="60"
+                   style="display:block;margin:0 auto 10px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.2);" />
+              <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Tu App Food</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;">
+              <p style="font-size:17px;color:#1a1a1a;margin:0 0 8px;font-weight:600;">Hola, ${nombre}</p>
+              <p style="font-size:15px;color:#555;margin:0 0 24px;line-height:1.6;">
+                Te avisamos que la contraseña de tu cuenta fue cambiada exitosamente.
+              </p>
+
+              <!-- Info box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                <tr>
+                  <td style="background:#f8f8f8;border-radius:10px;padding:16px 20px;">
+                    <p style="margin:0 0 6px;font-size:13px;color:#999;text-transform:uppercase;letter-spacing:0.5px;">Fecha y hora</p>
+                    <p style="margin:0;font-size:15px;color:#222;font-weight:600;">${now}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Alerta -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#FFF3CD;border-left:4px solid #ff8800;border-radius:6px;padding:14px 16px;">
+                    <p style="margin:0;font-size:13px;color:#856404;line-height:1.6;">
+                      🔒 &nbsp;Si <strong>no fuiste vos</strong> quien hizo este cambio, contactá a soporte de inmediato
+                      respondiendo este email.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#fafafa;border-top:1px solid #f0f0f0;padding:16px 32px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#bbb;">Tu App Food &mdash; Este es un aviso de seguridad automático</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+    };
+
+    return transporter.sendMail(mailOptions);
+};
+
+/**
  * Enviar email de recuperación de contraseña
  */
 exports.sendPasswordResetEmail = async (email, nombre, code) => {

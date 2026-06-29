@@ -9,6 +9,7 @@ curso-react-native/
 ├── frontend/        → App móvil React Native con Expo
 ├── backend/         → API REST con Node.js/Express
 ├── database/        → Schema SQL y seed de datos
+├── tools/           → Utilidades externas (bundletool.jar, etc.)
 └── config/          → Configuración AWS
 ```
 
@@ -37,19 +38,35 @@ curso-react-native/
 ```
 App.js               → Entry point principal
 index.js             → Registro de la app
-screens/             → Pantallas (una por feature)
+screens/             → Pantallas agrupadas por feature
+  auth/              → VerifyEmailScreen
+  onboarding/        → AnimatedSplashScreen, OnboardingScreen
+  restaurant/        → SelectRestaurantScreen
+  home/              → ScreenHome
+  food/              → FoodDetailScreen, PromoFoodDetailScreen
+  cart/              → CartScreen
+  orders/            → OrdersScreen, OrderDetailScreen, OrderConfirmationScreen, OrderTrackingScreen
+  favorites/         → FavoritesScreen
+  profile/           → ProfileScreen, EditProfileScreen, AddressesScreen, PaymentMethodsScreen, etc.
+  tickets/           → TicketScreen, TicketDetailScreen
 components/          → Componentes reutilizables
-navigation/          → Configuración de navegadores
+  common/            → AppHeader, BackButton, ShareButton, etc.
+  ticket/            → Componentes específicos de tickets
+navigation/          → Stacks de navegación (Home, Orders, Profile, Favorites)
 store/
   index.js           → Configuración Redux store
   slices/
     cartSlice.js     → Estado del carrito
     userSlice.js     → Estado del usuario autenticado
+    restaurantSlice.js → Restaurante seleccionado
   hooks.js           → Typed hooks (useAppDispatch, useAppSelector)
 services/api.js      → Llamadas HTTP al backend
+utils/               → Helpers de formato y validación (formatPrice, isValidEmail, etc.)
 firebase/            → Configuración Firebase
-constants/Colors.js  → Paleta de colores
+constants/           → Colors.js (paleta) y Spacing.js (escala de tamaños)
 config/              → Imágenes y Mapbox
+contexts/            → ThemeContext (light/dark)
+hooks/               → Custom hooks de la app
 assets/              → Imágenes, animaciones, videos
 ```
 

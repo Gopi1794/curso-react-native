@@ -11,7 +11,9 @@ const restaurantsRouter = require('./routers/restaurants');
 const ordersRouter      = require('./routers/orders');
 const paymentsRouter    = require('./routers/payments');
 const cuponesRouter     = require('./routers/cupones');
-const comentariosRouter = require('./routers/comentarios');
+const comentariosRouter  = require('./routers/comentarios');
+const favoritosRouter    = require('./routers/favoritos');
+const supportRouter      = require('./routers/support');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +45,8 @@ app.use('/api/orders',      ordersRouter);
 app.use('/api/payments',    paymentsRouter);
 app.use('/api/cupones',     cuponesRouter);
 app.use('/api/menu-items/:menuItemId/comentarios', comentariosRouter);
+app.use('/api/favorites',   favoritosRouter);
+app.use('/api/support',     supportRouter);
 
 // ── Health check ───────────────────────────────────────────
 app.get('/health', async (req, res) => {
@@ -61,7 +65,9 @@ app.use((req, res) => {
 });
 
 // ── Servidor ──────────────────────────────────────────────
-app.listen(PORT, () => {
+let serverStarted = false;
+const server = app.listen(PORT, () => {
+    serverStarted = true;
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
     console.log(`Endpoints disponibles:`);
     console.log(`  POST /api/auth/register`);
@@ -87,4 +93,15 @@ app.listen(PORT, () => {
     console.log(`  POST /api/menu-items/:id/comentarios`);
     console.log(`  DEL  /api/menu-items/:id/comentarios`);
     console.log(`  GET  /health`);
+});
+
+server.on('error', (err) => {
+    if (!serverStarted && err.code === 'EADDRINUSE') {
+        // Solo mostrar este mensaje si el servidor aún no arrancó
+        console.error(`❌ Puerto ${PORT} ya está en uso. Cerrá la instancia anterior o cambiá PORT en .env`);
+        process.exit(1);
+    } else {
+        // Si ya estaba corriendo, dejar que Node/nodemon lo maneje normalmente
+        throw err;
+    }
 });

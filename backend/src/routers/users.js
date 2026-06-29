@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const usersController = require('../controllers/usersController');
+const notificationsController = require('../controllers/notificationsController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Multer en memoria (max 5MB)
@@ -28,5 +29,10 @@ router.post('/avatar',         upload.single('avatar'), usersController.uploadAv
 router.get('/addresses',       usersController.getAddresses);
 router.post('/addresses',      usersController.createAddress);
 router.delete('/addresses/:id', usersController.deleteAddress);
+router.delete('/account',       usersController.deleteAccount);
+
+router.put('/push-token',                  notificationsController.savePushToken);
+router.get('/notification-preferences',    notificationsController.getPreferences);
+router.put('/notification-preferences',    notificationsController.updatePreferences);
 
 module.exports = router;
