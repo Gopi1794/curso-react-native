@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 //   iOS simulator    : 'http://localhost:3000'
 //   Dispositivo físico: tu IP local, ej: 'http://192.168.1.100:3000'
 //   Ngrok            : 'https://xxxx.ngrok-free.dev'
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.35:3000';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://curso-react-native.onrender.com';
 
 
 const TOKEN_KEY = 'userToken';
