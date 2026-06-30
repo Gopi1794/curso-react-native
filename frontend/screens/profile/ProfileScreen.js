@@ -98,11 +98,11 @@ export default function ProfileScreen({ navigation }) {
           {isAdmin && (
             <View style={styles.menuSection}>
               <Text style={styles.sectionTitle}>Administración</Text>
-              <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AdminIngredients')} accessibilityRole="button" accessibilityLabel="Gestionar Ingredientes">
+              <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AdminDashboard')} accessibilityRole="button" accessibilityLabel="Panel de administración">
                 <View style={[styles.menuIconContainer, { backgroundColor: '#2E7D32' }]}>
                   <Ionicons name="leaf-outline" size={20} color="#fff" />
                 </View>
-                <Text style={styles.menuText}>Ingredientes</Text>
+                <Text style={styles.menuText}>Administración</Text>
                 <Ionicons name="chevron-forward" size={18} color="#FF8700" />
               </TouchableOpacity>
             </View>

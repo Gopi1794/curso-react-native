@@ -268,6 +268,14 @@ const admin = {
         }),
         remove: (id) => request(`/api/admin/ingredientes/${id}`, { method: 'DELETE' }),
     },
+    stock: {
+        getByRestaurante: (restauranteId) => request(`/api/admin/ingredientes/stock/${restauranteId}`),
+        getPlatosByRestaurante: (restauranteId) => request(`/api/admin/ingredientes/platos/${restauranteId}`),
+        update: (id, data) => request(`/api/admin/ingredientes/stock/item/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
+    },
 };
 
 // ── SUPPORT ───────────────────────────────────────────────

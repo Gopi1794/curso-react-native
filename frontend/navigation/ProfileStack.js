@@ -10,6 +10,8 @@ import HelpScreen from '../screens/profile/HelpScreen';
 import ChatSupportScreen from '../screens/profile/ChatSupportScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import AdminIngredientsScreen from '../screens/admin/AdminIngredientsScreen';
+import AdminStockScreen from '../screens/admin/AdminStockScreen';
+import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 
 const Stack = createStackNavigator();
 
@@ -25,7 +27,9 @@ export default function ProfileStack() {
             <Stack.Screen name="Help" component={HelpScreen} />
             <Stack.Screen name="ChatSupport" component={ChatSupportScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
             <Stack.Screen name="AdminIngredients" component={AdminIngredientsScreen} />
+            <Stack.Screen name="AdminStock" component={AdminStockScreen} />
         </Stack.Navigator>
     );
 }
