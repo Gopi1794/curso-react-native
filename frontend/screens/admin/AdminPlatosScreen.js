@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { imageMap } from '../../assets/utils/imageMap';
 import AppHeader from '../../components/common/AppHeader';
+import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
 import { useAppSelector } from '../../store/hooks';
 
@@ -48,7 +49,7 @@ export default function AdminPlatosScreen({ navigation }) {
             const res = await API.admin.platos.getAll(restauranteId);
             if (res.success) setPlatos(res.platos);
         } catch {
-            Alert.alert('Error', 'No se pudieron cargar los platos');
+            showErrorMessage('Error', 'No se pudieron cargar los platos');
         } finally {
             setLoading(false);
         }
@@ -63,7 +64,7 @@ export default function AdminPlatosScreen({ navigation }) {
                 setPlatos(prev => prev.map(p => p.id === item.id ? { ...p, disponible: !p.disponible } : p));
             }
         } catch {
-            Alert.alert('Error', 'No se pudo cambiar el estado');
+            showErrorMessage('Error', 'No se pudo cambiar el estado');
         }
     };
 
@@ -88,9 +89,11 @@ export default function AdminPlatosScreen({ navigation }) {
                 descripcion: item.descripcion || '',
                 imagen_url: item.imagen_url || '',
             });
-            if (res.success) setPlatos(prev => [...prev, res.plato]);
-            else Alert.alert('Error', res.message);
-        } catch { Alert.alert('Error', 'No se pudo duplicar el plato'); }
+            if (res.success) {
+                setPlatos(prev => [...prev, res.plato]);
+                showSuccessMessage('Plato duplicado', `Copia de ${item.nombre} creada`);
+            } else showErrorMessage('Error', res.message);
+        } catch { showErrorMessage('Error', 'No se pudo duplicar el plato'); }
     };
 
     const handleDelete = (item) => {
@@ -101,9 +104,11 @@ export default function AdminPlatosScreen({ navigation }) {
                 onPress: async () => {
                     try {
                         const res = await API.admin.platos.remove(item.id);
-                        if (res.success) setPlatos(prev => prev.filter(p => p.id !== item.id));
-                        else Alert.alert('Error', res.message);
-                    } catch { Alert.alert('Error', 'No se pudo eliminar'); }
+                        if (res.success) {
+                            setPlatos(prev => prev.filter(p => p.id !== item.id));
+                            showSuccessMessage('Plato eliminado', item.nombre);
+                        } else showErrorMessage('Error', res.message);
+                    } catch { showErrorMessage('Error', 'No se pudo eliminar'); }
                 },
             },
         ]);
@@ -127,7 +132,7 @@ export default function AdminPlatosScreen({ navigation }) {
 
     const pickImage = async () => {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!perm.granted) { Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería'); return; }
+        if (!perm.granted) { showErrorMessage('Permiso requerido', 'Necesitamos acceso a tu galería'); return; }
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true, aspect: [1, 1], quality: 0.8,
@@ -136,15 +141,17 @@ export default function AdminPlatosScreen({ navigation }) {
         setUploading(true);
         try {
             const res = await API.admin.upload(result.assets[0].uri);
-            if (res.success) setForm(f => ({ ...f, imagen_url: res.url }));
-            else Alert.alert('Error', res.message);
-        } catch { Alert.alert('Error', 'No se pudo subir la imagen'); }
+            if (res.success) {
+                setForm(f => ({ ...f, imagen_url: res.url }));
+                showSuccessMessage('Imagen subida');
+            } else showErrorMessage('Error', res.message);
+        } catch { showErrorMessage('Error', 'No se pudo subir la imagen'); }
         finally { setUploading(false); }
     };
 
     const handleSave = async () => {
         if (!form.nombre.trim() || !form.precio || !form.categoria) {
-            Alert.alert('Error', 'Nombre, precio y categoría son requeridos'); return;
+            showErrorMessage('Campos requeridos', 'Nombre, precio y categoría son obligatorios'); return;
         }
         setSaving(true);
         try {
@@ -155,16 +162,18 @@ export default function AdminPlatosScreen({ navigation }) {
                     setModalVisible(false);
                     setEditId(null);
                     setForm(emptyForm());
-                } else Alert.alert('Error', res.message);
+                    showSuccessMessage('Plato actualizado', form.nombre);
+                } else showErrorMessage('Error', res.message);
             } else {
                 const res = await API.admin.platos.create(restauranteId, form);
                 if (res.success) {
                     setPlatos(prev => [...prev, res.plato]);
                     setModalVisible(false);
                     setForm(emptyForm());
-                } else Alert.alert('Error', res.message);
+                    showSuccessMessage('Plato creado', form.nombre);
+                } else showErrorMessage('Error', res.message);
             }
-        } catch { Alert.alert('Error', editId ? 'No se pudo actualizar el plato' : 'No se pudo crear el plato'); }
+        } catch { showErrorMessage('Error', editId ? 'No se pudo actualizar el plato' : 'No se pudo crear el plato'); }
         finally { setSaving(false); }
     };
 
@@ -322,7 +331,7 @@ export default function AdminPlatosScreen({ navigation }) {
 
                         {/* Pagination */}
                         {filtered.length > 0 && (
-                            <View style={styles.pagination}>
+                            <View style={[styles.pagination, { paddingBottom: Math.max(20, insets.bottom + 16) }]}>
                                 <Text style={styles.paginationInfo}>
                                     Mostrando {startItem} - {endItem} de {filtered.length}
                                 </Text>

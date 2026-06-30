@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import QRCode from 'react-native-qrcode-svg';
 import { imageMap } from '../../assets/utils/imageMap';
 import AppHeader from '../../components/common/AppHeader';
+import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
 
 const COLORS = ['#FF6B6B','#FF8700','#4CAF50','#2196F3','#9C27B0','#FF5722','#009688'];
@@ -37,7 +38,7 @@ export default function AdminCuponesScreen({ navigation }) {
             const res = await API.admin.cupones.getAll();
             if (res.success) setCupones(res.cupones);
         } catch {
-            Alert.alert('Error', 'No se pudieron cargar los cupones');
+            showErrorMessage('Error', 'No se pudieron cargar los cupones');
         } finally {
             setLoading(false);
         }
@@ -70,7 +71,7 @@ export default function AdminCuponesScreen({ navigation }) {
     const pickImage = async () => {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!perm.granted) {
-            Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería');
+            showErrorMessage('Permiso requerido', 'Necesitamos acceso a tu galería');
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -86,11 +87,12 @@ export default function AdminCuponesScreen({ navigation }) {
             const res = await API.admin.upload(result.assets[0].uri);
             if (res.success) {
                 setForm(f => ({ ...f, imagen_url: res.url }));
+                showSuccessMessage('Imagen subida');
             } else {
-                Alert.alert('Error', res.message);
+                showErrorMessage('Error', res.message);
             }
         } catch {
-            Alert.alert('Error', 'No se pudo subir la imagen');
+            showErrorMessage('Error', 'No se pudo subir la imagen');
         } finally {
             setUploading(false);
         }
@@ -98,15 +100,12 @@ export default function AdminCuponesScreen({ navigation }) {
 
     const handleSave = async () => {
         if (!form.titulo.trim() || !form.codigo.trim() || !form.valido_hasta) {
-            Alert.alert('Error', 'Título, código y fecha de vencimiento son requeridos');
+            showErrorMessage('Campos requeridos', 'Título, código y fecha de vencimiento son obligatorios');
             return;
         }
         setSaving(true);
         try {
-            const payload = {
-                ...form,
-                discount_percent: parseInt(form.discount_percent) || 10,
-            };
+            const payload = { ...form, discount_percent: parseInt(form.discount_percent) || 10 };
             const res = editId
                 ? await API.admin.cupones.update(editId, payload)
                 : await API.admin.cupones.create(payload);
@@ -114,15 +113,17 @@ export default function AdminCuponesScreen({ navigation }) {
             if (res.success) {
                 if (editId) {
                     setCupones(prev => prev.map(c => c.id === editId ? res.cupon : c));
+                    showSuccessMessage('Cupón actualizado', form.titulo);
                 } else {
                     setCupones(prev => [res.cupon, ...prev]);
+                    showSuccessMessage('Cupón creado', form.titulo);
                 }
                 setModalVisible(false);
             } else {
-                Alert.alert('Error', res.message);
+                showErrorMessage('Error', res.message);
             }
         } catch {
-            Alert.alert('Error', 'No se pudo guardar el cupón');
+            showErrorMessage('Error', 'No se pudo guardar el cupón');
         } finally {
             setSaving(false);
         }
@@ -133,8 +134,11 @@ export default function AdminCuponesScreen({ navigation }) {
             const res = await API.admin.cupones.update(item.id, { activo: !item.activo });
             if (res.success) {
                 setCupones(prev => prev.map(c => c.id === item.id ? { ...c, activo: !c.activo } : c));
+                showSuccessMessage(item.activo ? 'Cupón desactivado' : 'Cupón activado', item.titulo);
             }
-        } catch {}
+        } catch {
+            showErrorMessage('Error', 'No se pudo cambiar el estado');
+        }
     };
 
     const handleDelete = (item) => {
@@ -145,8 +149,13 @@ export default function AdminCuponesScreen({ navigation }) {
                 onPress: async () => {
                     try {
                         const res = await API.admin.cupones.remove(item.id);
-                        if (res.success) setCupones(prev => prev.filter(c => c.id !== item.id));
-                    } catch {}
+                        if (res.success) {
+                            setCupones(prev => prev.filter(c => c.id !== item.id));
+                            showSuccessMessage('Cupón eliminado', item.titulo);
+                        }
+                    } catch {
+                        showErrorMessage('Error', 'No se pudo eliminar el cupón');
+                    }
                 },
             },
         ]);
