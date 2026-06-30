@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppHeader from '../../components/common/AppHeader';
+import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
 
 const CATEGORIAS = ['proteina','lacteo','verdura','fruta','pan','salsa','condimento','grano','pasta','bebida','dulce','otro'];
@@ -33,7 +34,7 @@ export default function AdminIngredientsScreen({ navigation }) {
             const res = await API.admin.ingredientes.getAll();
             if (res.success) setIngredientes(res.ingredientes);
         } catch {
-            Alert.alert('Error', 'No se pudieron cargar los ingredientes');
+            showErrorMessage('Error', 'No se pudieron cargar los ingredientes');
         } finally {
             setLoading(false);
         }
@@ -43,7 +44,7 @@ export default function AdminIngredientsScreen({ navigation }) {
 
     const handleCreate = async () => {
         if (!form.nombre.trim()) {
-            Alert.alert('Error', 'El nombre es requerido');
+            showErrorMessage('Campo requerido', 'El nombre del ingrediente es obligatorio');
             return;
         }
         setSaving(true);
@@ -53,11 +54,12 @@ export default function AdminIngredientsScreen({ navigation }) {
                 setIngredientes(prev => [...prev, res.ingrediente].sort((a, b) => a.nombre.localeCompare(b.nombre)));
                 setModalVisible(false);
                 setForm({ nombre: '', categoria: 'proteina', unidad_medida: 'gr' });
+                showSuccessMessage('Ingrediente creado', form.nombre);
             } else {
-                Alert.alert('Error', res.message);
+                showErrorMessage('Error', res.message);
             }
         } catch {
-            Alert.alert('Error', 'No se pudo crear el ingrediente');
+            showErrorMessage('Error', 'No se pudo crear el ingrediente');
         } finally {
             setSaving(false);
         }
@@ -77,11 +79,12 @@ export default function AdminIngredientsScreen({ navigation }) {
                             const res = await API.admin.ingredientes.remove(item.id);
                             if (res.success) {
                                 setIngredientes(prev => prev.filter(i => i.id !== item.id));
+                                showSuccessMessage('Ingrediente eliminado', item.nombre);
                             } else {
-                                Alert.alert('Error', res.message);
+                                showErrorMessage('Error', res.message);
                             }
                         } catch {
-                            Alert.alert('Error', 'No se pudo eliminar');
+                            showErrorMessage('Error', 'No se pudo eliminar el ingrediente');
                         }
                     },
                 },

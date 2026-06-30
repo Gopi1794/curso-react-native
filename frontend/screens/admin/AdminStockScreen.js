@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppHeader from '../../components/common/AppHeader';
+import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
 import { useAppSelector } from '../../store/hooks';
 
@@ -40,7 +41,7 @@ export default function AdminStockScreen({ navigation }) {
             const res = await API.admin.stock.getByRestaurante(restauranteId);
             if (res.success) setStock(res.stock);
         } catch {
-            Alert.alert('Error', 'No se pudo cargar el stock');
+            showErrorMessage('Error', 'No se pudo cargar el stock');
         } finally {
             setLoading(false);
         }
@@ -56,7 +57,7 @@ export default function AdminStockScreen({ navigation }) {
     const handleSave = async () => {
         const cantidad = parseFloat(editCantidad);
         if (isNaN(cantidad) || cantidad < 0) {
-            Alert.alert('Error', 'Cantidad inválida');
+            showErrorMessage('Cantidad inválida');
             return;
         }
         setSaving(true);
@@ -65,11 +66,12 @@ export default function AdminStockScreen({ navigation }) {
             if (res.success) {
                 setStock(prev => prev.map(s => s.id === editItem.id ? { ...s, cantidad: res.stock.cantidad } : s));
                 setEditItem(null);
+                showSuccessMessage('Stock actualizado', `${editItem.nombre}: ${cantidad} ${editItem.unidad_medida}`);
             } else {
-                Alert.alert('Error', res.message);
+                showErrorMessage('Error', res.message);
             }
         } catch {
-            Alert.alert('Error', 'No se pudo actualizar');
+            showErrorMessage('Error', 'No se pudo actualizar el stock');
         } finally {
             setSaving(false);
         }
