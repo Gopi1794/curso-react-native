@@ -7,6 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { imageMap } from '../../assets/utils/imageMap';
 import AppHeader from '../../components/common/AppHeader';
 import API from '../../services/api';
 import { useAppSelector } from '../../store/hooks';
@@ -109,10 +110,18 @@ export default function AdminPlatosScreen({ navigation }) {
         p.categoria.toLowerCase().includes(search.toLowerCase())
     );
 
-    const renderItem = ({ item }) => (
+    const getImageSource = (item) => {
+        if (item.imagen_url) return { uri: item.imagen_url };
+        if (item.imagen_key && imageMap[item.imagen_key]) return { uri: imageMap[item.imagen_key] };
+        return null;
+    };
+
+    const renderItem = ({ item }) => {
+        const imgSrc = getImageSource(item);
+        return (
         <View style={[styles.row, !item.disponible && styles.rowInactive]}>
-            {item.imagen_url ? (
-                <Image source={{ uri: item.imagen_url }} style={styles.thumb} />
+            {imgSrc ? (
+                <Image source={imgSrc} style={styles.thumb} />
             ) : (
                 <View style={styles.thumbPlaceholder}>
                     <Ionicons name="fast-food-outline" size={22} color="#ddd" />
@@ -130,7 +139,8 @@ export default function AdminPlatosScreen({ navigation }) {
                 trackColor={{ false: '#eee', true: '#FFD580' }}
             />
         </View>
-    );
+        );
+    };
 
     return (
         <View style={styles.container}>
