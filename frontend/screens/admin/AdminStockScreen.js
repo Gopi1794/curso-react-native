@@ -103,7 +103,7 @@ export default function AdminStockScreen({ navigation }) {
             <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
             <AppHeader title="Stock" subtitle={`${stock.length} ingredientes`} onBack={() => navigation.goBack()} />
 
-            <View style={[styles.body, { paddingTop: insets.top + 44 + 16 }]}>
+            <View style={[styles.body, { paddingTop: insets.top + 76 }]}>
                 <View style={styles.legend}>
                     {[['#43A047','OK'],['#FB8C00','Bajo'],['#E53935','Sin stock']].map(([c,l]) => (
                         <View key={l} style={styles.legendItem}>

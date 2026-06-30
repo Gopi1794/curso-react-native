@@ -49,7 +49,7 @@ export default function AdminDashboardScreen({ navigation }) {
             <AppHeader title="Panel Admin" onBack={() => navigation.goBack()} />
 
             <ScrollView
-                contentContainerStyle={[styles.content, { paddingTop: insets.top + 44 + 24 }]}
+                contentContainerStyle={[styles.content, { paddingTop: insets.top + 76 }]}
                 showsVerticalScrollIndicator={false}
             >
                 <Text style={styles.greeting}>¿Qué querés gestionar?</Text>
