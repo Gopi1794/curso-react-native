@@ -7,18 +7,34 @@ import AppHeader from '../../components/common/AppHeader';
 
 const CARDS = [
     {
+        key: 'platos',
+        screen: 'AdminPlatos',
+        title: 'Platos del menú',
+        subtitle: 'Habilitá, deshabilitá o agregá platos',
+        icon: 'fast-food-outline',
+        colors: ['#E65100', '#FF8700'],
+    },
+    {
         key: 'stock',
         screen: 'AdminStock',
         title: 'Stock de ingredientes',
-        subtitle: 'Controlá el inventario por plato',
+        subtitle: 'Controlá las cantidades disponibles',
         icon: 'layers-outline',
         colors: ['#2E7D32', '#43A047'],
+    },
+    {
+        key: 'cupones',
+        screen: 'AdminCupones',
+        title: 'Cupones de descuento',
+        subtitle: 'Creá cupones con QR para el kiosco',
+        icon: 'ticket-outline',
+        colors: ['#6A1B9A', '#9C27B0'],
     },
     {
         key: 'ingredientes',
         screen: 'AdminIngredients',
         title: 'Catálogo de ingredientes',
-        subtitle: 'Agregá, editá o desactivá ingredientes',
+        subtitle: 'Agregá o desactivá ingredientes',
         icon: 'leaf-outline',
         colors: ['#1565C0', '#1976D2'],
     },

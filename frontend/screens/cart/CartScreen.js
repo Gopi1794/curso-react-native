@@ -541,7 +541,8 @@ const CartScreen = ({ navigation }) => {
                         source={{ uri: checkoutUrl }}
                         onNavigationStateChange={handleWebViewNavigation}
                         style={styles.webView}
-                        incognito={true}
+                        sharedCookiesEnabled={true}
+                        thirdPartyCookiesEnabled={true}
                     />
                 </View>
             </Modal>
