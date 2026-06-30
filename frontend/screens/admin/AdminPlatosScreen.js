@@ -112,18 +112,15 @@ export default function AdminPlatosScreen({ navigation }) {
     const showActions = (item) => setActionItem(item);
 
     const goToDetail = (item) => {
-        navigation.navigate('HomeTab', {
-            screen: 'FoodDetail',
-            params: {
-                foodItem: {
-                    id: item.id,
-                    name: item.nombre,
-                    price: `$${parseFloat(item.precio).toFixed(2)}`,
-                    imageKey: item.imagen_key || item.imagen_url || '',
-                    category: item.categoria,
-                    descriptionText: item.descripcion || '',
-                    ingredientText: [],
-                },
+        navigation.navigate('AdminFoodDetail', {
+            foodItem: {
+                id: item.id,
+                name: item.nombre,
+                price: `$${parseFloat(item.precio).toFixed(2)}`,
+                imageKey: item.imagen_key || item.imagen_url || '',
+                category: item.categoria,
+                descriptionText: item.descripcion || '',
+                ingredientText: [],
             },
         });
     };
