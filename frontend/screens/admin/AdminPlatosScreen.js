@@ -334,7 +334,7 @@ export default function AdminPlatosScreen({ navigation }) {
 
                         {/* Pagination */}
                         {filtered.length > 0 && (
-                            <View style={[styles.pagination, { paddingBottom: tabBarHeight + 12 }]}>
+                            <View style={[styles.pagination, { paddingBottom: tabBarHeight + 52 }]}>
                                 <Text style={styles.paginationInfo}>
                                     Mostrando {startItem} - {endItem} de {filtered.length}
                                 </Text>
