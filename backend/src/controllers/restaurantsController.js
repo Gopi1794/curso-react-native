@@ -104,6 +104,7 @@ exports.getMenu = async (req, res) => {
             LEFT JOIN vista_disponibilidad_platos vd
                 ON vd.menu_item_id = mi.id AND vd.restaurante_id = mi.restaurante_id
             WHERE mi.restaurante_id = $1
+              AND mi.disponible = TRUE
               AND COALESCE(vd.disponible, TRUE) = TRUE
         `;
         const values = [id];
