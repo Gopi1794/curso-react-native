@@ -12,6 +12,8 @@ import SettingsScreen from '../screens/profile/SettingsScreen';
 import AdminIngredientsScreen from '../screens/admin/AdminIngredientsScreen';
 import AdminStockScreen from '../screens/admin/AdminStockScreen';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
+import AdminCuponesScreen from '../screens/admin/AdminCuponesScreen';
+import AdminPlatosScreen from '../screens/admin/AdminPlatosScreen';
 
 const Stack = createStackNavigator();
 
@@ -30,6 +32,8 @@ export default function ProfileStack() {
             <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
             <Stack.Screen name="AdminIngredients" component={AdminIngredientsScreen} />
             <Stack.Screen name="AdminStock" component={AdminStockScreen} />
+            <Stack.Screen name="AdminCupones" component={AdminCuponesScreen} />
+            <Stack.Screen name="AdminPlatos" component={AdminPlatosScreen} />
         </Stack.Navigator>
     );
 }

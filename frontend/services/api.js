@@ -256,25 +256,37 @@ const notifications = {
 
 // ── ADMIN ─────────────────────────────────────────────────
 const admin = {
+    upload: async (uri, type = 'image/jpeg') => {
+        const token = await SecureStore.getItemAsync(TOKEN_KEY);
+        const form = new FormData();
+        form.append('image', { uri, type, name: 'upload.jpg' });
+        const res = await fetch(`${API_BASE_URL}/api/admin/upload`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: form,
+        });
+        return res.json();
+    },
     ingredientes: {
         getAll: () => request('/api/admin/ingredientes'),
-        create: (data) => request('/api/admin/ingredientes', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
-        update: (id, data) => request(`/api/admin/ingredientes/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        }),
+        create: (data) => request('/api/admin/ingredientes', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => request(`/api/admin/ingredientes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         remove: (id) => request(`/api/admin/ingredientes/${id}`, { method: 'DELETE' }),
     },
     stock: {
-        getByRestaurante: (restauranteId) => request(`/api/admin/ingredientes/stock/${restauranteId}`),
-        getPlatosByRestaurante: (restauranteId) => request(`/api/admin/ingredientes/platos/${restauranteId}`),
-        update: (id, data) => request(`/api/admin/ingredientes/stock/item/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        }),
+        getByRestaurante: (restauranteId) => request(`/api/admin/stock/${restauranteId}`),
+        update: (id, data) => request(`/api/admin/stock/item/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    },
+    cupones: {
+        getAll: () => request('/api/admin/cupones'),
+        create: (data) => request('/api/admin/cupones', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => request(`/api/admin/cupones/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        remove: (id) => request(`/api/admin/cupones/${id}`, { method: 'DELETE' }),
+    },
+    platos: {
+        getAll: (restauranteId) => request(`/api/admin/platos/${restauranteId}`),
+        create: (restauranteId, data) => request(`/api/admin/platos/${restauranteId}`, { method: 'POST', body: JSON.stringify(data) }),
+        toggle: (id) => request(`/api/admin/platos/${id}/toggle`, { method: 'PUT' }),
     },
 };
 
