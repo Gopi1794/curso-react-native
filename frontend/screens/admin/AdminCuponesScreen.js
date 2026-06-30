@@ -154,24 +154,27 @@ export default function AdminCuponesScreen({ navigation }) {
 
     const isExpired = (fecha) => fecha && new Date(fecha) < new Date();
 
-    const renderItem = ({ item }) => (
+    const getCuponImageSource = (item) => {
+        if (item.imagen_url) return { uri: item.imagen_url };
+        if (item.imagen_key) {
+            const raw = imageMap[item.imagen_key];
+            if (typeof raw === 'string') return { uri: raw };
+            if (raw?.uri) return { uri: raw.uri };
+        }
+        return null;
+    };
+
+    const renderItem = ({ item }) => {
+        const imgSrc = getCuponImageSource(item);
+        return (
         <View style={[styles.card, !item.activo && styles.cardInactive]}>
             <View style={[styles.cardStripe, { backgroundColor: item.color }]} />
-            {(() => {
-                let src = null;
-                if (item.imagen_url) {
-                    src = { uri: item.imagen_url };
-                } else if (item.imagen_key) {
-                    const raw = imageMap[item.imagen_key];
-                    if (typeof raw === 'string') src = { uri: raw };
-                    else if (raw?.uri) src = { uri: raw.uri };
-                }
-                return src
-                    ? <Image source={src} style={styles.cardImage} />
-                    : <View style={[styles.cardImagePlaceholder, { backgroundColor: item.color + '22' }]}>
-                        <Ionicons name="ticket-outline" size={28} color={item.color} />
-                      </View>;
-            })()}
+            {imgSrc ? (
+                <Image source={imgSrc} style={styles.cardImage} />
+            ) : (
+                <View style={[styles.cardImagePlaceholder, { backgroundColor: item.color + '22' }]}>
+                    <Ionicons name="ticket-outline" size={28} color={item.color} />
+                </View>
             )}
             <View style={styles.cardBody}>
                 <View style={styles.cardTop}>
@@ -204,7 +207,8 @@ export default function AdminCuponesScreen({ navigation }) {
                 </View>
             </View>
         </View>
-    );
+        );
+    };
 
     return (
         <View style={styles.container}>
