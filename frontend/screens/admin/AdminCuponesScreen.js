@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import QRCode from 'react-native-qrcode-svg';
+import { imageMap } from '../../assets/utils/imageMap';
 import AppHeader from '../../components/common/AppHeader';
 import API from '../../services/api';
 
@@ -156,12 +157,21 @@ export default function AdminCuponesScreen({ navigation }) {
     const renderItem = ({ item }) => (
         <View style={[styles.card, !item.activo && styles.cardInactive]}>
             <View style={[styles.cardStripe, { backgroundColor: item.color }]} />
-            {item.imagen_url ? (
-                <Image source={{ uri: item.imagen_url }} style={styles.cardImage} />
-            ) : (
-                <View style={[styles.cardImagePlaceholder, { backgroundColor: item.color + '22' }]}>
-                    <Ionicons name="ticket-outline" size={28} color={item.color} />
-                </View>
+            {(() => {
+                let src = null;
+                if (item.imagen_url) {
+                    src = { uri: item.imagen_url };
+                } else if (item.imagen_key) {
+                    const raw = imageMap[item.imagen_key];
+                    if (typeof raw === 'string') src = { uri: raw };
+                    else if (raw?.uri) src = { uri: raw.uri };
+                }
+                return src
+                    ? <Image source={src} style={styles.cardImage} />
+                    : <View style={[styles.cardImagePlaceholder, { backgroundColor: item.color + '22' }]}>
+                        <Ionicons name="ticket-outline" size={28} color={item.color} />
+                      </View>;
+            })()}
             )}
             <View style={styles.cardBody}>
                 <View style={styles.cardTop}>
