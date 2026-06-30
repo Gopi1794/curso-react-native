@@ -121,10 +121,31 @@ export default function AdminPlatosScreen({ navigation }) {
         return null;
     };
 
+    const goToDetail = (item) => {
+        navigation.navigate('HomeTab', {
+            screen: 'FoodDetail',
+            params: {
+                foodItem: {
+                    id: item.id,
+                    name: item.nombre,
+                    price: `$${parseFloat(item.precio).toFixed(2)}`,
+                    imageKey: item.imagen_key || item.imagen_url || '',
+                    category: item.categoria,
+                    descriptionText: item.descripcion || '',
+                    ingredientText: [],
+                },
+            },
+        });
+    };
+
     const renderItem = ({ item }) => {
         const imgSrc = getImageSource(item);
         return (
-        <View style={[styles.row, !item.disponible && styles.rowInactive]}>
+        <TouchableOpacity
+            style={[styles.row, !item.disponible && styles.rowInactive]}
+            onPress={() => goToDetail(item)}
+            activeOpacity={0.75}
+        >
             {imgSrc ? (
                 <Image source={imgSrc} style={styles.thumb} />
             ) : (
@@ -139,11 +160,11 @@ export default function AdminPlatosScreen({ navigation }) {
             </View>
             <Switch
                 value={item.disponible}
-                onValueChange={() => handleToggle(item)}
+                onValueChange={(val) => { val !== item.disponible && handleToggle(item); }}
                 thumbColor={item.disponible ? '#FF8700' : '#ccc'}
                 trackColor={{ false: '#eee', true: '#FFD580' }}
             />
-        </View>
+        </TouchableOpacity>
         );
     };
 
