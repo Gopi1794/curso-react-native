@@ -36,6 +36,8 @@ export default function ProfileScreen({ navigation }) {
     ? { uri: userInfo.avatar_url }
     : require('../../assets/img/usuario-img.jpg');
 
+  const isAdmin = userInfo?.rol === 'admin';
+
   const handleEditProfile = () => navigation.navigate('EditProfile');
   const handleAddresses = () => navigation.navigate('Addresses');
   const handlePaymentMethods = () => navigation.navigate('PaymentMethods');
@@ -91,6 +93,20 @@ export default function ProfileScreen({ navigation }) {
           </LinearGradient>
 
 
+
+          {/* Sección Admin — solo visible para rol admin */}
+          {isAdmin && (
+            <View style={styles.menuSection}>
+              <Text style={styles.sectionTitle}>Administración</Text>
+              <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AdminIngredients')} accessibilityRole="button" accessibilityLabel="Gestionar Ingredientes">
+                <View style={[styles.menuIconContainer, { backgroundColor: '#2E7D32' }]}>
+                  <Ionicons name="leaf-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.menuText}>Ingredientes</Text>
+                <Ionicons name="chevron-forward" size={18} color="#FF8700" />
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Sección de menú con diseño mejorado */}
           <View style={styles.menuSection}>

@@ -14,6 +14,7 @@ const cuponesRouter     = require('./routers/cupones');
 const comentariosRouter  = require('./routers/comentarios');
 const favoritosRouter    = require('./routers/favoritos');
 const supportRouter      = require('./routers/support');
+const ingredientesRouter = require('./routers/ingredientes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,7 +48,8 @@ app.use('/api/payments',    paymentsRouter);
 app.use('/api/cupones',     cuponesRouter);
 app.use('/api/menu-items/:menuItemId/comentarios', comentariosRouter);
 app.use('/api/favorites',   favoritosRouter);
-app.use('/api/support',     supportRouter);
+app.use('/api/support',       supportRouter);
+app.use('/api/admin/ingredientes', ingredientesRouter);
 
 // ── Health check ───────────────────────────────────────────
 app.get('/health', async (req, res) => {

@@ -9,6 +9,7 @@ import PrivacyScreen from '../screens/profile/PrivacyScreen';
 import HelpScreen from '../screens/profile/HelpScreen';
 import ChatSupportScreen from '../screens/profile/ChatSupportScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
+import AdminIngredientsScreen from '../screens/admin/AdminIngredientsScreen';
 
 const Stack = createStackNavigator();
 
@@ -24,6 +25,7 @@ export default function ProfileStack() {
             <Stack.Screen name="Help" component={HelpScreen} />
             <Stack.Screen name="ChatSupport" component={ChatSupportScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="AdminIngredients" component={AdminIngredientsScreen} />
         </Stack.Navigator>
     );
 }
