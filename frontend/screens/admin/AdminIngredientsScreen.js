@@ -137,7 +137,7 @@ export default function AdminIngredientsScreen({ navigation }) {
             <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
             <AppHeader title="Ingredientes" subtitle={`${ingredientes.length} registrados`} onBack={() => navigation.goBack()} />
 
-            <View style={[styles.body, { paddingTop: insets.top + 44 + 16 }]}>
+            <View style={[styles.body, { paddingTop: insets.top + 76 }]}>
                 <View style={styles.searchRow}>
                     <View style={styles.searchBox}>
                         <Ionicons name="search-outline" size={18} color="#aaa" style={{ marginRight: 8 }} />

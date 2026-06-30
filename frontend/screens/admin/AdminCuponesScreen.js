@@ -201,7 +201,7 @@ export default function AdminCuponesScreen({ navigation }) {
             <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
             <AppHeader title="Cupones" subtitle={`${cupones.length} cupones`} onBack={() => navigation.goBack()} />
 
-            <View style={[styles.body, { paddingTop: insets.top + 44 + 16 }]}>
+            <View style={[styles.body, { paddingTop: insets.top + 76 }]}>
                 <TouchableOpacity style={styles.addBtn} onPress={openCreate}>
                     <Ionicons name="add" size={20} color="#fff" />
                     <Text style={styles.addText}>Nuevo cupón</Text>
