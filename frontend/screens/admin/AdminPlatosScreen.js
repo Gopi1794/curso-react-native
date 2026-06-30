@@ -112,7 +112,12 @@ export default function AdminPlatosScreen({ navigation }) {
 
     const getImageSource = (item) => {
         if (item.imagen_url) return { uri: item.imagen_url };
-        if (item.imagen_key && imageMap[item.imagen_key]) return { uri: imageMap[item.imagen_key] };
+        if (item.imagen_key) {
+            const src = imageMap[item.imagen_key];
+            if (!src) return null;
+            if (typeof src === 'string') return { uri: src };
+            if (src.uri) return { uri: src.uri };
+        }
         return null;
     };
 
