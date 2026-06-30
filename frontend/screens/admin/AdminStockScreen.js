@@ -134,6 +134,9 @@ export default function AdminStockScreen({ navigation }) {
                         contentContainerStyle={styles.list}
                         ListEmptyComponent={<Text style={styles.empty}>Sin resultados</Text>}
                         showsVerticalScrollIndicator={false}
+                        initialNumToRender={20}
+                        maxToRenderPerBatch={20}
+                        windowSize={5}
                     />
                 )}
             </View>
