@@ -7,6 +7,7 @@ import {
     Dimensions,
     Text,
     Animated,
+    RefreshControl,
 } from "react-native";
 // Componentes reutilizables
 import { HeaderSection } from '../../components/HeaderSection';
@@ -120,26 +121,33 @@ export const ScreenHome = ({ navigation }) => {
     const [menuItems, setMenuItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [menuError, setMenuError] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
+    const fetchMenu = useCallback(async (isRefresh = false) => {
         if (!selectedRestaurant) return;
-        const fetchMenu = async () => {
-            setMenuError(null);
-            try {
-                const response = await API.restaurants.getMenu(selectedRestaurant.id);
-                if (response.success) {
-                    setMenuItems(response.items.map(mapMenuItem));
-                } else {
-                    setMenuError('No se pudo cargar el menú');
-                }
-            } catch (err) {
-                setMenuError('Error de conexión. Revisá tu internet.');
-            } finally {
-                setLoading(false);
+        if (!isRefresh) setLoading(true);
+        setMenuError(null);
+        try {
+            const response = await API.restaurants.getMenu(selectedRestaurant.id);
+            if (response.success) {
+                setMenuItems(response.items.map(mapMenuItem));
+            } else {
+                setMenuError('No se pudo cargar el menú');
             }
-        };
-        fetchMenu();
+        } catch (err) {
+            setMenuError('Error de conexión. Revisá tu internet.');
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
     }, [selectedRestaurant]);
+
+    useEffect(() => { fetchMenu(); }, [fetchMenu]);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchMenu(true);
+    }, [fetchMenu]);
 
     const categories = [
         { id: "todos",      label: "TODOS",      icon: "grid-outline" },
@@ -302,6 +310,14 @@ export const ScreenHome = ({ navigation }) => {
                     { useNativeDriver: false }
                 )}
                 scrollEventThrottle={16}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#FF8700']}
+                        tintColor="#FF8700"
+                    />
+                }
             >
                 <View style={styles.topSection}>
                     <CategoryFilter
