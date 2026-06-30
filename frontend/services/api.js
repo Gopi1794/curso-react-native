@@ -254,6 +254,22 @@ const notifications = {
     }),
 };
 
+// ── ADMIN ─────────────────────────────────────────────────
+const admin = {
+    ingredientes: {
+        getAll: () => request('/api/admin/ingredientes'),
+        create: (data) => request('/api/admin/ingredientes', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        update: (id, data) => request(`/api/admin/ingredientes/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
+        remove: (id) => request(`/api/admin/ingredientes/${id}`, { method: 'DELETE' }),
+    },
+};
+
 // ── SUPPORT ───────────────────────────────────────────────
 const support = {
     chat: (messages) => request('/api/support/chat', {
@@ -270,4 +286,4 @@ const token = {
 };
 
 export { API_BASE_URL as API_URL };
-export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, token };
+export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, admin, token };
