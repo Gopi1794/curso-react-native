@@ -35,6 +35,7 @@ export default function AdminPlatosScreen({ navigation }) {
     const [filterCategoria, setFilterCategoria] = useState(null);
     const [filterVisible, setFilterVisible] = useState(false);
     const [page, setPage] = useState(1);
+    const [actionItem, setActionItem] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [editId, setEditId] = useState(null);
     const [form, setForm] = useState(emptyForm());
@@ -108,15 +109,7 @@ export default function AdminPlatosScreen({ navigation }) {
         ]);
     };
 
-    const showActions = (item) => {
-        Alert.alert(item.nombre, null, [
-            { text: 'Ver detalle',  onPress: () => goToDetail(item) },
-            { text: 'Editar',       onPress: () => openEdit(item) },
-            { text: 'Duplicar',     onPress: () => handleDuplicate(item) },
-            { text: 'Eliminar',     style: 'destructive', onPress: () => handleDelete(item) },
-            { text: 'Cancelar',     style: 'cancel' },
-        ]);
-    };
+    const showActions = (item) => setActionItem(item);
 
     const goToDetail = (item) => {
         navigation.navigate('HomeTab', {
@@ -368,6 +361,56 @@ export default function AdminPlatosScreen({ navigation }) {
                 )}
             </View>
 
+            {/* Action sheet */}
+            <Modal visible={!!actionItem} animationType="slide" transparent onRequestClose={() => setActionItem(null)}>
+                <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setActionItem(null)}>
+                    <TouchableOpacity activeOpacity={1} style={styles.actionSheet}>
+                        {/* Header con info del plato */}
+                        <View style={styles.actionHeader}>
+                            {(() => {
+                                const src = actionItem ? getImageSource(actionItem) : null;
+                                return src
+                                    ? <Image source={src} style={styles.actionThumb} />
+                                    : <View style={[styles.actionThumb, styles.actionThumbEmpty]}>
+                                        <Ionicons name="fast-food-outline" size={26} color="#ddd" />
+                                      </View>;
+                            })()}
+                            <View style={styles.actionHeaderInfo}>
+                                <Text style={styles.actionNombre} numberOfLines={1}>{actionItem?.nombre}</Text>
+                                <Text style={styles.actionCategoria}>{actionItem?.categoria}</Text>
+                                <Text style={styles.actionPrecio}>${actionItem ? parseFloat(actionItem.precio).toFixed(2) : ''}</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.actionDivider} />
+
+                        {/* Acciones */}
+                        {[
+                            { icon: 'eye-outline',       label: 'Ver detalle', color: '#1976D2',
+                              onPress: () => { setActionItem(null); goToDetail(actionItem); } },
+                            { icon: 'pencil-outline',    label: 'Editar',      color: '#FF8700',
+                              onPress: () => { setActionItem(null); openEdit(actionItem); } },
+                            { icon: 'copy-outline',      label: 'Duplicar',    color: '#7B1FA2',
+                              onPress: () => { const i = actionItem; setActionItem(null); handleDuplicate(i); } },
+                            { icon: 'trash-outline',     label: 'Eliminar',    color: '#E53935',
+                              onPress: () => { const i = actionItem; setActionItem(null); handleDelete(i); } },
+                        ].map(({ icon, label, color, onPress }) => (
+                            <TouchableOpacity key={label} style={styles.actionRow} onPress={onPress} activeOpacity={0.7}>
+                                <View style={[styles.actionIconBox, { backgroundColor: color + '15' }]}>
+                                    <Ionicons name={icon} size={20} color={color} />
+                                </View>
+                                <Text style={[styles.actionLabel, { color }]}>{label}</Text>
+                                <Ionicons name="chevron-forward" size={16} color={color + '80'} />
+                            </TouchableOpacity>
+                        ))}
+
+                        <TouchableOpacity style={styles.actionCancel} onPress={() => setActionItem(null)}>
+                            <Text style={styles.actionCancelText}>Cancelar</Text>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
+
             {/* Modal filtro */}
             <Modal visible={filterVisible} animationType="slide" transparent onRequestClose={() => setFilterVisible(false)}>
                 <View style={styles.overlay}>
@@ -584,4 +627,37 @@ const styles = StyleSheet.create({
     cancelText: { color: '#666', fontFamily: 'Poppins-SemiBold', fontSize: 15 },
     saveBtn: { flex: 1, backgroundColor: '#FF8700', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
     saveText: { color: '#fff', fontFamily: 'Poppins-Bold', fontSize: 15 },
+
+    // Action sheet
+    actionSheet: {
+        backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        paddingTop: 8, paddingBottom: 36, paddingHorizontal: 20,
+        shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 12,
+    },
+    actionHeader: {
+        flexDirection: 'row', alignItems: 'center', gap: 14,
+        paddingVertical: 16,
+    },
+    actionThumb: { width: 60, height: 60, borderRadius: 14 },
+    actionThumbEmpty: { backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center' },
+    actionHeaderInfo: { flex: 1 },
+    actionNombre: { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#1a1a1a' },
+    actionCategoria: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#aaa', textTransform: 'capitalize', marginTop: 1 },
+    actionPrecio: { fontSize: 14, fontFamily: 'Poppins-Bold', color: '#FF8700', marginTop: 4 },
+    actionDivider: { height: 1, backgroundColor: '#f0f0f0', marginBottom: 8 },
+    actionRow: {
+        flexDirection: 'row', alignItems: 'center', gap: 14,
+        paddingVertical: 14, paddingHorizontal: 4,
+        borderRadius: 14,
+    },
+    actionIconBox: {
+        width: 42, height: 42, borderRadius: 12,
+        justifyContent: 'center', alignItems: 'center',
+    },
+    actionLabel: { flex: 1, fontSize: 15, fontFamily: 'Poppins-SemiBold' },
+    actionCancel: {
+        marginTop: 8, backgroundColor: '#f5f5f5', borderRadius: 14,
+        paddingVertical: 14, alignItems: 'center',
+    },
+    actionCancelText: { fontSize: 15, fontFamily: 'Poppins-SemiBold', color: '#666' },
 });
