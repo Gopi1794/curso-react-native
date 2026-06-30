@@ -36,6 +36,7 @@ export default function AdminPlatosScreen({ navigation }) {
     const [filterVisible, setFilterVisible] = useState(false);
     const [page, setPage] = useState(1);
     const [modalVisible, setModalVisible] = useState(false);
+    const [editId, setEditId] = useState(null);
     const [form, setForm] = useState(emptyForm());
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -65,14 +66,55 @@ export default function AdminPlatosScreen({ navigation }) {
         }
     };
 
+    const openEdit = (item) => {
+        setEditId(item.id);
+        setForm({
+            nombre: item.nombre,
+            precio: String(item.precio),
+            categoria: item.categoria,
+            descripcion: item.descripcion || '',
+            imagen_url: item.imagen_url || '',
+        });
+        setModalVisible(true);
+    };
+
+    const handleDuplicate = async (item) => {
+        try {
+            const res = await API.admin.platos.create(restauranteId, {
+                nombre: `Copia de ${item.nombre}`,
+                precio: item.precio,
+                categoria: item.categoria,
+                descripcion: item.descripcion || '',
+                imagen_url: item.imagen_url || '',
+            });
+            if (res.success) setPlatos(prev => [...prev, res.plato]);
+            else Alert.alert('Error', res.message);
+        } catch { Alert.alert('Error', 'No se pudo duplicar el plato'); }
+    };
+
+    const handleDelete = (item) => {
+        Alert.alert('Eliminar plato', `¿Eliminar "${item.nombre}"? Esta acción no se puede deshacer.`, [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+                text: 'Eliminar', style: 'destructive',
+                onPress: async () => {
+                    try {
+                        const res = await API.admin.platos.remove(item.id);
+                        if (res.success) setPlatos(prev => prev.filter(p => p.id !== item.id));
+                        else Alert.alert('Error', res.message);
+                    } catch { Alert.alert('Error', 'No se pudo eliminar'); }
+                },
+            },
+        ]);
+    };
+
     const showActions = (item) => {
         Alert.alert(item.nombre, null, [
-            { text: 'Ver detalle', onPress: () => goToDetail(item) },
-            {
-                text: item.disponible ? 'Deshabilitar' : 'Habilitar',
-                onPress: () => handleToggle(item),
-            },
-            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Ver detalle',  onPress: () => goToDetail(item) },
+            { text: 'Editar',       onPress: () => openEdit(item) },
+            { text: 'Duplicar',     onPress: () => handleDuplicate(item) },
+            { text: 'Eliminar',     style: 'destructive', onPress: () => handleDelete(item) },
+            { text: 'Cancelar',     style: 'cancel' },
         ]);
     };
 
@@ -110,19 +152,29 @@ export default function AdminPlatosScreen({ navigation }) {
         finally { setUploading(false); }
     };
 
-    const handleCreate = async () => {
+    const handleSave = async () => {
         if (!form.nombre.trim() || !form.precio || !form.categoria) {
             Alert.alert('Error', 'Nombre, precio y categoría son requeridos'); return;
         }
         setSaving(true);
         try {
-            const res = await API.admin.platos.create(restauranteId, form);
-            if (res.success) {
-                setPlatos(prev => [...prev, res.plato]);
-                setModalVisible(false);
-                setForm(emptyForm());
-            } else Alert.alert('Error', res.message);
-        } catch { Alert.alert('Error', 'No se pudo crear el plato'); }
+            if (editId) {
+                const res = await API.admin.platos.update(editId, form);
+                if (res.success) {
+                    setPlatos(prev => prev.map(p => p.id === editId ? res.plato : p));
+                    setModalVisible(false);
+                    setEditId(null);
+                    setForm(emptyForm());
+                } else Alert.alert('Error', res.message);
+            } else {
+                const res = await API.admin.platos.create(restauranteId, form);
+                if (res.success) {
+                    setPlatos(prev => [...prev, res.plato]);
+                    setModalVisible(false);
+                    setForm(emptyForm());
+                } else Alert.alert('Error', res.message);
+            }
+        } catch { Alert.alert('Error', editId ? 'No se pudo actualizar el plato' : 'No se pudo crear el plato'); }
         finally { setSaving(false); }
     };
 
@@ -344,11 +396,11 @@ export default function AdminPlatosScreen({ navigation }) {
             </Modal>
 
             {/* Modal crear */}
-            <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
+            <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => { setModalVisible(false); setEditId(null); setForm(emptyForm()); }}>
                 <View style={styles.overlay}>
                     <View style={styles.modal}>
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text style={styles.modalTitle}>Nuevo plato</Text>
+                            <Text style={styles.modalTitle}>{editId ? 'Editar plato' : 'Nuevo plato'}</Text>
 
                             <Text style={styles.label}>Nombre *</Text>
                             <TextInput style={styles.input} placeholder="Ej: Burger clásica" placeholderTextColor="#bbb" value={form.nombre} onChangeText={t => setForm(f => ({ ...f, nombre: t }))} />
@@ -395,7 +447,7 @@ export default function AdminPlatosScreen({ navigation }) {
                                 <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
                                     <Text style={styles.cancelText}>Cancelar</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.saveBtn} onPress={handleCreate} disabled={saving}>
+                                <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
                                     {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Guardar</Text>}
                                 </TouchableOpacity>
                             </View>
