@@ -32,6 +32,8 @@ router.delete('/cupones/:id', cuponesCtrl.remove);
 router.get('/platos/:restauranteId',          platosCtrl.getAll);
 router.post('/platos/:restauranteId',         platosCtrl.create);
 router.put('/platos/:id/toggle',              platosCtrl.toggleDisponible);
+router.put('/platos/:id',                     platosCtrl.update);
+router.delete('/platos/:id',                  platosCtrl.remove);
 
 // ── Stock ─────────────────────────────────────────────────
 router.get('/stock/:restauranteId',           stockCtrl.getStock);

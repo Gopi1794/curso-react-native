@@ -287,6 +287,8 @@ const admin = {
         getAll: (restauranteId) => request(`/api/admin/platos/${restauranteId}`),
         create: (restauranteId, data) => request(`/api/admin/platos/${restauranteId}`, { method: 'POST', body: JSON.stringify(data) }),
         toggle: (id) => request(`/api/admin/platos/${id}/toggle`, { method: 'PUT' }),
+        update: (id, data) => request(`/api/admin/platos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        remove: (id) => request(`/api/admin/platos/${id}`, { method: 'DELETE' }),
     },
 };
 
