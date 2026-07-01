@@ -90,6 +90,32 @@ exports.getHistorial = async (req, res) => {
     }
 };
 
+exports.getResumenDia = async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT
+                COUNT(*)                                                                        AS pedidos_entregados,
+                COUNT(*) * 2.99                                                                 AS ganancia,
+                COALESCE(SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto_recibido ELSE 0 END), 0) AS efectivo_cobrado
+             FROM pedidos
+             WHERE repartidor_id = $1
+               AND estado = 'entregado'
+               AND fecha_actualizacion::date = CURRENT_DATE`,
+            [req.user.userId]
+        );
+        const row = result.rows[0];
+        res.json({
+            success: true,
+            pedidos_entregados: parseInt(row.pedidos_entregados),
+            ganancia: parseFloat(row.ganancia).toFixed(2),
+            efectivo_cobrado: parseFloat(row.efectivo_cobrado).toFixed(2),
+        });
+    } catch (error) {
+        console.error('Error en getResumenDia:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
 exports.updateEstado = async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;

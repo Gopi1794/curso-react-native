@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
@@ -43,7 +43,6 @@ export default function NotificationsScreen({ navigation }) {
     const [saving, setSaving] = useState(false);
 
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
 
     const loadPreferences = useCallback(async () => {
         try {
@@ -89,7 +88,7 @@ export default function NotificationsScreen({ navigation }) {
                 <ScrollView
                     contentContainerStyle={[
                         styles.scroll,
-                        { paddingTop: insets.top + 44 + 24, paddingBottom: tabBarHeight + 24 },
+                        { paddingTop: insets.top + 44 + 24, paddingBottom: FLOATING_TAB_BAR_HEIGHT + 24 },
                     ]}
                     showsVerticalScrollIndicator={false}
                 >

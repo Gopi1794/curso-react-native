@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Lottie from 'lottie-react-native';
 import { Share } from 'react-native';
@@ -43,6 +43,7 @@ import { addToFavorites, removeFromFavorites } from '../../store/slices/userSlic
 import { addToCart } from '../../store/slices/cartSlice';
 import { showSuccessMessage, showErrorMessage, showFavoriteMessage } from '../../components/FlashMessageWrapper';
 import { ActionBar } from '../../components/common/ActionBar';
+import SuggestionSheet from '../../components/SuggestionSheet';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -73,11 +74,14 @@ const FoodDetailScreen = ({ route }) => {
     const { foodItem } = route.params;
 
     const dispatch = useAppDispatch();
-    const favorites = useAppSelector(state => state.user.favorites);
-    const userInfo = useAppSelector(state => state.user.userInfo);
+    const favorites  = useAppSelector(state => state.user.favorites);
+    const userInfo   = useAppSelector(state => state.user.userInfo);
+    const cartItems  = useAppSelector(state => state.cart.items);
+    const isInCart   = cartItems.some(i => i.id === foodItem?.id);
 
     const [isFavorite, setIsFavorite] = useState(false);
     const [quantity, setQuantity] = useState(1);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
@@ -103,7 +107,6 @@ const FoodDetailScreen = ({ route }) => {
     const [showIngredientSheet, setShowIngredientSheet] = useState(false);
     const [reduceMotion, setReduceMotion] = useState(false);
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const sheetAnim = useRef(new Animated.Value(0)).current;
 
     const heartAnimationRef = useRef(null);
@@ -361,6 +364,7 @@ const FoodDetailScreen = ({ route }) => {
         dispatch(addToCart(cartItem));
         showSuccessMessage('¡Agregado al carrito!', `${foodItem.name} se ha añadido al carrito`);
         setQuantity(1);
+        setTimeout(() => setShowSuggestions(true), 400);
     };
 
     // ✅ FUNCIONES PARA COMENTARIOS
@@ -480,7 +484,7 @@ const FoodDetailScreen = ({ route }) => {
             <Animated.ScrollView
                 style={[styles.scrollView, { opacity: fadeAnim }]}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.scrollViewContent, { paddingBottom: tabBarHeight + 16 }]}
+                contentContainerStyle={[styles.scrollViewContent, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16 }]}
             >
                 {/* ✅ CARRUSEL DE IMÁGENES DEL MISMO PLATO */}
                 <View style={styles.carouselSection}>
@@ -606,6 +610,18 @@ const FoodDetailScreen = ({ route }) => {
                                 </View>
                             )}
                             <Feather name="chevron-right" size={18} color={removedCount > 0 ? 'white' : '#FF8000'} />
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Ir al carrito (aparece cuando el ítem ya está en el carrito) */}
+                    {isInCart && (
+                        <TouchableOpacity
+                            style={styles.goToCartBtn}
+                            onPress={() => navigation.navigate('Cart')}
+                            activeOpacity={0.85}
+                        >
+                            <Ionicons name="cart" size={18} color="#fff" />
+                            <Text style={styles.goToCartText}>Ver carrito</Text>
                         </TouchableOpacity>
                     )}
 
@@ -771,6 +787,11 @@ const FoodDetailScreen = ({ route }) => {
                     </View>
                 </Animated.View>
             </Modal>
+
+            <SuggestionSheet
+                visible={showSuggestions}
+                onDismiss={() => setShowSuggestions(false)}
+            />
         </View>
     );
 };
@@ -1144,6 +1165,14 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins-SemiBold',
     },
     // Comentarios
+    goToCartBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+        backgroundColor: '#FF8700', borderRadius: 14,
+        paddingVertical: 12, marginHorizontal: 4, marginBottom: 8,
+    },
+    goToCartText: {
+        fontFamily: 'Poppins-SemiBold', fontSize: 15, color: '#fff',
+    },
     inlineActionBar: {
         borderRadius: 16,
         marginVertical: 16,

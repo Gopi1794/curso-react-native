@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import api from '../../services/api';
 
@@ -55,7 +55,6 @@ function TypingIndicator() {
 
 export default function ChatSupportScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const [messages, setMessages] = useState([WELCOME]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -114,7 +113,7 @@ export default function ChatSupportScreen({ navigation }) {
             <KeyboardAvoidingView
                 style={[styles.flex, { marginTop: headerHeight }]}
                 behavior="padding"
-                keyboardVerticalOffset={headerHeight + tabBarHeight}
+                keyboardVerticalOffset={headerHeight + FLOATING_TAB_BAR_HEIGHT}
             >
                 <FlatList
                     ref={listRef}
@@ -128,7 +127,7 @@ export default function ChatSupportScreen({ navigation }) {
                     showsVerticalScrollIndicator={false}
                 />
 
-                <View style={[styles.inputBar, { paddingBottom: tabBarHeight + 16 }]}>
+                <View style={[styles.inputBar, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16 }]}>
                     <TextInput
                         style={styles.input}
                         placeholder="Escribí tu consulta..."

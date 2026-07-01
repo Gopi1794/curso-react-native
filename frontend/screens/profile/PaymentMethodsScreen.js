@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import AppHeader from '../../components/common/AppHeader';
 import InstructionBanner from '../../components/common/InstructionBanner';
@@ -198,7 +198,6 @@ export default function PaymentMethodsScreen({ navigation }) {
     const brand = detectBrand(cardNumber);
 
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
 
     useEffect(() => { loadMethods(); }, []);
 
@@ -377,7 +376,7 @@ export default function PaymentMethodsScreen({ navigation }) {
                 }
             />
 
-            <View style={[styles.content, { paddingTop: insets.top + 44 + 32, paddingBottom: tabBarHeight + 16 }]}>
+            <View style={[styles.content, { paddingTop: insets.top + 44 + 32, paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16 }]}>
                 {methods.length === 0 ? (
                     <View style={styles.empty}>
                         <Ionicons name="wallet-outline" size={60} color="#ccc" />

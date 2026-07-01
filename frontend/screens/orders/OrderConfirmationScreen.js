@@ -16,22 +16,22 @@ const OrderConfirmationScreen = ({ route, navigation }) => {
     const { orderTotal, orderItems, orderId } = route.params || {};
 
     const handleBackToHome = () => {
-        navigation.navigate('Home');
+        navigation.navigate('HomeScreen');
     };
 
     const handleViewOrders = () => {
         if (orderId) {
-            navigation.navigate('Orders', {
+            navigation.navigate('OrdersTab', {
                 screen: 'OrderDetail',
                 params: { orderId },
             });
         } else {
-            navigation.navigate('Orders');
+            navigation.navigate('OrdersTab');
         }
     };
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
             <View style={styles.backgroundGradient} />
 
@@ -137,7 +137,7 @@ const OrderConfirmationScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000000',
+        backgroundColor: '#ffffff',
     },
     backgroundGradient: {
         ...StyleSheet.absoluteFillObject,

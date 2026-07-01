@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import API, { API_URL } from '../../services/api';
 import { useAppDispatch } from '../../store/hooks';
@@ -31,7 +31,6 @@ export default function EditProfileScreen({ navigation }) {
     const [avatarUrl, setAvatarUrl] = useState(null);
     const dispatch = useAppDispatch();
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
 
     useEffect(() => {
         loadUserData();
@@ -159,7 +158,7 @@ export default function EditProfileScreen({ navigation }) {
                 style={styles.scrollContainer}
                 contentContainerStyle={[
                     styles.scrollContent,
-                    { paddingTop: insets.top + 44 + 24, paddingBottom: tabBarHeight + 24 }
+                    { paddingTop: insets.top + 44 + 24, paddingBottom: FLOATING_TAB_BAR_HEIGHT + 24 }
                 ]}
             >
                 {/* Foto de perfil */}

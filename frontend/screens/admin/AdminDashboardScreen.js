@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import AppHeader from '../../components/common/AppHeader';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 
 const CARDS = [
     {
@@ -54,6 +55,14 @@ const CARDS = [
         icon: 'bicycle-outline',
         colors: ['#AD1457', '#E91E63'],
     },
+    {
+        key: 'repartidores',
+        screen: 'AdminRepartidores',
+        title: 'Repartidores',
+        subtitle: 'Resumen del día y liquidación de envíos',
+        icon: 'cash-outline',
+        colors: ['#00838F', '#00ACC1'],
+    },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
@@ -97,7 +106,7 @@ export default function AdminDashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8F8F8' },
-    content: { paddingHorizontal: 20, paddingBottom: 40 },
+    content: { paddingHorizontal: 20, paddingBottom: FLOATING_TAB_BAR_HEIGHT },
     greeting: {
         fontSize: 16, fontFamily: 'Poppins-SemiBold', color: '#666',
         marginBottom: 20,

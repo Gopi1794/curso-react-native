@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import AppHeader from '../../components/common/AppHeader';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
@@ -29,7 +29,6 @@ const DATA_ITEMS = [
 
 export default function PrivacyScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const dispatch = useAppDispatch();
 
     // Change password
@@ -111,7 +110,7 @@ export default function PrivacyScreen({ navigation }) {
             <ScrollView
                 contentContainerStyle={[
                     styles.scroll,
-                    { paddingTop: insets.top + 44 + 24, paddingBottom: tabBarHeight + insets.bottom + 48 },
+                    { paddingTop: insets.top + 44 + 24, paddingBottom: FLOATING_TAB_BAR_HEIGHT + insets.bottom + 48 },
                 ]}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"

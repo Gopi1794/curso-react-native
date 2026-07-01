@@ -31,6 +31,7 @@ router.post('/addresses',      usersController.createAddress);
 router.delete('/addresses/:id', usersController.deleteAddress);
 router.delete('/account',       usersController.deleteAccount);
 
+router.get('/notifications/feed',          notificationsController.getFeed);
 router.put('/push-token',                  notificationsController.savePushToken);
 router.get('/notification-preferences',    notificationsController.getPreferences);
 router.put('/notification-preferences',    notificationsController.updatePreferences);

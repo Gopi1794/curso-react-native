@@ -11,7 +11,7 @@ import {
     Animated,
     AccessibilityInfo,
 } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -143,7 +143,6 @@ const FavoritesScreen = () => {
     const dispatch = useAppDispatch();
     const favorites = useAppSelector(state => state.user.favorites);
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
 
     const [dialogVisible, setDialogVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
@@ -227,7 +226,7 @@ const FavoritesScreen = () => {
                     columnWrapperStyle={styles.columnWrapper}
                     contentContainerStyle={[styles.listContent, {
                         paddingTop: insets.top + 44 + 32,
-                        paddingBottom: tabBarHeight + 16,
+                        paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16,
                     }]}
                     showsVerticalScrollIndicator={false}
                     initialNumToRender={6}

@@ -43,8 +43,10 @@ router.get('/stock/platos/:restauranteId',    stockCtrl.getIngredientesMenuItems
 router.put('/stock/item/:id',                 stockCtrl.updateStock);
 
 // ── Pedidos (admin) ───────────────────────────────────────
+router.get('/notificaciones',                 pedidosCtrl.getNotificaciones);
 router.get('/pedidos',                        pedidosCtrl.getAll);
 router.get('/repartidores',                   pedidosCtrl.getRepartidores);
+router.get('/repartidores/resumen-dia',       pedidosCtrl.getResumenRepartidoresDia);
 router.put('/pedidos/:id/estado',             pedidosCtrl.updateEstado);
 router.put('/pedidos/:id/preparar',           pedidosCtrl.prepararPedido);
 router.put('/pedidos/:id/asignar',            pedidosCtrl.asignarRepartidor);

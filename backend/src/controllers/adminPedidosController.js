@@ -30,6 +30,60 @@ exports.getAll = async (req, res) => {
     }
 };
 
+exports.getNotificaciones = async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT
+                p.id,
+                p.estado,
+                p.total,
+                p.fecha_creacion,
+                p.fecha_actualizacion,
+                u.nombre  AS cliente_nombre,
+                u.apellido AS cliente_apellido,
+                r.nombre  AS repartidor_nombre,
+                r.apellido AS repartidor_apellido
+             FROM pedidos p
+             JOIN usuarios u ON u.id = p.usuario_id
+             LEFT JOIN usuarios r ON r.id = p.repartidor_id
+             ORDER BY p.fecha_actualizacion DESC
+             LIMIT 50`,
+            []
+        );
+        res.json({ success: true, notificaciones: result.rows });
+    } catch (error) {
+        console.error('Error en getNotificaciones:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
+exports.getResumenRepartidoresDia = async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT
+                u.id,
+                u.nombre,
+                u.apellido,
+                u.telefono,
+                COUNT(p.id)                                                                         AS pedidos_entregados,
+                COUNT(p.id) * 2.99                                                                  AS ganancia,
+                COALESCE(SUM(CASE WHEN p.metodo_pago = 'efectivo' THEN p.monto_recibido ELSE 0 END), 0) AS efectivo_cobrado
+             FROM usuarios u
+             LEFT JOIN pedidos p
+                ON p.repartidor_id = u.id
+               AND p.estado = 'entregado'
+               AND p.fecha_actualizacion::date = CURRENT_DATE
+             WHERE u.rol = 'repartidor' AND u.estado = 'activo'
+             GROUP BY u.id, u.nombre, u.apellido, u.telefono
+             ORDER BY pedidos_entregados DESC, u.nombre`
+        );
+        res.json({ success: true, repartidores: result.rows });
+    } catch (error) {
+        console.error('Error en getResumenRepartidoresDia:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
 exports.getRepartidores = async (req, res) => {
     try {
         const result = await db.query(

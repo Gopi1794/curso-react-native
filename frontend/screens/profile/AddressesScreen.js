@@ -22,7 +22,7 @@ import { showSuccessMessage } from '../../components/FlashMessageWrapper';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import * as Location from 'expo-location';
 import api from '../../services/api';
 
@@ -38,7 +38,6 @@ export default function AddressesScreen({ navigation }) {
     const [deleteDialog, setDeleteDialog] = useState({ visible: false, id: null });
 
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
 
     useEffect(() => {
         loadAddresses();
@@ -269,7 +268,7 @@ export default function AddressesScreen({ navigation }) {
                 }
             />
 
-            <View style={[styles.content, { paddingTop: insets.top + 44 + 32, paddingBottom: tabBarHeight + 16 }]}>
+            <View style={[styles.content, { paddingTop: insets.top + 44 + 32, paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16 }]}>
                 {addresses.length === 0 ? (
                     <View style={styles.empty}>
                         <Ionicons name="location-outline" size={48} color="#ccc" />

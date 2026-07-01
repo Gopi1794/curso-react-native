@@ -338,6 +338,7 @@ export const ScreenHome = ({ navigation }) => {
 
     const navigateToTicket = () => navigation.navigate('Tickets');
     const navigateToCart = () => navigation.navigate('Cart');
+    const navigateToNotifications = () => navigation.navigate('NotificationsFeed');
 
     const renderMenuItem = useCallback(({ item }) => (
         <MenuItem item={item} onAddToCart={handleAddToCart} />
@@ -384,6 +385,7 @@ export const ScreenHome = ({ navigation }) => {
             <HeaderSection
                 onTicketPress={navigateToTicket}
                 onCartPress={navigateToCart}
+                onNotificationsPress={navigateToNotifications}
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
                 onClearSearch={handleClearSearch}

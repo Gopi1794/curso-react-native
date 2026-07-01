@@ -1,5 +1,52 @@
 const db = require('../config/database');
 
+// GET /api/users/notifications/feed
+exports.getFeed = async (req, res) => {
+    const { userId, rol } = req.user;
+    try {
+        let query, params;
+
+        if (rol === 'admin') {
+            query = `
+                SELECT p.id, p.estado, p.total, p.fecha_actualizacion,
+                       u.nombre AS cliente_nombre, u.apellido AS cliente_apellido,
+                       r.nombre AS repartidor_nombre, r.apellido AS repartidor_apellido
+                FROM pedidos p
+                JOIN usuarios u ON u.id = p.usuario_id
+                LEFT JOIN usuarios r ON r.id = p.repartidor_id
+                ORDER BY p.fecha_actualizacion DESC LIMIT 50`;
+            params = [];
+        } else if (rol === 'repartidor') {
+            query = `
+                SELECT p.id, p.estado, p.total, p.fecha_actualizacion,
+                       u.nombre AS cliente_nombre, u.apellido AS cliente_apellido,
+                       NULL AS repartidor_nombre, NULL AS repartidor_apellido
+                FROM pedidos p
+                JOIN usuarios u ON u.id = p.usuario_id
+                WHERE p.repartidor_id = $1
+                ORDER BY p.fecha_actualizacion DESC LIMIT 50`;
+            params = [userId];
+        } else {
+            query = `
+                SELECT p.id, p.estado, p.total, p.fecha_actualizacion,
+                       u.nombre AS cliente_nombre, u.apellido AS cliente_apellido,
+                       r.nombre AS repartidor_nombre, r.apellido AS repartidor_apellido
+                FROM pedidos p
+                JOIN usuarios u ON u.id = p.usuario_id
+                LEFT JOIN usuarios r ON r.id = p.repartidor_id
+                WHERE p.usuario_id = $1
+                ORDER BY p.fecha_actualizacion DESC LIMIT 50`;
+            params = [userId];
+        }
+
+        const result = await db.query(query, params);
+        res.json({ success: true, notificaciones: result.rows });
+    } catch (error) {
+        console.error('Error en notifications getFeed:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
 // PUT /api/users/push-token
 exports.savePushToken = async (req, res) => {
     const { pushToken } = req.body;

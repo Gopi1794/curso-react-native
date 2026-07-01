@@ -14,6 +14,7 @@ const requireRepartidor = (req, res, next) => {
 router.use(authMiddleware, requireRepartidor);
 
 router.get('/pedidos',              ctrl.getMisPedidos);
+router.get('/resumen-dia',          ctrl.getResumenDia);
 router.get('/historial',            ctrl.getHistorial);
 router.put('/pedidos/:id/estado',   ctrl.updateEstado);
 router.put('/pedidos/:id/cobrar',   ctrl.cobrarEfectivo);

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import { imageMap } from '../../assets/utils/imageMap';
@@ -27,9 +27,8 @@ const ESTADO_COLOR = {
     pendiente:      '#888',
 };
 
-export default function RepartidorScreen() {
+export default function RepartidorScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const dispatch = useAppDispatch();
     const [pedidos, setPedidos] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -46,19 +45,30 @@ export default function RepartidorScreen() {
     const [sortVisible, setSortVisible] = useState(false);
     const [sortOrder, setSortOrder] = useState('desc');
     const [filterEstado, setFilterEstado] = useState('todos');
+    const [resumen, setResumen] = useState({ pedidos_entregados: 0, ganancia: '0.00', efectivo_cobrado: '0.00' });
+
+    const loadResumen = useCallback(async () => {
+        try {
+            const res = await API.repartidor.getResumenDia();
+            if (res.success) setResumen(res);
+        } catch {}
+    }, []);
 
     const load = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setLoading(true);
         try {
-            const res = await API.repartidor.getMisPedidos();
-            if (res.success) setPedidos(res.pedidos);
+            const [pedidosRes] = await Promise.all([
+                API.repartidor.getMisPedidos(),
+                loadResumen(),
+            ]);
+            if (pedidosRes.success) setPedidos(pedidosRes.pedidos);
         } catch {
             showErrorMessage('Error', 'No se pudieron cargar los pedidos');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [loadResumen]);
 
     useEffect(() => { load(); }, [load]);
     const onRefresh = useCallback(() => { setRefreshing(true); load(true); }, [load]);
@@ -83,6 +93,7 @@ export default function RepartidorScreen() {
                 if (nuevoEstado === 'entregado') {
                     setPedidos(prev => prev.filter(p => p.id !== pedido.id));
                     setEntregadoId(pedido.id);
+                    loadResumen();
                 } else {
                     setPedidos(prev => prev.map(p =>
                         p.id === pedido.id ? { ...p, estado: nuevoEstado } : p
@@ -125,6 +136,7 @@ export default function RepartidorScreen() {
                 setCobrarVisible(false);
                 setPedidos(prev => prev.filter(p => p.id !== cobrarPedido.id));
                 setCobradoData({ vuelto, total, monto });
+                loadResumen();
             } else {
                 showErrorMessage('Error', res.message);
             }
@@ -308,20 +320,49 @@ export default function RepartidorScreen() {
                         {pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''} activo{pedidos.length !== 1 ? 's' : ''}
                     </Text>
                 </View>
-                <TouchableOpacity style={styles.headerBtn} onPress={() => setSortVisible(true)}>
-                    <Ionicons name="options-outline" size={22} color="#FF8700" />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.getParent()?.navigate('NotificationsFeed')}>
+                        <Ionicons name="notifications-outline" size={22} color="#FF8700" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.headerBtn} onPress={() => setSortVisible(true)}>
+                        <Ionicons name="options-outline" size={22} color="#FF8700" />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <FlatList
                 data={sortedPedidos}
                 keyExtractor={i => String(i.id)}
                 renderItem={renderPedido}
-                contentContainerStyle={[styles.list, { paddingBottom: tabBarHeight + 16 }]}
+                contentContainerStyle={[styles.list, { paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" colors={['#FF8700']} />
                 }
+                ListHeaderComponent={(
+                    <View style={styles.resumenCard}>
+                        <View style={styles.resumenHeader}>
+                            <Ionicons name="stats-chart" size={16} color="#FF8700" />
+                            <Text style={styles.resumenTitle}>Resumen de hoy</Text>
+                        </View>
+                        <View style={styles.resumenStats}>
+                            <View style={styles.resumenStat}>
+                                <Text style={styles.resumenStatValue}>{resumen.pedidos_entregados}</Text>
+                                <Text style={styles.resumenStatLabel}>Entregas</Text>
+                            </View>
+                            <View style={styles.resumenDivider} />
+                            <View style={styles.resumenStat}>
+                                <Text style={styles.resumenStatValue}>${resumen.ganancia}</Text>
+                                <Text style={styles.resumenStatLabel}>Ganancia</Text>
+                            </View>
+                            <View style={styles.resumenDivider} />
+                            <View style={styles.resumenStat}>
+                                <Text style={styles.resumenStatValue}>${resumen.efectivo_cobrado}</Text>
+                                <Text style={styles.resumenStatLabel}>Efectivo</Text>
+                            </View>
+                        </View>
+                    </View>
+                )}
                 ListFooterComponent={pedidos.length > 0 ? (
                     <View style={styles.tipCard}>
                         <Ionicons name="information-circle-outline" size={22} color="#1976D2" />
@@ -576,6 +617,20 @@ const styles = StyleSheet.create({
     },
 
     list: { padding: 16, paddingBottom: 32 },
+
+    // ── Resumen del día ─────────────────────────────────────
+    resumenCard: {
+        backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 20,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07, shadowRadius: 10, elevation: 3,
+    },
+    resumenHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
+    resumenTitle: { fontFamily: 'Poppins-SemiBold', fontSize: 13, color: '#FF8700' },
+    resumenStats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+    resumenStat: { alignItems: 'center', flex: 1 },
+    resumenStatValue: { fontFamily: 'Poppins-Bold', fontSize: 22, color: '#1A1A1A' },
+    resumenStatLabel: { fontFamily: 'Poppins-Regular', fontSize: 11, color: '#999', marginTop: 2 },
+    resumenDivider: { width: 1, height: 36, backgroundColor: '#F0F0F0' },
 
     // ── Sección + card ───────────────────────────────────────
     section: { marginBottom: 16 },

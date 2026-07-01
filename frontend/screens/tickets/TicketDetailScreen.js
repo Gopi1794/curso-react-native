@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Componentes comunes
@@ -31,7 +31,6 @@ const TicketDetailScreen = ({ route, navigation }) => {
     const { ticket } = route.params;
     const [reduceMotion, setReduceMotion] = useState(false);
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -95,7 +94,7 @@ const TicketDetailScreen = ({ route, navigation }) => {
 
             <ScrollView
                 style={[styles.scrollView, { marginTop: insets.top + 44 + 16 }]}
-                contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + 24 }]}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 24 }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Instrucción */}

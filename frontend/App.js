@@ -19,7 +19,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 
 // Navegación
 import AppNavigator from './navigation/AppNavigator';
-import RepartidorNavigator from './navigation/RepartidorNavigator';
+import RepartidorStack from './navigation/RepartidorStack';
 
 // Componentes
 import ComponenteLogin from './components/LoginForm';
@@ -255,7 +255,7 @@ function MainApp() {
     return (
       <NavigationContainer>
         <StatusBar style="light" translucent backgroundColor="transparent" />
-        <RepartidorNavigator />
+        <RepartidorStack />
         <FlashMessageWrapper />
       </NavigationContainer>
     );
