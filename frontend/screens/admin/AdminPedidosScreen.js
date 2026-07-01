@@ -4,6 +4,8 @@ import {
     Modal, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import AppHeader from '../../components/common/AppHeader';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
@@ -17,6 +19,8 @@ const ESTADO_COLOR = {
 };
 
 export default function AdminPedidosScreen({ navigation }) {
+    const insets = useSafeAreaInsets();
+    const tabBarHeight = useBottomTabBarHeight();
     const [pedidos, setPedidos] = useState([]);
     const [repartidores, setRepartidores] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -33,9 +37,7 @@ export default function AdminPedidosScreen({ navigation }) {
                 API.admin.pedidos.getAll(),
                 API.admin.pedidos.getRepartidores(),
             ]);
-            console.log('PEDIDOS RES:', JSON.stringify(pedRes));
-            console.log('REPARTIDORES RES:', JSON.stringify(repRes));
-            if (pedRes.success) setPedidos(pedRes.pedidos);
+if (pedRes.success) setPedidos(pedRes.pedidos);
             if (repRes.success) setRepartidores(repRes.repartidores);
         } catch {
             showErrorMessage('Error', 'No se pudieron cargar los pedidos');
@@ -145,7 +147,8 @@ export default function AdminPedidosScreen({ navigation }) {
                     data={pedidos}
                     keyExtractor={i => String(i.id)}
                     renderItem={renderPedido}
-                    contentContainerStyle={styles.list}
+                    contentContainerStyle={[styles.list, { paddingTop: insets.top + 76, paddingBottom: tabBarHeight + 16 }]}
+                    style={{ flex: 1 }}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} />
@@ -216,7 +219,7 @@ export default function AdminPedidosScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F5F5F5' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    list: { padding: 16, paddingBottom: 40 },
+    list: { padding: 16 },
 
     card: {
         backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 14,

@@ -14,6 +14,7 @@ const requireRepartidor = (req, res, next) => {
 router.use(authMiddleware, requireRepartidor);
 
 router.get('/pedidos',              ctrl.getMisPedidos);
+router.get('/historial',            ctrl.getHistorial);
 router.put('/pedidos/:id/estado',   ctrl.updateEstado);
 
 module.exports = router;
