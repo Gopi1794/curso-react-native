@@ -6,6 +6,7 @@ exports.getMisPedidos = async (req, res) => {
         const result = await db.query(
             `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.notas, p.fecha_creacion,
                     u.nombre AS cliente_nombre, u.apellido AS cliente_apellido, u.telefono AS cliente_telefono,
+                    (SELECT a.telefono FROM usuarios a WHERE a.rol = 'admin' AND a.estado = 'activo' ORDER BY a.id LIMIT 1) AS admin_telefono,
                     json_agg(json_build_object(
                         'nombre', mi.nombre,
                         'cantidad', pi.cantidad,
