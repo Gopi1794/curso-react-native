@@ -1,23 +1,19 @@
 import { View, StyleSheet, Dimensions, Animated, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useEffect } from 'react';
-import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const TAB_BAR_WIDTH = 290;
 const CIRCLE_SIZE = 54;
 
-// Height exposed to useBottomTabBarHeight(): bar (74) + bottom offset (28) + safe area
-export const FLOATING_TAB_BAR_HEIGHT = 74 + 28 + 16;
+// Espacio total que ocupa el navbar flotante: alto (74) + offset inferior (28) + margen (16)
+export const FLOATING_TAB_BAR_HEIGHT = 150;
 
 export default function FloatingTabBar({ state, navigation, tabConfig }) {
-    const insets = useSafeAreaInsets();
     const tabCount = tabConfig.length;
     const itemWidth = TAB_BAR_WIDTH / tabCount;
     const circleOffset = (itemWidth - CIRCLE_SIZE) / 2;
-    const totalHeight = 74 + 28 + insets.bottom;
 
     const slideX = useRef(
         new Animated.Value(state.index * itemWidth + circleOffset)
@@ -45,7 +41,6 @@ export default function FloatingTabBar({ state, navigation, tabConfig }) {
     }, [state.index]);
 
     return (
-        <BottomTabBarHeightContext.Provider value={totalHeight}>
         <View style={[styles.tabBar, { width: TAB_BAR_WIDTH, marginHorizontal: (screenWidth - TAB_BAR_WIDTH) / 2 }]}>
             <Animated.View
                 style={[styles.activeCircle, { transform: [{ translateX: slideX }], top: (72 - CIRCLE_SIZE) / 2 }]}
@@ -84,7 +79,6 @@ export default function FloatingTabBar({ state, navigation, tabConfig }) {
                 );
             })}
         </View>
-        </BottomTabBarHeightContext.Provider>
     );
 }
 
