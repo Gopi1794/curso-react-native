@@ -49,8 +49,7 @@ exports.getRepartidores = async (req, res) => {
 const TRANSICIONES_ADMIN = {
     pendiente:      ['en_preparacion', 'cancelado'],
     confirmado:     ['en_preparacion', 'cancelado'],
-    en_preparacion: ['en_camino', 'cancelado'],
-    en_camino:      ['entregado'],
+    en_preparacion: ['cancelado'],
 };
 
 const NOTIF_ESTADO = {
