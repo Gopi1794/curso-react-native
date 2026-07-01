@@ -38,6 +38,14 @@ const CARDS = [
         icon: 'leaf-outline',
         colors: ['#1565C0', '#1976D2'],
     },
+    {
+        key: 'recetas',
+        screen: 'AdminRecetas',
+        title: 'Recetas',
+        subtitle: 'Editá las cantidades de cada plato',
+        icon: 'clipboard-outline',
+        colors: ['#00695C', '#00897B'],
+    },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
