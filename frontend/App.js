@@ -35,7 +35,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import * as Notifications from 'expo-notifications';
 import API from './services/api';
-import { registerForPushNotifications } from './services/pushNotifications';
+import { registerForPushNotifications, registerNotificationCategories } from './services/pushNotifications';
 import VerifyEmailScreen from './screens/auth/VerifyEmailScreen';
 import { useTheme } from './contexts/ThemeContext';
 
@@ -113,25 +113,9 @@ function MainApp() {
 
   // Verificar si es la primera vez que abre la app
   useEffect(() => {
+    registerNotificationCategories().catch(() => {});
     checkFirstTimeUser();
     checkAuthenticationStatus();
-  }, []);
-
-  // Manejar acciones de notificaciones (ej: botón "Poner en preparación")
-  useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
-      if (response.actionIdentifier === 'PREPARAR') {
-        const orderId = response.notification.request.content.data?.orderId;
-        if (orderId) {
-          try {
-            await API.admin.pedidos.preparar(orderId);
-          } catch (e) {
-            console.error('Error al preparar pedido desde notificación:', e);
-          }
-        }
-      }
-    });
-    return () => sub.remove();
   }, []);
 
   // Esperar a que Firebase esté listo
@@ -336,6 +320,17 @@ function MainApp() {
 
 export default function App() {
   useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
+      if (response.actionIdentifier === 'PREPARAR') {
+        const orderId = response.notification.request.content.data?.orderId;
+        if (orderId) {
+          API.admin.pedidos.preparar(orderId).catch((e) => {
+            console.error('Error al preparar pedido desde notificación:', e);
+          });
+        }
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   return (

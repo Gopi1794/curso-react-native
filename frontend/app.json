@@ -40,7 +40,12 @@
     "plugins": [
       "expo-font",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      ["expo-notifications", {
+        "icon": "./assets/icon.png",
+        "color": "#ff8700",
+        "defaultChannel": "default"
+      }]
     ],
     "experiments": {
       "tsconfigPaths": false
