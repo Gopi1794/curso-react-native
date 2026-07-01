@@ -14,8 +14,10 @@ import {
     TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SvgXml } from 'react-native-svg';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
+import { MP_LOGO_HORIZONTAL } from '../../assets/img/mercadopago/logos';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppHeader from '../../components/common/AppHeader';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
@@ -227,6 +229,63 @@ const CartScreen = ({ navigation }) => {
         }
     };
 
+
+    const handleEfectivoPayment = async () => {
+        if (cartItems.length === 0) {
+            showWarningMessage('Carrito vacío', 'Agregá productos antes de pagar');
+            return;
+        }
+
+        setLoading(true);
+        const { ok, unavailable } = await checkItemsAvailability();
+        setLoading(false);
+
+        if (!ok) {
+            const names = unavailable.map(i => i.name).join(', ');
+            Alert.alert('Productos no disponibles', `${names} ya no están disponibles.`, [{
+                text: 'Entendido',
+                onPress: () => unavailable.forEach(i => dispatch(removeFromCart(i.id))),
+            }]);
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const orderItems = cartItems.map(item => ({
+                menu_item_id: item.id,
+                nombre_item: item.name,
+                precio_unitario: item.price,
+                cantidad: item.quantity,
+                ingredientes_removidos: item.removedIngredients || [],
+            }));
+
+            const orderRes = await API.orders.create(
+                selectedRestaurant.id,
+                orderItems,
+                'Dirección registrada',
+                '',
+                'efectivo'
+            );
+
+            if (!orderRes.success) {
+                showErrorMessage('Error al crear pedido', orderRes.message || 'Intentá de nuevo');
+                return;
+            }
+
+            const total = calculateTotal();
+            dispatch(clearCart());
+            navigation.navigate('OrderConfirmation', {
+                orderId: orderRes.order.id,
+                orderTotal: total,
+                orderItems: [...cartItems],
+                metodoPago: 'efectivo',
+            });
+        } catch {
+            showErrorMessage('Error de conexión', 'No se pudo crear el pedido. Revisá tu conexión.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handlePaymentFailure = () => {
         setShowMercadoPago(false);
@@ -465,6 +524,19 @@ const CartScreen = ({ navigation }) => {
                             </View>
                         </View>
 
+                        {/* --- Boton efectivo --- */}
+                        <TouchableOpacity
+                            style={[styles.efectivoButton, loading && styles.buttonDisabled]}
+                            onPress={handleEfectivoPayment}
+                            disabled={loading}
+                        >
+                            <View style={styles.payButtonLeft}>
+                                <Ionicons name="cash-outline" size={20} color="#2E7D32" />
+                                <Text style={[styles.payButtonText, { color: '#2E7D32' }]}>Pagar en efectivo</Text>
+                            </View>
+                            <Text style={[styles.payButtonAmount, { color: '#2E7D32' }]}>${calculateTotal().toFixed(2)}</Text>
+                        </TouchableOpacity>
+
                         {/* --- Boton de pago --- */}
                         <TouchableOpacity
                             style={[styles.payButton, loading && styles.buttonDisabled]}
@@ -477,10 +549,7 @@ const CartScreen = ({ navigation }) => {
                                 <ActivityIndicator color="white" />
                             ) : (
                                 <>
-                                    <View style={styles.payButtonLeft}>
-                                        <Ionicons name="card-outline" size={20} color="white" />
-                                        <Text style={styles.payButtonText}>Pagar con Mercado Pago</Text>
-                                    </View>
+                                    <SvgXml xml={MP_LOGO_HORIZONTAL} width={100} height={28} />
                                     <Text style={styles.payButtonAmount}>${calculateTotal().toFixed(2)}</Text>
                                 </>
                             )}
@@ -888,6 +957,21 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontFamily: 'Poppins-Bold',
         color: '#FF8700',
+    },
+
+    /* Boton efectivo */
+    efectivoButton: {
+        backgroundColor: '#E8F5E9',
+        marginHorizontal: 16,
+        marginBottom: 10,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1.5,
+        borderColor: '#43A047',
     },
 
     /* Boton de pago */

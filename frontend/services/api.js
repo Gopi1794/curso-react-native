@@ -157,13 +157,14 @@ const restaurants = {
 
 // ── ORDERS ────────────────────────────────────────────────
 const orders = {
-    create: (restauranteId, items, direccionEntrega, notas) => request('/api/orders', {
+    create: (restauranteId, items, direccionEntrega, notas, metodoPago) => request('/api/orders', {
         method: 'POST',
         body: JSON.stringify({
             restaurante_id: restauranteId,
             items,
             direccion_entrega: direccionEntrega,
             notas,
+            metodo_pago: metodoPago || 'mercadopago',
         }),
     }),
 
@@ -259,6 +260,7 @@ const repartidor = {
     getMisPedidos: () => request('/api/repartidor/pedidos'),
     getHistorial: () => request('/api/repartidor/historial'),
     updateEstado: (id, estado) => request(`/api/repartidor/pedidos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
+    cobrarEfectivo: (id, monto_recibido) => request(`/api/repartidor/pedidos/${id}/cobrar`, { method: 'PUT', body: JSON.stringify({ monto_recibido }) }),
 };
 
 // ── ADMIN ─────────────────────────────────────────────────

@@ -5,6 +5,7 @@ exports.getMisPedidos = async (req, res) => {
     try {
         const result = await db.query(
             `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.notas, p.fecha_creacion,
+                    p.metodo_pago, p.monto_recibido,
                     u.nombre AS cliente_nombre, u.apellido AS cliente_apellido, u.telefono AS cliente_telefono,
                     (SELECT a.telefono FROM usuarios a WHERE a.rol = 'admin' AND a.estado = 'activo' ORDER BY a.id LIMIT 1) AS admin_telefono,
                     json_agg(json_build_object(
@@ -26,6 +27,46 @@ exports.getMisPedidos = async (req, res) => {
         res.json({ success: true, pedidos: result.rows });
     } catch (error) {
         console.error('Error en getMisPedidos:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
+exports.cobrarEfectivo = async (req, res) => {
+    const { id } = req.params;
+    const { monto_recibido } = req.body;
+
+    if (!monto_recibido || isNaN(monto_recibido) || monto_recibido <= 0) {
+        return res.status(400).json({ success: false, message: 'Monto inválido' });
+    }
+
+    try {
+        const result = await db.query(
+            `UPDATE pedidos SET estado = 'entregado', monto_recibido = $1
+             WHERE id = $2 AND repartidor_id = $3 AND metodo_pago = 'efectivo'
+             RETURNING id, total, monto_recibido, usuario_id`,
+            [monto_recibido, id, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+        }
+
+        const pedido = result.rows[0];
+        const vuelto = parseFloat(monto_recibido) - parseFloat(pedido.total);
+
+        const cliente = await db.query('SELECT push_token FROM usuarios WHERE id = $1', [pedido.usuario_id]);
+        if (cliente.rows[0]?.push_token) {
+            await sendPushNotification(
+                cliente.rows[0].push_token,
+                '¡Pedido entregado!',
+                'Gracias por tu compra. ¡Buen provecho!',
+                { type: 'estado_pedido', pedido_id: id, estado: 'entregado' }
+            );
+        }
+
+        res.json({ success: true, pedido, vuelto: vuelto.toFixed(2) });
+    } catch (error) {
+        console.error('Error en cobrarEfectivo:', error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
 };

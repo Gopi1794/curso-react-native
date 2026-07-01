@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList, TouchableOpacity,
-    RefreshControl, StatusBar, Alert, Linking, Image,
+    RefreshControl, StatusBar, Alert, Linking, Image, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,6 +34,13 @@ export default function RepartidorScreen() {
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(null);
     const [logoutVisible, setLogoutVisible] = useState(false);
+    const [cobrarVisible, setCobrarVisible] = useState(false);
+    const [cobrarPedido, setCobrarPedido] = useState(null);
+    const [montoRecibido, setMontoRecibido] = useState('');
+    const [cobrandoLoading, setCobrandoLoading] = useState(false);
+    const [sortVisible, setSortVisible] = useState(false);
+    const [sortOrder, setSortOrder] = useState('desc');
+    const [filterEstado, setFilterEstado] = useState('todos');
 
     const load = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setLoading(true);
@@ -93,6 +100,57 @@ export default function RepartidorScreen() {
             ]
         );
     };
+
+    const openCobrar = (pedido) => {
+        setCobrarPedido(pedido);
+        setMontoRecibido('');
+        setCobrarVisible(true);
+    };
+
+    const handleCobrar = async () => {
+        const monto = parseFloat(montoRecibido);
+        if (isNaN(monto) || monto <= 0) {
+            showErrorMessage('Monto inválido', 'Ingresá el monto recibido');
+            return;
+        }
+        if (monto < parseFloat(cobrarPedido.total)) {
+            showErrorMessage('Monto insuficiente', `El total es $${parseFloat(cobrarPedido.total).toFixed(2)}`);
+            return;
+        }
+        setCobrandoLoading(true);
+        try {
+            const res = await API.repartidor.cobrarEfectivo(cobrarPedido.id, monto);
+            if (res.success) {
+                const vuelto = parseFloat(res.vuelto);
+                setCobrarVisible(false);
+                setPedidos(prev => prev.filter(p => p.id !== cobrarPedido.id));
+                if (vuelto > 0) {
+                    Alert.alert('¡Cobrado!', `Vuelto a dar al cliente: $${vuelto.toFixed(2)}`);
+                } else {
+                    showSuccessMessage('¡Cobrado!', `Pedido #${cobrarPedido.id} entregado`);
+                }
+            } else {
+                showErrorMessage('Error', res.message);
+            }
+        } catch {
+            showErrorMessage('Error', 'No se pudo registrar el cobro');
+        } finally {
+            setCobrandoLoading(false);
+        }
+    };
+
+    const sortedPedidos = [...pedidos]
+        .filter(p => {
+            if (filterEstado === 'todos') return true;
+            if (filterEstado === 'en_camino') return p.estado === 'en_camino';
+            if (filterEstado === 'preparando') return p.estado === 'preparando' || p.estado === 'en_preparacion';
+            return true;
+        })
+        .sort((a, b) => {
+            const da = new Date(a.fecha_creacion);
+            const db = new Date(b.fecha_creacion);
+            return sortOrder === 'desc' ? db - da : da - db;
+        });
 
     const renderPedido = ({ item }) => {
         const isUpdating = updating === item.id;
@@ -162,10 +220,17 @@ export default function RepartidorScreen() {
                             <Text style={styles.totalLabel}>Total</Text>
                             <Text style={styles.totalAmount}>${parseFloat(item.total).toFixed(2)}</Text>
                         </View>
-                        <View style={styles.pagadoBadge}>
-                            <Ionicons name="cash-outline" size={14} color="#2E7D32" />
-                            <Text style={styles.pagadoText}>Pagado</Text>
-                        </View>
+                        {item.metodo_pago === 'efectivo' ? (
+                            <View style={[styles.pagadoBadge, { backgroundColor: '#FFF8E1', }]}>
+                                <Ionicons name="cash-outline" size={14} color="#F57F17" />
+                                <Text style={[styles.pagadoText, { color: '#F57F17' }]}>Efectivo</Text>
+                            </View>
+                        ) : (
+                            <View style={styles.pagadoBadge}>
+                                <Ionicons name="card-outline" size={14} color="#2E7D32" />
+                                <Text style={styles.pagadoText}>Pagado</Text>
+                            </View>
+                        )}
                     </View>
 
                     {/* Contacto */}
@@ -210,7 +275,17 @@ export default function RepartidorScreen() {
                             <Text style={styles.actionBtnText}>Salir a entregar</Text>
                         </TouchableOpacity>
                     )}
-                    {item.estado === 'en_camino' && (
+                    {item.estado === 'en_camino' && item.metodo_pago === 'efectivo' && (
+                        <TouchableOpacity
+                            style={[styles.actionBtn, { backgroundColor: '#2E7D32' }, isUpdating && styles.btnDisabled]}
+                            onPress={() => openCobrar(item)}
+                            disabled={isUpdating}
+                        >
+                            <Ionicons name="cash-outline" size={20} color="#fff" />
+                            <Text style={styles.actionBtnText}>Cobrar efectivo</Text>
+                        </TouchableOpacity>
+                    )}
+                    {item.estado === 'en_camino' && item.metodo_pago !== 'efectivo' && (
                         <TouchableOpacity
                             style={[styles.actionBtn, { backgroundColor: '#43A047' }, isUpdating && styles.btnDisabled]}
                             onPress={() => handleUpdateEstado(item, 'entregado')}
@@ -237,13 +312,13 @@ export default function RepartidorScreen() {
                         {pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''} activo{pedidos.length !== 1 ? 's' : ''}
                     </Text>
                 </View>
-                <TouchableOpacity style={styles.headerBtn} onPress={() => setLogoutVisible(true)}>
+                <TouchableOpacity style={styles.headerBtn} onPress={() => setSortVisible(true)}>
                     <Ionicons name="options-outline" size={22} color="#FF8700" />
                 </TouchableOpacity>
             </View>
 
             <FlatList
-                data={pedidos}
+                data={sortedPedidos}
                 keyExtractor={i => String(i.id)}
                 renderItem={renderPedido}
                 contentContainerStyle={styles.list}
@@ -258,7 +333,11 @@ export default function RepartidorScreen() {
                             <Text style={styles.tipTitle}>Consejo</Text>
                             <Text style={styles.tipSub}>Confirmá la entrega para mantener a tus clientes satisfechos.</Text>
                         </View>
-                        <Text style={styles.tipEmoji}>📦✅</Text>
+                        <Image
+                            source={require('../../assets/img/paquete-de-alimentos-listo-illustration-svg-download-png-14822599.webp')}
+                            style={styles.tipImg}
+                            resizeMode="contain"
+                        />
                     </View>
                 ) : null}
                 ListEmptyComponent={loading ? null : (
@@ -269,6 +348,82 @@ export default function RepartidorScreen() {
                     </View>
                 )}
             />
+
+            <Portal>
+                <Dialog visible={sortVisible} onDismiss={() => setSortVisible(false)} style={styles.dialog}>
+                    <Dialog.Title style={styles.dialogTitle}>Filtrar y ordenar</Dialog.Title>
+                    <Dialog.Content>
+                        <Text style={styles.sortSection}>Estado</Text>
+                        {[
+                            { key: 'todos', label: 'Todos' },
+                            { key: 'en_camino', label: 'En camino' },
+                            { key: 'preparando', label: 'Preparando' },
+                        ].map(opt => (
+                            <TouchableOpacity
+                                key={opt.key}
+                                style={[styles.sortOption, filterEstado === opt.key && styles.sortOptionActive]}
+                                onPress={() => setFilterEstado(opt.key)}
+                            >
+                                <Text style={[styles.sortOptionText, filterEstado === opt.key && { color: '#FF8700' }]}>{opt.label}</Text>
+                                {filterEstado === opt.key && <Ionicons name="checkmark" size={18} color="#FF8700" />}
+                            </TouchableOpacity>
+                        ))}
+
+                        <Text style={[styles.sortSection, { marginTop: 12 }]}>Orden</Text>
+                        {[
+                            { key: 'desc', label: 'Más reciente primero', icon: 'arrow-down-outline' },
+                            { key: 'asc', label: 'Más antiguo primero', icon: 'arrow-up-outline' },
+                        ].map(opt => (
+                            <TouchableOpacity
+                                key={opt.key}
+                                style={[styles.sortOption, sortOrder === opt.key && styles.sortOptionActive]}
+                                onPress={() => setSortOrder(opt.key)}
+                            >
+                                <Ionicons name={opt.icon} size={16} color={sortOrder === opt.key ? '#FF8700' : '#888'} />
+                                <Text style={[styles.sortOptionText, sortOrder === opt.key && { color: '#FF8700' }]}>{opt.label}</Text>
+                                {sortOrder === opt.key && <Ionicons name="checkmark" size={18} color="#FF8700" />}
+                            </TouchableOpacity>
+                        ))}
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setSortVisible(false)} textColor="#FF8700">Listo</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            <Portal>
+                <Dialog visible={cobrarVisible} onDismiss={() => setCobrarVisible(false)} style={styles.dialog}>
+                    <Dialog.Title style={styles.dialogTitle}>Cobrar en efectivo</Dialog.Title>
+                    <Dialog.Content>
+                        <Text style={styles.cobrarTotal}>
+                            Total del pedido: <Text style={{ color: '#FF8700' }}>${parseFloat(cobrarPedido?.total || 0).toFixed(2)}</Text>
+                        </Text>
+                        <Text style={styles.cobrarLabel}>¿Cuánto te dio el cliente?</Text>
+                        <TextInput
+                            style={styles.cobrarInput}
+                            keyboardType="decimal-pad"
+                            placeholder="0.00"
+                            value={montoRecibido}
+                            onChangeText={setMontoRecibido}
+                            selectTextOnFocus
+                        />
+                        {montoRecibido && !isNaN(parseFloat(montoRecibido)) && parseFloat(montoRecibido) >= parseFloat(cobrarPedido?.total || 0) && (
+                            <View style={styles.vueltoBox}>
+                                <Ionicons name="arrow-undo-outline" size={16} color="#1976D2" />
+                                <Text style={styles.vueltoText}>
+                                    Vuelto: <Text style={{ fontFamily: 'Poppins-Bold' }}>${(parseFloat(montoRecibido) - parseFloat(cobrarPedido?.total || 0)).toFixed(2)}</Text>
+                                </Text>
+                            </View>
+                        )}
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setCobrarVisible(false)} textColor="#888">Cancelar</Button>
+                        <Button onPress={handleCobrar} textColor="#2E7D32" loading={cobrandoLoading} disabled={cobrandoLoading}>
+                            Confirmar cobro
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
 
             <Portal>
                 <Dialog visible={logoutVisible} onDismiss={() => setLogoutVisible(false)} style={styles.dialog}>
@@ -397,7 +552,7 @@ const styles = StyleSheet.create({
     tipContent: { flex: 1 },
     tipTitle: { fontFamily: 'Poppins-Bold', fontSize: 14, color: '#1A1A1A' },
     tipSub: { fontFamily: 'Poppins-Regular', fontSize: 12, color: '#555', marginTop: 3 },
-    tipEmoji: { fontSize: 30 },
+    tipImg: { width: 60, height: 60 },
 
     // ── Empty ────────────────────────────────────────────────
     empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 40 },
@@ -408,4 +563,24 @@ const styles = StyleSheet.create({
     dialog: { borderRadius: 20, backgroundColor: '#fff' },
     dialogTitle: { textAlign: 'center', fontFamily: 'Poppins-Bold', fontSize: 18 },
     dialogMessage: { textAlign: 'center', fontFamily: 'Poppins-Regular', color: '#666' },
+    cobrarTotal: { fontFamily: 'Poppins-Regular', fontSize: 14, color: '#555', marginBottom: 12 },
+    cobrarLabel: { fontFamily: 'Poppins-SemiBold', fontSize: 13, color: '#333', marginBottom: 8 },
+    cobrarInput: {
+        borderWidth: 1.5, borderColor: '#E0E0E0', borderRadius: 12,
+        padding: 14, fontFamily: 'Poppins-Regular', fontSize: 18,
+        color: '#1A1A1A', textAlign: 'center', backgroundColor: '#F9F9F9',
+    },
+    vueltoBox: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: '#E3F2FD', borderRadius: 10, padding: 12, marginTop: 12,
+    },
+    vueltoText: { fontFamily: 'Poppins-Regular', fontSize: 14, color: '#1976D2' },
+
+    sortSection: { fontFamily: 'Poppins-SemiBold', fontSize: 12, color: '#999', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+    sortOption: {
+        flexDirection: 'row', alignItems: 'center', gap: 10,
+        padding: 12, borderRadius: 12, marginBottom: 4, backgroundColor: '#F9F9F9',
+    },
+    sortOptionActive: { backgroundColor: '#FFF5EB' },
+    sortOptionText: { flex: 1, fontFamily: 'Poppins-SemiBold', fontSize: 14, color: '#555' },
 });

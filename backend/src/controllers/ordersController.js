@@ -3,7 +3,7 @@ const db = require('../config/database');
 // ── CREATE ORDER ──────────────────────────────────────────
 // POST /api/orders
 exports.createOrder = async (req, res) => {
-    const { restaurante_id, items, direccion_entrega, notas } = req.body;
+    const { restaurante_id, items, direccion_entrega, notas, metodo_pago } = req.body;
 
     // 1. Validar estructura del body
     if (!restaurante_id || !items || !Array.isArray(items) || items.length === 0) {
@@ -102,11 +102,12 @@ exports.createOrder = async (req, res) => {
         });
 
         // 5. Insertar el pedido
+        const esEfectivo = metodo_pago === 'efectivo';
         const pedidoResult = await client.query(
-            `INSERT INTO pedidos (usuario_id, restaurante_id, estado, total, direccion_entrega, notas)
-             VALUES ($1, $2, 'pendiente', $3, $4, $5)
-             RETURNING id, usuario_id, restaurante_id, estado, total, direccion_entrega, notas, fecha_creacion`,
-            [req.user.userId, restaurante_id, total.toFixed(2), direccion_entrega || null, notas || null]
+            `INSERT INTO pedidos (usuario_id, restaurante_id, estado, total, direccion_entrega, notas, metodo_pago)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, usuario_id, restaurante_id, estado, total, direccion_entrega, notas, metodo_pago, fecha_creacion`,
+            [req.user.userId, restaurante_id, esEfectivo ? 'en_preparacion' : 'pendiente', total.toFixed(2), direccion_entrega || null, notas || null, metodo_pago || 'mercadopago']
         );
 
         const pedido = pedidoResult.rows[0];
