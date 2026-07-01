@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { sendPushNotification } = require('../services/notificationService');
 
 // ── CREATE ORDER ──────────────────────────────────────────
 // POST /api/orders
@@ -135,6 +136,21 @@ exports.createOrder = async (req, res) => {
              FROM pedido_items WHERE pedido_id = $1`,
             [pedido.id]
         );
+
+        if (esEfectivo) {
+            const admins = await db.query(
+                "SELECT id, push_token FROM usuarios WHERE rol = 'admin' AND push_token IS NOT NULL"
+            );
+            console.log(`[push] Admins con token para notificar: ${admins.rows.length}`, admins.rows.map(a => `id=${a.id} token=${a.push_token?.slice(0, 30)}...`));
+            await Promise.all(admins.rows.map(a =>
+                sendPushNotification(
+                    a.push_token,
+                    '💵 Nuevo pedido en efectivo',
+                    `Pedido #${pedido.id} — $${parseFloat(pedido.total).toFixed(2)} — listo para preparar`,
+                    { orderId: pedido.id, type: 'new_order' }
+                )
+            ));
+        }
 
         res.status(201).json({
             success: true,

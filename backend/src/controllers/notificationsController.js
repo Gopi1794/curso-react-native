@@ -13,6 +13,7 @@ exports.savePushToken = async (req, res) => {
             'UPDATE usuarios SET push_token = $1 WHERE id = $2',
             [pushToken, req.user.userId]
         );
+        console.log(`[push] Token guardado para usuario ${req.user.userId}: ${pushToken}`);
         res.json({ success: true });
     } catch (error) {
         console.error('Error guardando push token:', error);
