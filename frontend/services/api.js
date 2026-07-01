@@ -283,6 +283,10 @@ const admin = {
         update: (id, data) => request(`/api/admin/cupones/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         remove: (id) => request(`/api/admin/cupones/${id}`, { method: 'DELETE' }),
     },
+    recetas: {
+        getByRestaurante: (restauranteId) => request(`/api/admin/recetas/${restauranteId}`),
+        updateCantidad: (id, cantidad_usada) => request(`/api/admin/recetas/item/${id}`, { method: 'PUT', body: JSON.stringify({ cantidad_usada }) }),
+    },
     platos: {
         getAll: (restauranteId) => request(`/api/admin/platos/${restauranteId}`),
         create: (restauranteId, data) => request(`/api/admin/platos/${restauranteId}`, { method: 'POST', body: JSON.stringify(data) }),
