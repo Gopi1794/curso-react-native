@@ -19,6 +19,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 
 // Navegación
 import AppNavigator from './navigation/AppNavigator';
+import RepartidorScreen from './screens/repartidor/RepartidorScreen';
 
 // Componentes
 import ComponenteLogin from './components/LoginForm';
@@ -104,6 +105,7 @@ function MainApp() {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const isLoggedIn = useAppSelector((state) => state.user.isLoggedIn);
+  const userRol = useAppSelector((state) => state.user.userInfo?.rol);
   const selectedRestaurant = useAppSelector((state) => state.restaurant.selected);
   const dispatch = useAppDispatch();
   const { isDark } = useTheme();
@@ -243,6 +245,17 @@ function MainApp() {
           style={styles.loadingLogo}
         />
       </View>
+    );
+  }
+
+  // Repartidor — su propia pantalla, sin restaurante ni tab bar
+  if (isLoggedIn && userRol === 'repartidor') {
+    return (
+      <NavigationContainer>
+        <StatusBar style="light" translucent backgroundColor="transparent" />
+        <RepartidorScreen />
+        <FlashMessageWrapper />
+      </NavigationContainer>
     );
   }
 

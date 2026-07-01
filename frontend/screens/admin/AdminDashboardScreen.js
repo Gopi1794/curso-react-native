@@ -46,6 +46,14 @@ const CARDS = [
         icon: 'clipboard-outline',
         colors: ['#00695C', '#00897B'],
     },
+    {
+        key: 'pedidos',
+        screen: 'AdminPedidos',
+        title: 'Pedidos',
+        subtitle: 'Asigná repartidores y seguí el estado',
+        icon: 'bicycle-outline',
+        colors: ['#AD1457', '#E91E63'],
+    },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
