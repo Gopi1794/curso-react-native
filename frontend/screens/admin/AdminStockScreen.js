@@ -148,14 +148,31 @@ export default function AdminStockScreen({ navigation }) {
                     <View style={styles.modal}>
                         <Text style={styles.modalTitle}>Editar stock</Text>
                         <Text style={styles.modalSub}>{editItem?.nombre}</Text>
-                        <Text style={styles.label}>Cantidad ({editItem?.unidad_medida})</Text>
-                        <TextInput
-                            style={styles.input}
-                            keyboardType="numeric"
-                            value={editCantidad}
-                            onChangeText={setEditCantidad}
-                            autoFocus
-                        />
+                        <Text style={styles.modalCat}>{editItem?.categoria}</Text>
+
+                        <Text style={styles.label}>Cantidad en {editItem?.unidad_medida === 'gr' ? 'gramos' : editItem?.unidad_medida === 'ml' ? 'mililitros' : 'unidades'}</Text>
+                        <View style={styles.inputRow}>
+                            <TextInput
+                                style={styles.input}
+                                keyboardType="decimal-pad"
+                                value={editCantidad}
+                                onChangeText={setEditCantidad}
+                                autoFocus
+                                selectTextOnFocus
+                                placeholder="0"
+                                placeholderTextColor="#ccc"
+                            />
+                            <View style={styles.unitTag}>
+                                <Text style={styles.unitText}>{editItem?.unidad_medida}</Text>
+                            </View>
+                        </View>
+
+                        {editItem?.umbral_minimo > 0 && (
+                            <Text style={styles.umbralHint}>
+                                Umbral mínimo: {editItem.umbral_minimo} {editItem.unidad_medida}
+                            </Text>
+                        )}
+
                         <View style={styles.modalActions}>
                             <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditItem(null)}>
                                 <Text style={styles.cancelText}>Cancelar</Text>
@@ -205,13 +222,21 @@ const styles = StyleSheet.create({
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modal: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
     modalTitle: { fontSize: 18, fontFamily: 'Poppins-Bold', color: '#1a1a1a', marginBottom: 4 },
-    modalSub: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#888', marginBottom: 20 },
+    modalSub: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#333', marginBottom: 2 },
+    modalCat: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#aaa', textTransform: 'capitalize', marginBottom: 20 },
     label: { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#666', marginBottom: 8 },
+    inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     input: {
-        borderWidth: 1, borderColor: '#eee', borderRadius: 12,
+        flex: 1, borderWidth: 1, borderColor: '#eee', borderRadius: 12,
         paddingHorizontal: 14, paddingVertical: 12,
-        fontSize: 20, fontFamily: 'Poppins-Regular', color: '#1a1a1a', backgroundColor: '#fafafa',
+        fontSize: 24, fontFamily: 'Poppins-Regular', color: '#1a1a1a', backgroundColor: '#fafafa',
     },
+    unitTag: {
+        backgroundColor: '#FFF3E0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
+        borderWidth: 1, borderColor: '#FFE0B2',
+    },
+    unitText: { fontFamily: 'Poppins-Bold', fontSize: 14, color: '#FF8700' },
+    umbralHint: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#bbb', marginTop: 8 },
     modalActions: { flexDirection: 'row', gap: 12, marginTop: 24 },
     cancelBtn: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
     cancelText: { color: '#666', fontFamily: 'Poppins-SemiBold', fontSize: 15 },
