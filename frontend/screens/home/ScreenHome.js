@@ -27,9 +27,8 @@ import { clearJustRegistered } from '../../store/slices/userSlice';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const MenuItemSkeleton = () => {
+const useShimmer = () => {
     const shimmer = useRef(new Animated.Value(0)).current;
-
     useEffect(() => {
         Animated.loop(
             Animated.sequence([
@@ -38,9 +37,11 @@ const MenuItemSkeleton = () => {
             ])
         ).start();
     }, []);
+    return shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+};
 
-    const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
-
+const MenuItemSkeleton = () => {
+    const opacity = useShimmer();
     return (
         <Animated.View style={[skeletonStyles.card, { opacity }]}>
             <View style={skeletonStyles.image} />
@@ -48,6 +49,52 @@ const MenuItemSkeleton = () => {
             <View style={skeletonStyles.priceLine} />
             <View style={skeletonStyles.button} />
         </Animated.View>
+    );
+};
+
+const PromoSkeleton = () => {
+    const opacity = useShimmer();
+    return (
+        <View style={skeletonStyles.promoSection}>
+            {/* Header */}
+            <View style={skeletonStyles.promoHeader}>
+                <View>
+                    <Animated.View style={[skeletonStyles.promoTitleLine, { opacity }]} />
+                    <Animated.View style={[skeletonStyles.promoSubtitleLine, { opacity }]} />
+                </View>
+                <Animated.View style={[skeletonStyles.promoVerTodas, { opacity }]} />
+            </View>
+            {/* Card */}
+            <Animated.View style={[skeletonStyles.promoCard, { opacity }]} />
+            {/* Dots */}
+            <View style={skeletonStyles.promoDots}>
+                {[0, 1, 2].map(i => (
+                    <Animated.View key={i} style={[skeletonStyles.promoDot, i === 0 && skeletonStyles.promoDotActive, { opacity }]} />
+                ))}
+            </View>
+        </View>
+    );
+};
+
+const SugerenciasSkeleton = () => {
+    const opacity = useShimmer();
+    return (
+        <View style={skeletonStyles.sugerenciasSection}>
+            {/* Header */}
+            <View style={skeletonStyles.sugerenciasHeader}>
+                <Animated.View style={[skeletonStyles.sugerenciasTitleLine, { opacity }]} />
+                <View style={skeletonStyles.sugerenciasDots}>
+                    {[0, 1, 2].map(i => (
+                        <Animated.View key={i} style={[skeletonStyles.promoDot, { opacity }]} />
+                    ))}
+                </View>
+            </View>
+            {/* Card */}
+            <Animated.View style={[skeletonStyles.sugerenciasCard, { opacity }]}>
+                <View style={skeletonStyles.sugerenciasLeft} />
+                <View style={skeletonStyles.sugerenciasRight} />
+            </Animated.View>
+        </View>
     );
 };
 
@@ -89,6 +136,49 @@ const skeletonStyles = StyleSheet.create({
         borderRadius: 18,
         backgroundColor: '#D8D8D8',
     },
+
+    // Promo skeleton
+    promoSection: { paddingBottom: 8 },
+    promoHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        marginBottom: 18,
+    },
+    promoTitleLine: { width: 160, height: 14, borderRadius: 7, backgroundColor: '#E0E0E0', marginBottom: 6 },
+    promoSubtitleLine: { width: 200, height: 10, borderRadius: 5, backgroundColor: '#E8E8E8' },
+    promoVerTodas: { width: 64, height: 12, borderRadius: 6, backgroundColor: '#E0E0E0' },
+    promoCard: {
+        marginHorizontal: 20,
+        height: 160,
+        borderRadius: 20,
+        backgroundColor: '#E8E8E8',
+        marginTop: 20,
+    },
+    promoDots: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 16, marginBottom: 8 },
+    promoDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E0E0E0' },
+    promoDotActive: { width: 20, backgroundColor: '#D0D0D0' },
+
+    // Sugerencias skeleton
+    sugerenciasSection: { minHeight: 217, paddingHorizontal: 16 },
+    sugerenciasHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sugerenciasTitleLine: { width: 120, height: 14, borderRadius: 7, backgroundColor: '#E0E0E0' },
+    sugerenciasDots: { flexDirection: 'row', gap: 7 },
+    sugerenciasCard: {
+        height: 165,
+        borderRadius: 24,
+        flexDirection: 'row',
+        overflow: 'hidden',
+        backgroundColor: '#F0F0F0',
+    },
+    sugerenciasLeft: { width: '55%', backgroundColor: '#D8D0E8' },
+    sugerenciasRight: { flex: 1, backgroundColor: '#EDEAE4' },
 });
 
 const mapMenuItem = (item) => ({
@@ -370,21 +460,25 @@ export const ScreenHome = ({ navigation }) => {
 
                 {!debouncedQuery.trim() && (
                     <>
-                        <PromoSection
-                            promos={promos}
-                            activePromoIndex={activePromoIndex}
-                            onPromoPress={handlePromoPress}
-                            onPromoIndicatorPress={handlePromoIndicatorPress}
-                            onPromoScroll={handlePromoScroll}
-                            promoFlatListRef={promoFlatListRef}
-                            onVerTodas={() => navigation.navigate('AllPromos', { promos })}
-                        />
+                        {loading ? <PromoSkeleton /> : (
+                            <PromoSection
+                                promos={promos}
+                                activePromoIndex={activePromoIndex}
+                                onPromoPress={handlePromoPress}
+                                onPromoIndicatorPress={handlePromoIndicatorPress}
+                                onPromoScroll={handlePromoScroll}
+                                promoFlatListRef={promoFlatListRef}
+                                onVerTodas={() => navigation.navigate('AllPromos', { promos })}
+                            />
+                        )}
 
                         <View style={styles.sugerenciasWrapper}>
-                            <ListSugerencias
-                                navigation={navigation}
-                                menuItems={menuItems}
-                            />
+                            {loading ? <SugerenciasSkeleton /> : (
+                                <ListSugerencias
+                                    navigation={navigation}
+                                    menuItems={menuItems}
+                                />
+                            )}
                         </View>
                     </>
                 )}
