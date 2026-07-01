@@ -295,6 +295,7 @@ const admin = {
     pedidos: {
         getAll: () => request('/api/admin/pedidos'),
         getRepartidores: () => request('/api/admin/repartidores'),
+        preparar: (id) => request(`/api/admin/pedidos/${id}/preparar`, { method: 'PUT' }),
         asignar: (id, repartidor_id) => request(`/api/admin/pedidos/${id}/asignar`, { method: 'PUT', body: JSON.stringify({ repartidor_id }) }),
     },
     recetas: {

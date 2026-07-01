@@ -34,5 +34,14 @@ export async function registerForPushNotifications() {
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+
+    await Notifications.setNotificationCategoryAsync('new_order_admin', [
+        {
+            identifier: 'PREPARAR',
+            buttonTitle: '✅ Poner en preparación',
+            options: { isDestructive: false, isAuthenticationRequired: false },
+        },
+    ]);
+
     return tokenData.data;
 }
