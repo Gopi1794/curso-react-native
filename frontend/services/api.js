@@ -254,6 +254,12 @@ const notifications = {
     }),
 };
 
+// ── REPARTIDOR ────────────────────────────────────────────
+const repartidor = {
+    getMisPedidos: () => request('/api/repartidor/pedidos'),
+    updateEstado: (id, estado) => request(`/api/repartidor/pedidos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
+};
+
 // ── ADMIN ─────────────────────────────────────────────────
 const admin = {
     upload: async (uri, type = 'image/jpeg') => {
@@ -282,6 +288,11 @@ const admin = {
         create: (data) => request('/api/admin/cupones', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => request(`/api/admin/cupones/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         remove: (id) => request(`/api/admin/cupones/${id}`, { method: 'DELETE' }),
+    },
+    pedidos: {
+        getAll: () => request('/api/admin/pedidos'),
+        getRepartidores: () => request('/api/admin/repartidores'),
+        asignar: (id, repartidor_id) => request(`/api/admin/pedidos/${id}/asignar`, { method: 'PUT', body: JSON.stringify({ repartidor_id }) }),
     },
     recetas: {
         getByRestaurante: (restauranteId) => request(`/api/admin/recetas/${restauranteId}`),
@@ -312,4 +323,4 @@ const token = {
 };
 
 export { API_BASE_URL as API_URL };
-export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, admin, token };
+export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, admin, repartidor, token };

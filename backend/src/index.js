@@ -16,6 +16,7 @@ const favoritosRouter    = require('./routers/favoritos');
 const supportRouter      = require('./routers/support');
 const ingredientesRouter = require('./routers/ingredientes');
 const adminRouter        = require('./routers/admin');
+const repartidorRouter   = require('./routers/repartidor');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,6 +53,7 @@ app.use('/api/favorites',   favoritosRouter);
 app.use('/api/support',       supportRouter);
 app.use('/api/admin/ingredientes', ingredientesRouter);
 app.use('/api/admin',              adminRouter);
+app.use('/api/repartidor',         repartidorRouter);
 
 // ── Health check ───────────────────────────────────────────
 app.get('/health', async (req, res) => {

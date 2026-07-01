@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+const { sendPushNotification } = require('../services/notificationService');
 
 const getMpClient = () => new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN,
@@ -362,6 +363,19 @@ exports.mpWebhook = async (req, res) => {
         } finally {
             client.release();
         }
+
+        // Notificar a todos los admins
+        const admins = await db.query(
+            "SELECT push_token FROM usuarios WHERE rol = 'admin' AND push_token IS NOT NULL"
+        );
+        await Promise.all(admins.rows.map(a =>
+            sendPushNotification(
+                a.push_token,
+                '¡Nuevo pedido pagado!',
+                `Pedido #${pedidoId} listo para preparar`,
+                { type: 'nuevo_pedido', pedido_id: pedidoId }
+            )
+        ));
 
         res.sendStatus(200);
     } catch (error) {

@@ -7,6 +7,7 @@ const platosCtrl   = require('../controllers/adminPlatosController');
 const stockCtrl    = require('../controllers/adminStockController');
 const ingCtrl      = require('../controllers/ingredientesController');
 const recetasCtrl  = require('../controllers/adminRecetasController');
+const pedidosCtrl  = require('../controllers/adminPedidosController');
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -40,6 +41,11 @@ router.delete('/platos/:id',                  platosCtrl.remove);
 router.get('/stock/:restauranteId',           stockCtrl.getStock);
 router.get('/stock/platos/:restauranteId',    stockCtrl.getIngredientesMenuItems);
 router.put('/stock/item/:id',                 stockCtrl.updateStock);
+
+// ── Pedidos (admin) ───────────────────────────────────────
+router.get('/pedidos',                        pedidosCtrl.getAll);
+router.get('/repartidores',                   pedidosCtrl.getRepartidores);
+router.put('/pedidos/:id/asignar',            pedidosCtrl.asignarRepartidor);
 
 // ── Recetas ───────────────────────────────────────────────
 router.get('/recetas/:restauranteId',      recetasCtrl.getByRestaurante);
