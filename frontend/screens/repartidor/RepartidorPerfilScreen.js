@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/slices/userSlice';
@@ -9,6 +10,7 @@ import API from '../../services/api';
 
 export default function RepartidorPerfilScreen() {
     const insets = useSafeAreaInsets();
+    const tabBarHeight = useBottomTabBarHeight();
     const dispatch = useAppDispatch();
     const userInfo = useAppSelector(s => s.user.userInfo);
     const [logoutVisible, setLogoutVisible] = useState(false);
@@ -39,7 +41,7 @@ export default function RepartidorPerfilScreen() {
                 </View>
             </View>
 
-            <TouchableOpacity style={styles.logoutBtn} onPress={() => setLogoutVisible(true)}>
+            <TouchableOpacity style={[styles.logoutBtn, { marginBottom: tabBarHeight + 16 }]} onPress={() => setLogoutVisible(true)}>
                 <Ionicons name="log-out-outline" size={20} color="#ff4444" />
                 <Text style={styles.logoutText}>Cerrar sesión</Text>
             </TouchableOpacity>

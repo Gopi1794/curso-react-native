@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList, TouchableOpacity,
-    RefreshControl, StatusBar, Alert, Linking, Image, TextInput, KeyboardAvoidingView, Platform,
+    RefreshControl, StatusBar, Linking, Image, TextInput, KeyboardAvoidingView, Platform, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import { imageMap } from '../../assets/utils/imageMap';
@@ -28,6 +29,7 @@ const ESTADO_COLOR = {
 
 export default function RepartidorScreen() {
     const insets = useSafeAreaInsets();
+    const tabBarHeight = useBottomTabBarHeight();
     const dispatch = useAppDispatch();
     const [pedidos, setPedidos] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -38,6 +40,9 @@ export default function RepartidorScreen() {
     const [cobrarPedido, setCobrarPedido] = useState(null);
     const [montoRecibido, setMontoRecibido] = useState('');
     const [cobrandoLoading, setCobrandoLoading] = useState(false);
+    const [cobradoData, setCobradoData] = useState(null); // { vuelto, total, monto }
+    const [confirmData, setConfirmData] = useState(null); // { pedido, nuevoEstado }
+    const [entregadoId, setEntregadoId] = useState(null);
     const [sortVisible, setSortVisible] = useState(false);
     const [sortOrder, setSortOrder] = useState('desc');
     const [filterEstado, setFilterEstado] = useState('todos');
@@ -65,40 +70,33 @@ export default function RepartidorScreen() {
     };
 
     const handleUpdateEstado = (pedido, nuevoEstado) => {
-        const labels = { en_camino: 'en camino', entregado: 'entregado' };
-        Alert.alert(
-            'Confirmar',
-            `¿Marcar el pedido #${pedido.id} como ${labels[nuevoEstado]}?`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Confirmar',
-                    onPress: async () => {
-                        setUpdating(pedido.id);
-                        try {
-                            const res = await API.repartidor.updateEstado(pedido.id, nuevoEstado);
-                            if (res.success) {
-                                if (nuevoEstado === 'entregado') {
-                                    setPedidos(prev => prev.filter(p => p.id !== pedido.id));
-                                    showSuccessMessage('¡Entregado!', `Pedido #${pedido.id} completado`);
-                                } else {
-                                    setPedidos(prev => prev.map(p =>
-                                        p.id === pedido.id ? { ...p, estado: nuevoEstado } : p
-                                    ));
-                                    showSuccessMessage('Estado actualizado', `Pedido #${pedido.id} en camino`);
-                                }
-                            } else {
-                                showErrorMessage('Error', res.message);
-                            }
-                        } catch {
-                            showErrorMessage('Error', 'No se pudo actualizar el estado');
-                        } finally {
-                            setUpdating(null);
-                        }
-                    },
-                },
-            ]
-        );
+        setConfirmData({ pedido, nuevoEstado });
+    };
+
+    const doUpdateEstado = async () => {
+        const { pedido, nuevoEstado } = confirmData;
+        setConfirmData(null);
+        setUpdating(pedido.id);
+        try {
+            const res = await API.repartidor.updateEstado(pedido.id, nuevoEstado);
+            if (res.success) {
+                if (nuevoEstado === 'entregado') {
+                    setPedidos(prev => prev.filter(p => p.id !== pedido.id));
+                    setEntregadoId(pedido.id);
+                } else {
+                    setPedidos(prev => prev.map(p =>
+                        p.id === pedido.id ? { ...p, estado: nuevoEstado } : p
+                    ));
+                    showSuccessMessage('Estado actualizado', `Pedido #${pedido.id} en camino`);
+                }
+            } else {
+                showErrorMessage('Error', res.message);
+            }
+        } catch {
+            showErrorMessage('Error', 'No se pudo actualizar el estado');
+        } finally {
+            setUpdating(null);
+        }
     };
 
     const openCobrar = (pedido) => {
@@ -122,13 +120,11 @@ export default function RepartidorScreen() {
             const res = await API.repartidor.cobrarEfectivo(cobrarPedido.id, monto);
             if (res.success) {
                 const vuelto = parseFloat(res.vuelto);
+                const total = parseFloat(cobrarPedido.total);
+                const monto = parseFloat(montoRecibido);
                 setCobrarVisible(false);
                 setPedidos(prev => prev.filter(p => p.id !== cobrarPedido.id));
-                if (vuelto > 0) {
-                    Alert.alert('¡Cobrado!', `Vuelto a dar al cliente: $${vuelto.toFixed(2)}`);
-                } else {
-                    showSuccessMessage('¡Cobrado!', `Pedido #${cobrarPedido.id} entregado`);
-                }
+                setCobradoData({ vuelto, total, monto });
             } else {
                 showErrorMessage('Error', res.message);
             }
@@ -321,7 +317,7 @@ export default function RepartidorScreen() {
                 data={sortedPedidos}
                 keyExtractor={i => String(i.id)}
                 renderItem={renderPedido}
-                contentContainerStyle={styles.list}
+                contentContainerStyle={[styles.list, { paddingBottom: tabBarHeight + 16 }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" colors={['#FF8700']} />
@@ -424,6 +420,123 @@ export default function RepartidorScreen() {
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
+
+            {/* ── Modal ¡Cobrado! ── */}
+            <Modal
+                visible={!!cobradoData}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setCobradoData(null)}
+            >
+                <View style={styles.cobradoOverlay}>
+                    <View style={styles.cobradoSheet}>
+                        {/* Icono de éxito */}
+                        <View style={styles.cobradoIconWrap}>
+                            <Ionicons name="checkmark-circle" size={72} color="#43A047" />
+                        </View>
+
+                        <Text style={styles.cobradoTitle}>¡Cobrado!</Text>
+                        <Text style={styles.cobradoSub}>Pedido entregado exitosamente</Text>
+
+                        {/* Detalle de montos */}
+                        <View style={styles.cobradoBox}>
+                            <View style={styles.cobradoRow}>
+                                <Text style={styles.cobradoRowLabel}>Total del pedido</Text>
+                                <Text style={styles.cobradoRowValue}>${cobradoData?.total.toFixed(2)}</Text>
+                            </View>
+                            <View style={styles.cobradoRow}>
+                                <Text style={styles.cobradoRowLabel}>Recibido</Text>
+                                <Text style={styles.cobradoRowValue}>${cobradoData?.monto.toFixed(2)}</Text>
+                            </View>
+                            <View style={styles.cobradoDivider} />
+                            <View style={styles.cobradoRow}>
+                                <Text style={styles.cobradoVueltoLabel}>Vuelto a dar</Text>
+                                <Text style={[
+                                    styles.cobradoVueltoValue,
+                                    { color: cobradoData?.vuelto > 0 ? '#1976D2' : '#43A047' }
+                                ]}>
+                                    ${cobradoData?.vuelto.toFixed(2)}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.cobradoBtn}
+                            onPress={() => setCobradoData(null)}
+                        >
+                            <Text style={styles.cobradoBtnText}>Listo</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* ── Modal confirmación (salir / entregar) ── */}
+            <Modal
+                visible={!!confirmData}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setConfirmData(null)}
+            >
+                <View style={styles.cobradoOverlay}>
+                    <View style={styles.cobradoSheet}>
+                        <View style={[styles.cobradoIconWrap, { backgroundColor: confirmData?.nuevoEstado === 'en_camino' ? '#E3F2FD' : '#E8F5E9' }]}>
+                            <Ionicons
+                                name={confirmData?.nuevoEstado === 'en_camino' ? 'bicycle-outline' : 'checkmark-circle-outline'}
+                                size={64}
+                                color={confirmData?.nuevoEstado === 'en_camino' ? '#1976D2' : '#43A047'}
+                            />
+                        </View>
+                        <Text style={styles.cobradoTitle}>
+                            {confirmData?.nuevoEstado === 'en_camino' ? '¿Salís a entregar?' : '¿Pedido entregado?'}
+                        </Text>
+                        <Text style={[styles.cobradoSub, { marginBottom: 28 }]}>
+                            {confirmData?.nuevoEstado === 'en_camino'
+                                ? `Pedido #${confirmData?.pedido?.id} se marcará como en camino`
+                                : `Pedido #${confirmData?.pedido?.id} se marcará como entregado`}
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+                            <TouchableOpacity
+                                style={[styles.cobradoBtn, { flex: 1, backgroundColor: '#F0F0F0' }]}
+                                onPress={() => setConfirmData(null)}
+                            >
+                                <Text style={[styles.cobradoBtnText, { color: '#555' }]}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.cobradoBtn, { flex: 1, backgroundColor: confirmData?.nuevoEstado === 'en_camino' ? '#1976D2' : '#43A047' }]}
+                                onPress={doUpdateEstado}
+                            >
+                                <Text style={styles.cobradoBtnText}>Confirmar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* ── Modal ¡Entregado! ── */}
+            <Modal
+                visible={!!entregadoId}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setEntregadoId(null)}
+            >
+                <View style={styles.cobradoOverlay}>
+                    <View style={styles.cobradoSheet}>
+                        <View style={styles.cobradoIconWrap}>
+                            <Ionicons name="checkmark-circle" size={72} color="#43A047" />
+                        </View>
+                        <Text style={styles.cobradoTitle}>¡Entregado!</Text>
+                        <Text style={[styles.cobradoSub, { marginBottom: 28 }]}>
+                            Pedido #{entregadoId} completado exitosamente
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.cobradoBtn}
+                            onPress={() => setEntregadoId(null)}
+                        >
+                            <Text style={styles.cobradoBtnText}>Listo</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             <Portal>
                 <Dialog visible={logoutVisible} onDismiss={() => setLogoutVisible(false)} style={styles.dialog}>
@@ -583,4 +696,49 @@ const styles = StyleSheet.create({
     },
     sortOptionActive: { backgroundColor: '#FFF5EB' },
     sortOptionText: { flex: 1, fontFamily: 'Poppins-SemiBold', fontSize: 14, color: '#555' },
+
+    /* ── Modal ¡Cobrado! ── */
+    cobradoOverlay: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center', alignItems: 'center', padding: 24,
+    },
+    cobradoSheet: {
+        backgroundColor: '#fff', borderRadius: 28,
+        padding: 28, width: '100%', alignItems: 'center',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2, shadowRadius: 20, elevation: 12,
+    },
+    cobradoIconWrap: {
+        width: 100, height: 100, borderRadius: 50,
+        backgroundColor: '#E8F5E9',
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 16,
+    },
+    cobradoTitle: {
+        fontSize: 28, fontFamily: 'Poppins-Bold',
+        color: '#1a1a1a', marginBottom: 4,
+    },
+    cobradoSub: {
+        fontSize: 14, fontFamily: 'Poppins-Regular',
+        color: '#888', marginBottom: 24,
+    },
+    cobradoBox: {
+        width: '100%', backgroundColor: '#F9F9F9',
+        borderRadius: 16, padding: 18, marginBottom: 24,
+    },
+    cobradoRow: {
+        flexDirection: 'row', justifyContent: 'space-between',
+        alignItems: 'center', marginBottom: 10,
+    },
+    cobradoRowLabel: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#666' },
+    cobradoRowValue: { fontSize: 15, fontFamily: 'Poppins-SemiBold', color: '#333' },
+    cobradoDivider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 8 },
+    cobradoVueltoLabel: { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#1a1a1a' },
+    cobradoVueltoValue: { fontSize: 24, fontFamily: 'Poppins-Bold' },
+    cobradoBtn: {
+        width: '100%', backgroundColor: '#43A047',
+        paddingVertical: 16, borderRadius: 16,
+        alignItems: 'center',
+    },
+    cobradoBtnText: { color: '#fff', fontSize: 16, fontFamily: 'Poppins-Bold' },
 });
