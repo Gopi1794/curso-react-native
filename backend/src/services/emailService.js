@@ -1,15 +1,23 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.EMAIL_FROM || 'Tu App Food <onboarding@resend.dev>';
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT) || 587,
+    secure: false,
+    family: 4,
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    },
+});
 
-const send = async ({ to, subject, html }) => {
-    const { error } = await resend.emails.send({ from: FROM, to, subject, html });
-    if (error) throw new Error(error.message);
-};
+transporter.verify()
+    .then(() => console.log('✅ Servidor de email conectado'))
+    .catch(err => console.warn('⚠️  Email no disponible:', err.message));
 
 exports.sendVerificationEmail = async (email, nombre, code) => {
-    await send({
+    return transporter.sendMail({
+        from: process.env.SMTP_FROM,
         to: email,
         subject: `${code} — Verificá tu cuenta en Tu App Food`,
         html: `
@@ -55,7 +63,8 @@ exports.sendPasswordChangedEmail = async (email, nombre) => {
         timeStyle: 'short',
     });
 
-    await send({
+    return transporter.sendMail({
+        from: process.env.SMTP_FROM,
         to: email,
         subject: 'Tu contraseña fue cambiada — Tu App Food',
         html: `
@@ -117,7 +126,8 @@ exports.sendPasswordResetEmail = async (email, nombre, code) => {
          </td>`
     ).join('');
 
-    await send({
+    return transporter.sendMail({
+        from: process.env.SMTP_FROM,
         to: email,
         subject: `${code} — Recuperá tu contraseña en Tu App Food`,
         html: `
