@@ -8,7 +8,7 @@ const TAB_BAR_WIDTH = 290;
 const CIRCLE_SIZE = 54;
 
 // Espacio total que ocupa el navbar flotante: alto (74) + offset inferior (28) + margen (16)
-export const FLOATING_TAB_BAR_HEIGHT = 150;
+export const FLOATING_TAB_BAR_HEIGHT = 162;
 
 export default function FloatingTabBar({ state, navigation, tabConfig }) {
     const tabCount = tabConfig.length;
@@ -85,7 +85,7 @@ export default function FloatingTabBar({ state, navigation, tabConfig }) {
 const styles = StyleSheet.create({
     tabBar: {
         position: 'absolute',
-        bottom: 28,
+        bottom: 40,
         height: 74,
         backgroundColor: 'rgba(255, 255, 255, 0.97)',
         borderColor: '#ff8000',
