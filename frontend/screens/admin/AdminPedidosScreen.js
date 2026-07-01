@@ -11,11 +11,33 @@ import { showSuccessMessage, showErrorMessage } from '../../components/FlashMess
 import API from '../../services/api';
 
 const ESTADO_COLOR = {
-    pendiente:   '#FB8C00',
-    preparando:  '#1976D2',
-    en_camino:   '#7B1FA2',
-    entregado:   '#2E7D32',
-    cancelado:   '#C62828',
+    pendiente:      '#FB8C00',
+    confirmado:     '#0288D1',
+    en_preparacion: '#1976D2',
+    en_camino:      '#7B1FA2',
+    entregado:      '#2E7D32',
+    cancelado:      '#C62828',
+};
+
+const NEXT_ESTADOS = {
+    pendiente:      ['en_preparacion', 'cancelado'],
+    confirmado:     ['en_preparacion', 'cancelado'],
+    en_preparacion: ['en_camino', 'cancelado'],
+    en_camino:      ['entregado'],
+};
+
+const ESTADO_LABEL = {
+    en_preparacion: 'En preparación',
+    en_camino:      'En camino',
+    entregado:      'Entregado',
+    cancelado:      'Cancelar pedido',
+};
+
+const ESTADO_BTN_COLOR = {
+    en_preparacion: '#1976D2',
+    en_camino:      '#7B1FA2',
+    entregado:      '#2E7D32',
+    cancelado:      '#C62828',
 };
 
 export default function AdminPedidosScreen({ navigation }) {
@@ -29,6 +51,9 @@ export default function AdminPedidosScreen({ navigation }) {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedPedido, setSelectedPedido] = useState(null);
+    const [estadoModal, setEstadoModal] = useState(false);
+    const [estadoPedido, setEstadoPedido] = useState(null);
+    const [updatingEstado, setUpdatingEstado] = useState(false);
 
     const load = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setLoading(true);
@@ -54,6 +79,33 @@ if (pedRes.success) setPedidos(pedRes.pedidos);
     const openAsignar = (pedido) => {
         setSelectedPedido(pedido);
         setModalVisible(true);
+    };
+
+    const openEstadoModal = (pedido) => {
+        setEstadoPedido(pedido);
+        setEstadoModal(true);
+    };
+
+    const handleUpdateEstado = async (nuevoEstado) => {
+        if (!estadoPedido) return;
+        setUpdatingEstado(true);
+        try {
+            const res = await API.admin.pedidos.updateEstado(estadoPedido.id, nuevoEstado);
+            if (res.success) {
+                setPedidos(prev => prev.map(p =>
+                    p.id === estadoPedido.id ? { ...p, estado: nuevoEstado } : p
+                ));
+                setEstadoModal(false);
+                setEstadoPedido(null);
+                showSuccessMessage('Estado actualizado', `Pedido #${estadoPedido.id} → ${ESTADO_LABEL[nuevoEstado]}`);
+            } else {
+                showErrorMessage('Error', res.message);
+            }
+        } catch {
+            showErrorMessage('Error', 'No se pudo actualizar el estado');
+        } finally {
+            setUpdatingEstado(false);
+        }
     };
 
     const handleAsignar = async (repartidorId) => {
@@ -112,23 +164,57 @@ if (pedRes.success) setPedidos(pedRes.pedidos);
                     ))}
                 </View>
 
+                {/* Método de pago */}
+                <View style={styles.payRow}>
+                    <View style={[styles.metodoBadge, item.metodo_pago === 'efectivo' ? styles.badgeEfectivo : styles.badgeMP]}>
+                        <Ionicons
+                            name={item.metodo_pago === 'efectivo' ? 'cash-outline' : 'card-outline'}
+                            size={12}
+                            color={item.metodo_pago === 'efectivo' ? '#2E7D32' : '#1565C0'}
+                        />
+                        <Text style={[styles.metodoText, { color: item.metodo_pago === 'efectivo' ? '#2E7D32' : '#1565C0' }]}>
+                            {item.metodo_pago === 'efectivo' ? 'Efectivo' : 'MercadoPago'}
+                        </Text>
+                    </View>
+                    {item.metodo_pago === 'efectivo' && item.monto_recibido ? (
+                        <Text style={styles.cobradoInfo}>
+                            Cobrado ${parseFloat(item.monto_recibido).toFixed(2)}
+                            {parseFloat(item.monto_recibido) > parseFloat(item.total)
+                                ? ` · Vuelto $${(parseFloat(item.monto_recibido) - parseFloat(item.total)).toFixed(2)}`
+                                : ''}
+                        </Text>
+                    ) : null}
+                </View>
+
                 <View style={styles.cardFooter}>
                     <Text style={styles.total}>Total: ${parseFloat(item.total).toFixed(2)}</Text>
 
-                    {yaAsignado ? (
-                        <View style={styles.asignadoChip}>
-                            <Ionicons name="bicycle-outline" size={13} color="#7B1FA2" />
-                            <Text style={styles.asignadoText}>{item.repartidor_nombre} {item.repartidor_apellido}</Text>
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.asignarBtn}
-                            onPress={() => openAsignar(item)}
-                        >
-                            <Ionicons name="person-add-outline" size={14} color="#fff" />
-                            <Text style={styles.asignarBtnText}>Asignar repartidor</Text>
-                        </TouchableOpacity>
-                    )}
+                    <View style={styles.footerActions}>
+                        {NEXT_ESTADOS[item.estado] && (
+                            <TouchableOpacity
+                                style={styles.estadoBtn}
+                                onPress={() => openEstadoModal(item)}
+                            >
+                                <Ionicons name="swap-horizontal-outline" size={14} color="#fff" />
+                                <Text style={styles.estadoBtnText}>Estado</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {yaAsignado ? (
+                            <View style={styles.asignadoChip}>
+                                <Ionicons name="bicycle-outline" size={13} color="#7B1FA2" />
+                                <Text style={styles.asignadoText}>{item.repartidor_nombre} {item.repartidor_apellido}</Text>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.asignarBtn}
+                                onPress={() => openAsignar(item)}
+                            >
+                                <Ionicons name="person-add-outline" size={14} color="#fff" />
+                                <Text style={styles.asignarBtnText}>Asignar</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </View>
         );
@@ -212,6 +298,43 @@ if (pedRes.success) setPedidos(pedRes.pedidos);
                     </View>
                 </View>
             </Modal>
+
+            {/* Modal cambiar estado */}
+            <Modal
+                visible={estadoModal}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setEstadoModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHandle} />
+                        <Text style={styles.modalTitle}>
+                            Cambiar estado — pedido #{estadoPedido?.id}
+                        </Text>
+                        <Text style={styles.estadoActualLabel}>
+                            Estado actual: <Text style={{ color: ESTADO_COLOR[estadoPedido?.estado] ?? '#888', fontFamily: 'Poppins-SemiBold' }}>
+                                {estadoPedido?.estado?.replace('_', ' ')}
+                            </Text>
+                        </Text>
+
+                        {(NEXT_ESTADOS[estadoPedido?.estado] ?? []).map(next => (
+                            <TouchableOpacity
+                                key={next}
+                                style={[styles.estadoOptionBtn, { backgroundColor: ESTADO_BTN_COLOR[next] }, updatingEstado && { opacity: 0.6 }]}
+                                onPress={() => handleUpdateEstado(next)}
+                                disabled={updatingEstado}
+                            >
+                                <Text style={styles.estadoOptionText}>{ESTADO_LABEL[next]}</Text>
+                            </TouchableOpacity>
+                        ))}
+
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setEstadoModal(false)} disabled={updatingEstado}>
+                            <Text style={styles.cancelText}>Cancelar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -284,4 +407,25 @@ const styles = StyleSheet.create({
 
     cancelBtn: { marginTop: 8, alignItems: 'center', padding: 14 },
     cancelText: { fontFamily: 'Poppins-SemiBold', fontSize: 15, color: '#888' },
+
+    payRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' },
+    metodoBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+    badgeEfectivo: { backgroundColor: '#E8F5E9' },
+    badgeMP: { backgroundColor: '#E3F2FD' },
+    metodoText: { fontFamily: 'Poppins-SemiBold', fontSize: 11 },
+    cobradoInfo: { fontFamily: 'Poppins-Regular', fontSize: 11, color: '#888' },
+
+    footerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    estadoBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 5,
+        backgroundColor: '#455A64', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8,
+    },
+    estadoBtnText: { fontFamily: 'Poppins-Bold', fontSize: 12, color: '#fff' },
+
+    estadoActualLabel: { fontFamily: 'Poppins-Regular', fontSize: 13, color: '#666', marginBottom: 16, textAlign: 'center' },
+    estadoOptionBtn: {
+        borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20,
+        alignItems: 'center', marginBottom: 10,
+    },
+    estadoOptionText: { fontFamily: 'Poppins-Bold', fontSize: 15, color: '#fff' },
 });

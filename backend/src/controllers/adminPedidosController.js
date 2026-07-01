@@ -46,6 +46,70 @@ exports.getRepartidores = async (req, res) => {
     }
 };
 
+const TRANSICIONES_ADMIN = {
+    pendiente:      ['en_preparacion', 'cancelado'],
+    confirmado:     ['en_preparacion', 'cancelado'],
+    en_preparacion: ['en_camino', 'cancelado'],
+    en_camino:      ['entregado'],
+};
+
+const NOTIF_ESTADO = {
+    en_preparacion: { title: '¡Tu pedido está siendo preparado!', body: 'Ya está en cocina.' },
+    en_camino:      { title: '¡Tu pedido está en camino!',        body: 'El repartidor ya salió.' },
+    entregado:      { title: '¡Pedido entregado!',                body: 'Gracias por tu compra.' },
+    cancelado:      { title: 'Tu pedido fue cancelado',           body: 'Contactate con nosotros si tenés dudas.' },
+};
+
+exports.updateEstado = async (req, res) => {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    if (!estado) {
+        return res.status(400).json({ success: false, message: 'estado requerido' });
+    }
+
+    try {
+        const current = await db.query('SELECT estado, usuario_id FROM pedidos WHERE id = $1', [id]);
+        if (current.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+        }
+
+        const estadoActual = current.rows[0].estado;
+        const permitidos = TRANSICIONES_ADMIN[estadoActual] || [];
+
+        if (!permitidos.includes(estado)) {
+            return res.status(400).json({
+                success: false,
+                message: `No se puede pasar de "${estadoActual}" a "${estado}"`,
+            });
+        }
+
+        const result = await db.query(
+            `UPDATE pedidos SET estado = $1 WHERE id = $2 RETURNING id, estado, usuario_id`,
+            [estado, id]
+        );
+
+        const pedido = result.rows[0];
+        const notif = NOTIF_ESTADO[estado];
+        if (notif) {
+            const cliente = await db.query('SELECT push_token FROM usuarios WHERE id = $1', [pedido.usuario_id]);
+            if (cliente.rows[0]?.push_token) {
+                await sendPushNotification(
+                    cliente.rows[0].push_token,
+                    notif.title,
+                    notif.body,
+                    { type: 'estado_pedido', pedido_id: id, estado }
+                );
+            }
+        }
+
+        res.json({ success: true, pedido });
+    } catch (error) {
+        console.error('Error en updateEstado admin:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
 exports.prepararPedido = async (req, res) => {
     const { id } = req.params;
 
