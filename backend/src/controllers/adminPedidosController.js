@@ -46,6 +46,40 @@ exports.getRepartidores = async (req, res) => {
     }
 };
 
+exports.prepararPedido = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await db.query(
+            `UPDATE pedidos SET estado = 'en_preparacion'
+             WHERE id = $1 AND estado NOT IN ('entregado', 'cancelado')
+             RETURNING id, estado, usuario_id`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pedido no encontrado o no se puede cambiar su estado' });
+        }
+
+        const pedido = result.rows[0];
+
+        const cliente = await db.query('SELECT push_token FROM usuarios WHERE id = $1', [pedido.usuario_id]);
+        if (cliente.rows[0]?.push_token) {
+            await sendPushNotification(
+                cliente.rows[0].push_token,
+                '¡Tu pedido está siendo preparado!',
+                `Tu pedido #${id} ya está en cocina.`,
+                { type: 'estado_pedido', pedido_id: id, estado: 'en_preparacion' }
+            );
+        }
+
+        res.json({ success: true, pedido });
+    } catch (error) {
+        console.error('Error en prepararPedido:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
 exports.asignarRepartidor = async (req, res) => {
     const { id } = req.params;
     const { repartidor_id } = req.body;

@@ -1,6 +1,6 @@
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
-async function sendPushNotification(pushToken, title, body, data = {}) {
+async function sendPushNotification(pushToken, title, body, data = {}, categoryId = null) {
     if (!pushToken || !pushToken.startsWith('ExponentPushToken')) return;
 
     const message = {
@@ -9,6 +9,7 @@ async function sendPushNotification(pushToken, title, body, data = {}) {
         title,
         body,
         data,
+        ...(categoryId && { categoryIdentifier: categoryId }),
     };
 
     try {

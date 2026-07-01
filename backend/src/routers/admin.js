@@ -45,6 +45,7 @@ router.put('/stock/item/:id',                 stockCtrl.updateStock);
 // ── Pedidos (admin) ───────────────────────────────────────
 router.get('/pedidos',                        pedidosCtrl.getAll);
 router.get('/repartidores',                   pedidosCtrl.getRepartidores);
+router.put('/pedidos/:id/preparar',           pedidosCtrl.prepararPedido);
 router.put('/pedidos/:id/asignar',            pedidosCtrl.asignarRepartidor);
 
 // ── Recetas ───────────────────────────────────────────────

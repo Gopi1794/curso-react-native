@@ -147,7 +147,8 @@ exports.createOrder = async (req, res) => {
                     a.push_token,
                     '💵 Nuevo pedido en efectivo',
                     `Pedido #${pedido.id} — $${parseFloat(pedido.total).toFixed(2)} — listo para preparar`,
-                    { orderId: pedido.id, type: 'new_order' }
+                    { orderId: pedido.id, type: 'new_order' },
+                    'new_order_admin'
                 )
             ));
         }
