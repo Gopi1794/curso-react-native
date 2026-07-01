@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList, TouchableOpacity,
-    RefreshControl, StatusBar, Alert,
+    RefreshControl, StatusBar, Alert, Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
 import { useAppDispatch } from '../../store/hooks';
@@ -23,6 +24,7 @@ export default function RepartidorScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(null);
+    const [logoutVisible, setLogoutVisible] = useState(false);
 
     const load = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setLoading(true);
@@ -76,14 +78,10 @@ export default function RepartidorScreen() {
         );
     };
 
-    const handleLogout = () => {
-        Alert.alert('Cerrar sesión', '¿Seguro que querés salir?', [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Salir', style: 'destructive', onPress: async () => {
-                await API.token.remove();
-                dispatch(logout());
-            }},
-        ]);
+    const confirmLogout = async () => {
+        setLogoutVisible(false);
+        await API.token.remove();
+        dispatch(logout());
     };
 
     const renderPedido = ({ item }) => {
@@ -123,6 +121,36 @@ export default function RepartidorScreen() {
 
                 <Text style={styles.total}>Total: ${parseFloat(item.total).toFixed(2)}</Text>
 
+                <View style={styles.contactRow}>
+                    {item.cliente_telefono && (
+                        <TouchableOpacity
+                            style={styles.contactBtn}
+                            onPress={() => Linking.openURL(`tel:${item.cliente_telefono}`)}
+                        >
+                            <Ionicons name="call-outline" size={16} color="#43A047" />
+                            <Text style={[styles.contactText, { color: '#43A047' }]}>Llamar</Text>
+                        </TouchableOpacity>
+                    )}
+                    {item.cliente_telefono && (
+                        <TouchableOpacity
+                            style={styles.contactBtn}
+                            onPress={() => Linking.openURL(`whatsapp://send?phone=${item.cliente_telefono}`)}
+                        >
+                            <Ionicons name="logo-whatsapp" size={16} color="#25D366" />
+                            <Text style={[styles.contactText, { color: '#25D366' }]}>Cliente</Text>
+                        </TouchableOpacity>
+                    )}
+                    {item.admin_telefono && (
+                        <TouchableOpacity
+                            style={styles.contactBtn}
+                            onPress={() => Linking.openURL(`whatsapp://send?phone=${item.admin_telefono}`)}
+                        >
+                            <Ionicons name="logo-whatsapp" size={16} color="#1976D2" />
+                            <Text style={[styles.contactText, { color: '#1976D2' }]}>Admin</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
                 {item.estado === 'preparando' && (
                     <TouchableOpacity
                         style={[styles.actionBtn, styles.btnCamino, isUpdating && styles.btnDisabled]}
@@ -157,7 +185,7 @@ export default function RepartidorScreen() {
                     <Text style={styles.headerTitle}>Mis repartos</Text>
                     <Text style={styles.headerSub}>{pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''} activo{pedidos.length !== 1 ? 's' : ''}</Text>
                 </View>
-                <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+                <TouchableOpacity onPress={() => setLogoutVisible(true)} style={styles.logoutBtn}>
                     <Ionicons name="log-out-outline" size={22} color="#fff" />
                 </TouchableOpacity>
             </View>
@@ -179,6 +207,19 @@ export default function RepartidorScreen() {
                     </View>
                 }
             />
+        <Portal>
+            <Dialog visible={logoutVisible} onDismiss={() => setLogoutVisible(false)} style={styles.dialog}>
+                <Dialog.Icon icon="log-out" size={36} color="#FF8700" />
+                <Dialog.Title style={styles.dialogTitle}>Cerrar sesión</Dialog.Title>
+                <Dialog.Content>
+                    <Paragraph style={styles.dialogMessage}>¿Estás seguro que querés cerrar sesión?</Paragraph>
+                </Dialog.Content>
+                <Dialog.Actions>
+                    <Button onPress={() => setLogoutVisible(false)} textColor="#888">Cancelar</Button>
+                    <Button onPress={confirmLogout} textColor="#ff4444">Cerrar sesión</Button>
+                </Dialog.Actions>
+            </Dialog>
+        </Portal>
         </View>
     );
 }
@@ -217,6 +258,14 @@ const styles = StyleSheet.create({
     itemText: { fontFamily: 'Poppins-Regular', fontSize: 13, color: '#555', marginBottom: 2 },
     total: { fontFamily: 'Poppins-Bold', fontSize: 15, color: '#222', marginBottom: 12 },
 
+    contactRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+    contactBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 5,
+        borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+        backgroundColor: '#F5F5F5', borderWidth: 1, borderColor: '#E0E0E0',
+    },
+    contactText: { fontFamily: 'Poppins-SemiBold', fontSize: 12 },
+
     actionBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         gap: 8, borderRadius: 12, paddingVertical: 13,
@@ -229,4 +278,7 @@ const styles = StyleSheet.create({
     empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 40 },
     emptyTitle: { fontFamily: 'Poppins-SemiBold', fontSize: 18, color: '#bbb', marginTop: 16 },
     emptySub: { fontFamily: 'Poppins-Regular', fontSize: 13, color: '#ccc', textAlign: 'center', marginTop: 8 },
+    dialog: { borderRadius: 20, backgroundColor: '#fff' },
+    dialogTitle: { textAlign: 'center', fontFamily: 'Poppins-Bold', fontSize: 18 },
+    dialogMessage: { textAlign: 'center', fontFamily: 'Poppins-Regular', color: '#666' },
 });
