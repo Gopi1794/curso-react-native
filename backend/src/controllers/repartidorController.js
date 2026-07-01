@@ -10,7 +10,8 @@ exports.getMisPedidos = async (req, res) => {
                     json_agg(json_build_object(
                         'nombre', mi.nombre,
                         'cantidad', pi.cantidad,
-                        'precio', pi.precio_unitario
+                        'precio', pi.precio_unitario,
+                        'imagen_key', mi.imagen_key
                     ) ORDER BY mi.nombre) AS items
              FROM pedidos p
              JOIN usuarios u ON u.id = p.usuario_id
@@ -25,6 +26,25 @@ exports.getMisPedidos = async (req, res) => {
         res.json({ success: true, pedidos: result.rows });
     } catch (error) {
         console.error('Error en getMisPedidos:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
+exports.getHistorial = async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.fecha_actualizacion,
+                    u.nombre AS cliente_nombre, u.apellido AS cliente_apellido
+             FROM pedidos p
+             JOIN usuarios u ON u.id = p.usuario_id
+             WHERE p.repartidor_id = $1 AND p.estado = 'entregado'
+             ORDER BY p.fecha_actualizacion DESC
+             LIMIT 50`,
+            [req.user.userId]
+        );
+        res.json({ success: true, pedidos: result.rows });
+    } catch (error) {
+        console.error('Error en getHistorial:', error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
 };

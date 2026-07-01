@@ -257,6 +257,7 @@ const notifications = {
 // ── REPARTIDOR ────────────────────────────────────────────
 const repartidor = {
     getMisPedidos: () => request('/api/repartidor/pedidos'),
+    getHistorial: () => request('/api/repartidor/historial'),
     updateEstado: (id, estado) => request(`/api/repartidor/pedidos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
 };
 
