@@ -8,6 +8,7 @@ import TicketDetailScreen from '../screens/tickets/TicketDetailScreen';
 import CartScreen from '../screens/cart/CartScreen';
 import AllPromosScreen from '../screens/home/AllPromosScreen';
 import OrderConfirmationScreen from '../screens/orders/OrderConfirmationScreen';
+import NotificationsFeedScreen from '../screens/admin/NotificationsFeedScreen';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +27,7 @@ export default function HomeStack() {
                 component={OrderConfirmationScreen}
                 options={{ headerShown: false }}
             />
+            <Stack.Screen name="NotificationsFeed" component={NotificationsFeedScreen} />
         </Stack.Navigator>
     );
 }

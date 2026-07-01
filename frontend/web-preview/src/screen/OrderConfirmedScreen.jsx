@@ -153,6 +153,11 @@ export default function OrderConfirmedScreen({ orderNumber, paymentMethod, onDon
         <div className={styles.countdownText}>
           {t.orderConfirmed.returnIn} <strong>{countdown}</strong> {t.orderConfirmed.seconds}
         </div>
+        <div className={styles.footerButtons}>
+          <button className={styles.btnPrimary} onClick={onDone}>
+            🏠 Nuevo pedido
+          </button>
+        </div>
       </div>
     </div>
   );

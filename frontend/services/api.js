@@ -242,6 +242,7 @@ const cupones = {
 
 // ── NOTIFICATIONS ─────────────────────────────────────────
 const notifications = {
+    getFeed: () => request('/api/users/notifications/feed'),
     savePushToken: (pushToken) => request('/api/users/push-token', {
         method: 'PUT',
         body: JSON.stringify({ pushToken }),
@@ -261,6 +262,7 @@ const repartidor = {
     getHistorial: () => request('/api/repartidor/historial'),
     updateEstado: (id, estado) => request(`/api/repartidor/pedidos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
     cobrarEfectivo: (id, monto_recibido) => request(`/api/repartidor/pedidos/${id}/cobrar`, { method: 'PUT', body: JSON.stringify({ monto_recibido }) }),
+    getResumenDia: () => request('/api/repartidor/resumen-dia'),
 };
 
 // ── ADMIN ─────────────────────────────────────────────────
@@ -293,8 +295,10 @@ const admin = {
         remove: (id) => request(`/api/admin/cupones/${id}`, { method: 'DELETE' }),
     },
     pedidos: {
+        getNotificaciones: () => request('/api/admin/notificaciones'),
         getAll: () => request('/api/admin/pedidos'),
         getRepartidores: () => request('/api/admin/repartidores'),
+        getResumenRepartidoresDia: () => request('/api/admin/repartidores/resumen-dia'),
         updateEstado: (id, estado) => request(`/api/admin/pedidos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
         preparar: (id) => request(`/api/admin/pedidos/${id}/preparar`, { method: 'PUT' }),
         asignar: (id, repartidor_id) => request(`/api/admin/pedidos/${id}/asignar`, { method: 'PUT', body: JSON.stringify({ repartidor_id }) }),

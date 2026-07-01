@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/slices/userSlice';
 import API from '../../services/api';
 
-export default function RepartidorPerfilScreen() {
+export default function RepartidorPerfilScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const dispatch = useAppDispatch();
     const userInfo = useAppSelector(s => s.user.userInfo);
     const [logoutVisible, setLogoutVisible] = useState(false);
@@ -25,6 +24,9 @@ export default function RepartidorPerfilScreen() {
         <View style={styles.container}>
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <Text style={styles.headerTitle}>Mi perfil</Text>
+                <TouchableOpacity onPress={() => navigation.getParent()?.navigate('NotificationsFeed')}>
+                    <Ionicons name="notifications-outline" size={24} color="#FF8700" />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.avatarSection}>
@@ -41,7 +43,7 @@ export default function RepartidorPerfilScreen() {
                 </View>
             </View>
 
-            <TouchableOpacity style={[styles.logoutBtn, { marginBottom: tabBarHeight + 16 }]} onPress={() => setLogoutVisible(true)}>
+            <TouchableOpacity style={[styles.logoutBtn, { marginBottom: FLOATING_TAB_BAR_HEIGHT }]} onPress={() => setLogoutVisible(true)}>
                 <Ionicons name="log-out-outline" size={20} color="#ff4444" />
                 <Text style={styles.logoutText}>Cerrar sesión</Text>
             </TouchableOpacity>
@@ -65,7 +67,7 @@ export default function RepartidorPerfilScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F5F5F5' },
-    header: { backgroundColor: '#fff', paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+    header: { backgroundColor: '#fff', paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
     headerTitle: { fontFamily: 'Poppins-Bold', fontSize: 26, color: '#1A1A1A' },
     avatarSection: { alignItems: 'center', paddingTop: 40, paddingBottom: 30 },
     avatar: {

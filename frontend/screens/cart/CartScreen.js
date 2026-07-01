@@ -1,5 +1,5 @@
 // screens/cart/CartScreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -17,8 +17,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { SvgXml } from 'react-native-svg';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
-import { MP_LOGO_HORIZONTAL } from '../../assets/img/mercadopago/logos';
+import { MP_LOGO_COLOR } from '../../assets/img/mercadopago/logos';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { clearCart, removeFromCart, updateQuantity } from '../../store/slices/cartSlice';
@@ -37,13 +38,36 @@ const CartScreen = ({ navigation }) => {
     const [checkoutUrl, setCheckoutUrl] = useState('');
     const [currentOrderId, setCurrentOrderId] = useState(null);
     const [currentOrderItems, setCurrentOrderItems] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loadingMP, setLoadingMP] = useState(false);
+    const [loadingEfectivo, setLoadingEfectivo] = useState(false);
     const [couponCode, setCouponCode] = useState('');
     const [couponApplied, setCouponApplied] = useState(false);
     const [couponDiscount, setCouponDiscount] = useState(10);
     const [validatingCoupon, setValidatingCoupon] = useState(false);
     const [dialogVisible, setDialogVisible] = useState(false);
     const [dialogConfig, setDialogConfig] = useState({ title: '', message: '', onConfirm: null });
+    const [addresses, setAddresses] = useState([]);
+    const [selectedAddress, setSelectedAddress] = useState(null);
+    const [addressPickerVisible, setAddressPickerVisible] = useState(false);
+    const [loadingAddresses, setLoadingAddresses] = useState(true);
+
+    useEffect(() => {
+        const loadAddresses = async () => {
+            try {
+                const res = await API.users.getAddresses();
+                if (res.success && res.addresses.length > 0) {
+                    setAddresses(res.addresses);
+                    const principal = res.addresses.find(a => a.es_principal) || res.addresses[0];
+                    setSelectedAddress(principal);
+                }
+            } catch {
+                // sin direcciones
+            } finally {
+                setLoadingAddresses(false);
+            }
+        };
+        loadAddresses();
+    }, []);
 
     const handleGoBack = () => {
         navigation.goBack();
@@ -169,26 +193,17 @@ const CartScreen = ({ navigation }) => {
             return;
         }
 
-        setLoading(true);
+        setLoadingMP(true);
         const { ok, unavailable } = await checkItemsAvailability();
-        setLoading(false);
 
         if (!ok) {
+            setLoadingMP(false);
             const names = unavailable.map(i => i.name).join(', ');
-            Alert.alert(
-                'Productos no disponibles',
-                `Los siguientes productos ya no están disponibles: ${names}.\n\nSerán eliminados del carrito.`,
-                [{
-                    text: 'Entendido',
-                    onPress: () => {
-                        unavailable.forEach(i => dispatch(removeFromCart(i.id)));
-                    }
-                }]
-            );
+            showErrorMessage('Productos no disponibles', `${names} ya no están disponibles y serán eliminados del carrito.`);
+            unavailable.forEach(i => dispatch(removeFromCart(i.id)));
             return;
         }
 
-        setLoading(true);
         try {
             const orderItems = cartItems.map(item => ({
                 menu_item_id: item.id,
@@ -201,7 +216,7 @@ const CartScreen = ({ navigation }) => {
             const orderRes = await API.orders.create(
                 selectedRestaurant.id,
                 orderItems,
-                'Dirección registrada',
+                selectedAddress ? `${selectedAddress.direccion}, ${selectedAddress.ciudad}` : 'Dirección registrada',
                 ''
             );
 
@@ -225,7 +240,7 @@ const CartScreen = ({ navigation }) => {
         } catch {
             showErrorMessage('Error de conexión', 'No se pudo iniciar el pago. Revisá tu conexión.');
         } finally {
-            setLoading(false);
+            setLoadingMP(false);
         }
     };
 
@@ -236,20 +251,17 @@ const CartScreen = ({ navigation }) => {
             return;
         }
 
-        setLoading(true);
+        setLoadingEfectivo(true);
         const { ok, unavailable } = await checkItemsAvailability();
-        setLoading(false);
 
         if (!ok) {
+            setLoadingEfectivo(false);
             const names = unavailable.map(i => i.name).join(', ');
-            Alert.alert('Productos no disponibles', `${names} ya no están disponibles.`, [{
-                text: 'Entendido',
-                onPress: () => unavailable.forEach(i => dispatch(removeFromCart(i.id))),
-            }]);
+            showErrorMessage('Productos no disponibles', `${names} ya no están disponibles.`);
+            unavailable.forEach(i => dispatch(removeFromCart(i.id)));
             return;
         }
 
-        setLoading(true);
         try {
             const orderItems = cartItems.map(item => ({
                 menu_item_id: item.id,
@@ -262,7 +274,7 @@ const CartScreen = ({ navigation }) => {
             const orderRes = await API.orders.create(
                 selectedRestaurant.id,
                 orderItems,
-                'Dirección registrada',
+                selectedAddress ? `${selectedAddress.direccion}, ${selectedAddress.ciudad}` : 'Dirección registrada',
                 '',
                 'efectivo'
             );
@@ -283,7 +295,7 @@ const CartScreen = ({ navigation }) => {
         } catch {
             showErrorMessage('Error de conexión', 'No se pudo crear el pedido. Revisá tu conexión.');
         } finally {
-            setLoading(false);
+            setLoadingEfectivo(false);
         }
     };
 
@@ -319,7 +331,7 @@ const CartScreen = ({ navigation }) => {
             setShowMercadoPago(false);
             showWarningMessage('Pago pendiente', 'Tu pago está siendo procesado. Te avisamos cuando se confirme.');
             dispatch(clearCart());
-            navigation.navigate('Orders');
+            navigation.navigate('OrdersTab');
         }
     };
 
@@ -348,7 +360,7 @@ const CartScreen = ({ navigation }) => {
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 44 + 32 }]}
+                contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 44 + 32, paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
                 showsVerticalScrollIndicator={false}
             >
                 {cartItems.length === 0 ? (
@@ -524,39 +536,142 @@ const CartScreen = ({ navigation }) => {
                             </View>
                         </View>
 
+                        {/* --- Selección de dirección --- */}
+                        <View style={styles.addressSection}>
+                            <Text style={styles.addressSectionTitle}>
+                                <Ionicons name="location-outline" size={15} color="#333" /> Dirección de entrega
+                            </Text>
+                            {loadingAddresses ? (
+                                <ActivityIndicator size="small" color="#ff8700" style={{ marginTop: 8 }} />
+                            ) : addresses.length === 0 ? (
+                                <TouchableOpacity
+                                    style={styles.addressEmpty}
+                                    onPress={() => navigation.navigate('Addresses')}
+                                >
+                                    <Ionicons name="add-circle-outline" size={18} color="#ff8700" />
+                                    <Text style={styles.addressEmptyText}>Agregá una dirección para continuar</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    style={styles.addressSelector}
+                                    onPress={() => setAddressPickerVisible(true)}
+                                >
+                                    <View style={styles.addressSelectorLeft}>
+                                        <Ionicons name="location" size={18} color="#ff8700" />
+                                        <View style={{ marginLeft: 10, flex: 1 }}>
+                                            <Text style={styles.addressSelectorLabel} numberOfLines={1}>
+                                                {selectedAddress?.etiqueta || 'Dirección'}
+                                                {selectedAddress?.es_principal ? ' ⭐' : ''}
+                                            </Text>
+                                            <Text style={styles.addressSelectorValue} numberOfLines={1}>
+                                                {selectedAddress?.direccion}, {selectedAddress?.ciudad}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <Ionicons name="chevron-down" size={18} color="#888" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
                         {/* --- Boton efectivo --- */}
                         <TouchableOpacity
-                            style={[styles.efectivoButton, loading && styles.buttonDisabled]}
+                            style={[styles.efectivoButton, (loadingEfectivo || loadingMP || !selectedAddress) && styles.buttonDisabled]}
                             onPress={handleEfectivoPayment}
-                            disabled={loading}
+                            disabled={loadingEfectivo || loadingMP || !selectedAddress}
                         >
-                            <View style={styles.payButtonLeft}>
-                                <Ionicons name="cash-outline" size={20} color="#2E7D32" />
-                                <Text style={[styles.payButtonText, { color: '#2E7D32' }]}>Pagar en efectivo</Text>
-                            </View>
-                            <Text style={[styles.payButtonAmount, { color: '#2E7D32' }]}>${calculateTotal().toFixed(2)}</Text>
+                            {loadingEfectivo ? (
+                                <ActivityIndicator color="#2E7D32" style={{ flex: 1 }} />
+                            ) : (
+                                <>
+                                    <View style={styles.payButtonLeft}>
+                                        <Ionicons name="cash-outline" size={20} color="#2E7D32" />
+                                        <Text style={[styles.payButtonText, { color: '#2E7D32' }]}>Pagar en efectivo</Text>
+                                    </View>
+                                    <Text style={[styles.payButtonAmount, { color: '#2E7D32' }]}>${calculateTotal().toFixed(2)}</Text>
+                                </>
+                            )}
                         </TouchableOpacity>
 
                         {/* --- Boton de pago --- */}
                         <TouchableOpacity
-                            style={[styles.payButton, loading && styles.buttonDisabled]}
+                            style={[styles.payButton, (loadingMP || loadingEfectivo || !selectedAddress) && styles.buttonDisabled]}
                             onPress={handleMercadoPagoPayment}
-                            disabled={loading}
+                            disabled={loadingMP || loadingEfectivo || !selectedAddress}
                             accessibilityLabel={`Pagar $${calculateTotal().toFixed(2)}`}
                             accessibilityRole="button"
                         >
-                            {loading ? (
-                                <ActivityIndicator color="white" />
+                            {loadingMP ? (
+                                <ActivityIndicator color="#009EE3" style={{ flex: 1 }} />
                             ) : (
                                 <>
-                                    <SvgXml xml={MP_LOGO_HORIZONTAL} width={100} height={28} />
-                                    <Text style={styles.payButtonAmount}>${calculateTotal().toFixed(2)}</Text>
+                                    <View style={[styles.payButtonLeft, { marginLeft: -24 }]}>
+                                        <SvgXml xml={MP_LOGO_COLOR} width={200} height={52} />
+                                    </View>
+                                    <Text style={[styles.payButtonAmount, { color: '#009EE3' }]}>${calculateTotal().toFixed(2)}</Text>
                                 </>
                             )}
                         </TouchableOpacity>
                     </>
                 )}
             </ScrollView>
+
+            {/* Modal selector de dirección */}
+            <Modal
+                visible={addressPickerVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setAddressPickerVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.addressModalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setAddressPickerVisible(false)}
+                >
+                    <View style={styles.addressModalSheet}>
+                        <View style={styles.addressModalHandle} />
+                        <Text style={styles.addressModalTitle}>Seleccioná una dirección</Text>
+                        {addresses.map(addr => (
+                            <TouchableOpacity
+                                key={addr.id}
+                                style={[
+                                    styles.addressOption,
+                                    selectedAddress?.id === addr.id && styles.addressOptionSelected,
+                                ]}
+                                onPress={() => {
+                                    setSelectedAddress(addr);
+                                    setAddressPickerVisible(false);
+                                }}
+                            >
+                                <View style={styles.addressOptionLeft}>
+                                    <Ionicons
+                                        name={selectedAddress?.id === addr.id ? 'radio-button-on' : 'radio-button-off'}
+                                        size={20}
+                                        color={selectedAddress?.id === addr.id ? '#ff8700' : '#ccc'}
+                                    />
+                                    <View style={{ marginLeft: 12, flex: 1 }}>
+                                        <Text style={styles.addressOptionLabel}>
+                                            {addr.etiqueta}{addr.es_principal ? ' ⭐' : ''}
+                                        </Text>
+                                        <Text style={styles.addressOptionValue} numberOfLines={2}>
+                                            {addr.direccion}, {addr.ciudad}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity
+                            style={styles.addressModalAddBtn}
+                            onPress={() => {
+                                setAddressPickerVisible(false);
+                                navigation.navigate('Addresses');
+                            }}
+                        >
+                            <Ionicons name="add-circle-outline" size={18} color="#ff8700" />
+                            <Text style={styles.addressModalAddText}>Agregar nueva dirección</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
 
             <FlashMessageWrapper />
 
@@ -627,9 +742,7 @@ const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
     },
-    scrollContent: {
-        paddingBottom: 40,
-    },
+    scrollContent: {},
 
     trashButton: {
         width: 44,
@@ -976,7 +1089,9 @@ const styles = StyleSheet.create({
 
     /* Boton de pago */
     payButton: {
-        backgroundColor: '#009EE3',
+        backgroundColor: '#ffffff',
+        borderWidth: 2,
+        borderColor: '#009EE3',
         marginHorizontal: 16,
         paddingVertical: 16,
         borderRadius: 16,
@@ -986,9 +1101,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         shadowColor: '#009EE3',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.15,
         shadowRadius: 10,
-        elevation: 5,
+        elevation: 3,
     },
     buttonDisabled: {
         backgroundColor: '#ccc',
@@ -1060,6 +1175,136 @@ const styles = StyleSheet.create({
     dialogActions: {
         justifyContent: 'space-around',
         paddingBottom: 8,
+    },
+
+    /* Dirección de entrega */
+    addressSection: {
+        marginHorizontal: 16,
+        marginBottom: 14,
+    },
+    addressSectionTitle: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 8,
+    },
+    addressEmpty: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#FFF3E0',
+        borderWidth: 1.5,
+        borderColor: '#ff8700',
+        borderStyle: 'dashed',
+        borderRadius: 12,
+        padding: 14,
+    },
+    addressEmptyText: {
+        color: '#ff8700',
+        fontSize: 13,
+        fontWeight: '600',
+        flex: 1,
+    },
+    addressSelector: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: '#e0e0e0',
+        padding: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    addressSelectorLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    addressSelectorLabel: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#222',
+    },
+    addressSelectorValue: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 2,
+    },
+
+    /* Modal picker de dirección */
+    addressModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'flex-end',
+    },
+    addressModalSheet: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 20,
+        paddingBottom: 36,
+    },
+    addressModalHandle: {
+        width: 40,
+        height: 4,
+        backgroundColor: '#ddd',
+        borderRadius: 2,
+        alignSelf: 'center',
+        marginBottom: 16,
+    },
+    addressModalTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#1a1a1a',
+        marginBottom: 16,
+    },
+    addressOption: {
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        marginBottom: 8,
+        backgroundColor: '#fafafa',
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    addressOptionSelected: {
+        backgroundColor: '#FFF3E0',
+        borderColor: '#ff8700',
+    },
+    addressOptionLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    addressOptionLabel: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#222',
+    },
+    addressOptionValue: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 2,
+    },
+    addressModalAddBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 8,
+        padding: 14,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: '#ff8700',
+        borderStyle: 'dashed',
+    },
+    addressModalAddText: {
+        color: '#ff8700',
+        fontSize: 13,
+        fontWeight: '600',
     },
 });
 

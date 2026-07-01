@@ -10,7 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 
 const FAQS = [
@@ -114,7 +114,6 @@ function FaqItem({ item }) {
 
 export default function HelpScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
 
     return (
         <View style={styles.container}>
@@ -123,7 +122,7 @@ export default function HelpScreen({ navigation }) {
             <ScrollView
                 contentContainerStyle={[
                     styles.scroll,
-                    { paddingTop: insets.top + 44 + 24, paddingBottom: tabBarHeight + insets.bottom + 32 },
+                    { paddingTop: insets.top + 44 + 24, paddingBottom: FLOATING_TAB_BAR_HEIGHT + insets.bottom + 32 },
                 ]}
                 showsVerticalScrollIndicator={false}
             >

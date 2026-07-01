@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
@@ -41,7 +41,6 @@ const ESTADO_BTN_COLOR = {
 
 export default function AdminPedidosScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const [pedidos, setPedidos] = useState([]);
     const [repartidores, setRepartidores] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -232,7 +231,7 @@ if (pedRes.success) setPedidos(pedRes.pedidos);
                     data={pedidos}
                     keyExtractor={i => String(i.id)}
                     renderItem={renderPedido}
-                    contentContainerStyle={[styles.list, { paddingTop: insets.top + 76, paddingBottom: tabBarHeight + 16 }]}
+                    contentContainerStyle={[styles.list, { paddingTop: insets.top + 76, paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16 }]}
                     style={{ flex: 1 }}
                     showsVerticalScrollIndicator={false}
                     refreshControl={

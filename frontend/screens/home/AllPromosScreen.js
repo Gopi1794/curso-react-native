@@ -12,7 +12,7 @@ import {
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth - 32;
 import { useNavigation } from '@react-navigation/native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -32,7 +32,6 @@ const parsePrice = (price) =>
 const AllPromosScreen = ({ route }) => {
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const { promos = [] } = route.params ?? {};
     const [activeSort, setActiveSort] = useState('discount');
 
@@ -112,7 +111,7 @@ const AllPromosScreen = ({ route }) => {
                 data={sorted}
                 renderItem={renderItem}
                 keyExtractor={keyExtractor}
-                contentContainerStyle={[styles.list, { paddingBottom: tabBarHeight + 32 }]}
+                contentContainerStyle={[styles.list, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 32 }]}
                 showsVerticalScrollIndicator={false}
             />
         </View>

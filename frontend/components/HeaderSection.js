@@ -9,6 +9,7 @@ import { SearchBar } from './common/SearchBar';
 export const HeaderSection = ({
     onTicketPress,
     onCartPress,
+    onNotificationsPress,
     searchQuery,
     onSearchChange,
     onClearSearch,
@@ -55,6 +56,16 @@ export const HeaderSection = ({
                 </TouchableOpacity>
 
                 <View style={styles.icons}>
+                    {onNotificationsPress && (
+                        <TouchableOpacity
+                            style={styles.iconBtn}
+                            onPress={onNotificationsPress}
+                            accessibilityLabel="Notificaciones"
+                        >
+                            <Ionicons name="notifications-outline" size={21} color="#222" />
+                        </TouchableOpacity>
+                    )}
+
                     <TouchableOpacity
                         style={styles.iconBtn}
                         onPress={onTicketPress}

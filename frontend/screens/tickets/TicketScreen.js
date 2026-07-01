@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Componentes comunes
@@ -196,7 +196,6 @@ const TicketScreen = ({ navigation }) => {
     const [error, setError]       = useState(null);
     const [reduceMotion, setReduceMotion] = useState(false);
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
 
     useEffect(() => {
         AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
@@ -251,7 +250,7 @@ const TicketScreen = ({ navigation }) => {
             />
 
             {loading ? (
-                <View style={[styles.listContent, { paddingTop: insets.top + 44 + 32, paddingBottom: tabBarHeight + 16 }]}>
+                <View style={[styles.listContent, { paddingTop: insets.top + 44 + 32, paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16 }]}>
                     <TicketSkeleton reduceMotion={reduceMotion} />
                     <TicketSkeleton reduceMotion={reduceMotion} />
                     <TicketSkeleton reduceMotion={reduceMotion} />
@@ -274,7 +273,7 @@ const TicketScreen = ({ navigation }) => {
                     data={tickets}
                     renderItem={renderTicket}
                     keyExtractor={keyExtractor}
-                    contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 44 + 32, paddingBottom: tabBarHeight + 16 }]}
+                    contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 44 + 32, paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16 }]}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={EmptyState}
                     initialNumToRender={5}

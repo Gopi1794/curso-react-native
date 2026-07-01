@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Lottie from 'lottie-react-native';
 import { Share } from 'react-native';
@@ -53,7 +53,6 @@ const PromoFoodDetailScreen = ({ route }) => {
     const [carouselImages, setCarouselImages] = useState([]);
     const [reduceMotion, setReduceMotion] = useState(false);
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -269,7 +268,7 @@ const PromoFoodDetailScreen = ({ route }) => {
             <Animated.ScrollView
                 style={[styles.scrollView, { opacity: fadeAnim }]}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.scrollViewContent, { paddingBottom: tabBarHeight + 16 }]}
+                contentContainerStyle={[styles.scrollViewContent, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 16 }]}
             >
                 {/* Carrusel de imágenes */}
                 <View style={styles.carouselSection}>

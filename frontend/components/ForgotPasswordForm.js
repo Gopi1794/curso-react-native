@@ -6,8 +6,6 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
     ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -123,16 +121,12 @@ export default function ForgotPasswordForm({ onBackToLogin }) {
     ];
 
     return (
-        <KeyboardAvoidingView
-            style={styles.mainContainer}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <View style={{ flex: 1 }}>
-                <ScrollView
-                    contentContainerStyle={styles.scrollContainer}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                >
+        <View style={styles.mainContainer}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
                     <View style={styles.container}>
                         <View style={styles.blurContainer}>
                             <View style={styles.formContainer}>
@@ -334,9 +328,8 @@ export default function ForgotPasswordForm({ onBackToLogin }) {
                             </View>
                         </View>
                     </View>
-                </ScrollView>
-            </View>
-        </KeyboardAvoidingView>
+            </ScrollView>
+        </View>
     );
 }
 
@@ -459,7 +452,7 @@ const styles = StyleSheet.create({
     },
     button: {
         borderRadius: 25,
-        paddingVertical: 17,
+        height: 56,
         paddingHorizontal: 24,
         flexDirection: 'row',
         alignItems: 'center',

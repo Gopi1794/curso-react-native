@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import * as ImagePicker from 'expo-image-picker';
 import { imageMap } from '../../assets/utils/imageMap';
 import AppHeader from '../../components/common/AppHeader';
@@ -28,7 +28,6 @@ const emptyForm = () => ({ nombre: '', precio: '', categoria: 'burgers', descrip
 
 export default function AdminPlatosScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const restaurante = useAppSelector(s => s.restaurant.selected);
     const restauranteId = restaurante?.id ?? 1;
 
@@ -334,7 +333,7 @@ export default function AdminPlatosScreen({ navigation }) {
 
                         {/* Pagination */}
                         {filtered.length > 0 && (
-                            <View style={[styles.pagination, { paddingBottom: tabBarHeight + 52 }]}>
+                            <View style={[styles.pagination, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 52 }]}>
                                 <Text style={styles.paginationInfo}>
                                     Mostrando {startItem} - {endItem} de {filtered.length}
                                 </Text>
