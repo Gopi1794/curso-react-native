@@ -5,6 +5,7 @@ exports.getAll = async (req, res) => {
     try {
         const result = await db.query(
             `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.notas, p.fecha_creacion,
+                    p.metodo_pago, p.monto_recibido,
                     u.nombre AS cliente_nombre, u.apellido AS cliente_apellido, u.telefono AS cliente_telefono,
                     r.nombre AS repartidor_nombre, r.apellido AS repartidor_apellido, r.id AS repartidor_id,
                     json_agg(json_build_object(
