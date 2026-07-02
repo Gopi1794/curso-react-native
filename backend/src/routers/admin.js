@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const multer = require('multer');
 const authMiddleware = require('../middleware/authMiddleware');
+const requireAdminOwnership = require('../middleware/requireAdminOwnership');
 const uploadCtrl   = require('../controllers/adminUploadController');
 const cuponesCtrl  = require('../controllers/adminCuponesController');
 const platosCtrl   = require('../controllers/adminPlatosController');
@@ -12,7 +13,12 @@ const restCtrl     = require('../controllers/adminRestauranteController');
 const statsCtrl    = require('../controllers/adminStatsController');
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => cb(null, ALLOWED_MIME.includes(file.mimetype)),
+});
 
 const requireAdmin = (req, res, next) => {
     if (req.user?.rol !== 'admin') {
@@ -24,11 +30,11 @@ const requireAdmin = (req, res, next) => {
 router.use(authMiddleware, requireAdmin);
 
 // ── Stats ─────────────────────────────────────────────────
-router.get('/stats/:restauranteId', statsCtrl.getStats);
+router.get('/stats/:restauranteId', requireAdminOwnership, statsCtrl.getStats);
 
 // ── Restaurante ───────────────────────────────────────────
-router.get('/restaurante/:restauranteId',  restCtrl.getInfo);
-router.put('/restaurante/:restauranteId',  restCtrl.updateInfo);
+router.get('/restaurante/:restauranteId',  requireAdminOwnership, restCtrl.getInfo);
+router.put('/restaurante/:restauranteId',  requireAdminOwnership, restCtrl.updateInfo);
 router.post('/repartidores',               restCtrl.createRepartidor);
 
 // ── Upload ────────────────────────────────────────────────
@@ -41,15 +47,15 @@ router.put('/cupones/:id',   cuponesCtrl.update);
 router.delete('/cupones/:id', cuponesCtrl.remove);
 
 // ── Platos ────────────────────────────────────────────────
-router.get('/platos/:restauranteId',          platosCtrl.getAll);
-router.post('/platos/:restauranteId',         platosCtrl.create);
+router.get('/platos/:restauranteId',          requireAdminOwnership, platosCtrl.getAll);
+router.post('/platos/:restauranteId',         requireAdminOwnership, platosCtrl.create);
 router.put('/platos/:id/toggle',              platosCtrl.toggleDisponible);
 router.put('/platos/:id',                     platosCtrl.update);
 router.delete('/platos/:id',                  platosCtrl.remove);
 
 // ── Stock ─────────────────────────────────────────────────
-router.get('/stock/:restauranteId',           stockCtrl.getStock);
-router.get('/stock/platos/:restauranteId',    stockCtrl.getIngredientesMenuItems);
+router.get('/stock/:restauranteId',           requireAdminOwnership, stockCtrl.getStock);
+router.get('/stock/platos/:restauranteId',    requireAdminOwnership, stockCtrl.getIngredientesMenuItems);
 router.put('/stock/item/:id',                 stockCtrl.updateStock);
 
 // ── Pedidos (admin) ───────────────────────────────────────
@@ -62,7 +68,7 @@ router.put('/pedidos/:id/preparar',           pedidosCtrl.prepararPedido);
 router.put('/pedidos/:id/asignar',            pedidosCtrl.asignarRepartidor);
 
 // ── Recetas ───────────────────────────────────────────────
-router.get('/recetas/:restauranteId',      recetasCtrl.getByRestaurante);
+router.get('/recetas/:restauranteId',      requireAdminOwnership, recetasCtrl.getByRestaurante);
 router.put('/recetas/item/:id',            recetasCtrl.updateCantidad);
 
 // ── Ingredientes ──────────────────────────────────────────

@@ -163,22 +163,18 @@ exports.login = async (req, res) => {
         }
 
         const result = await db.query(
-            'SELECT * FROM usuarios WHERE email = $1',
+            `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado,
+                    email_verificado, avatar_url, password_hash
+             FROM usuarios WHERE email = $1`,
             [email.trim().toLowerCase()]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(401).json({
-                success: false,
-                message: 'Credenciales incorrectas'
-            });
-        }
+        const DUMMY_HASH = '$2b$12$invalidhashfortimingattackprotection000000000000000000';
+        const user = result.rows[0] || null;
+        const hashToCompare = user ? user.password_hash : DUMMY_HASH;
+        const isPasswordValid = await bcrypt.compare(password, hashToCompare);
 
-        const user = result.rows[0];
-
-        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-
-        if (!isPasswordValid) {
+        if (!user || !isPasswordValid) {
             return res.status(401).json({
                 success: false,
                 message: 'Credenciales incorrectas'
@@ -220,7 +216,7 @@ exports.login = async (req, res) => {
         const token = jwt.sign(
             { userId: user.id, uuid: user.uuid, email: user.email, rol: user.rol },
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRE || '7d' }
+            { expiresIn: process.env.JWT_EXPIRE || '30m' }
         );
 
         res.json({
@@ -335,7 +331,7 @@ exports.googleLogin = async (req, res) => {
         const token = jwt.sign(
             { userId: user.id, uuid: user.uuid, email: user.email, rol: user.rol },
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRE || '7d' }
+            { expiresIn: process.env.JWT_EXPIRE || '30m' }
         );
 
         res.json({
@@ -445,7 +441,7 @@ exports.verifyEmail = async (req, res) => {
         const token = jwt.sign(
             { userId: user.id, uuid: user.uuid, email: user.email, rol: user.rol },
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRE || '7d' }
+            { expiresIn: process.env.JWT_EXPIRE || '30m' }
         );
 
         res.json({

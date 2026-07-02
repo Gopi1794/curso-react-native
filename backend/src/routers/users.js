@@ -6,16 +6,11 @@ const notificationsController = require('../controllers/notificationsController'
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Multer en memoria (max 5MB)
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Solo se permiten imágenes'), false);
-        }
-    }
+    fileFilter: (req, file, cb) => cb(null, ALLOWED_MIME.includes(file.mimetype)),
 });
 
 // Todas las rutas de este módulo requieren JWT
