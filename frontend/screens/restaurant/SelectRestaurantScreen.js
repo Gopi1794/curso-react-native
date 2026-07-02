@@ -27,31 +27,21 @@ const RestaurantCard = ({ restaurant, onPress, index }) => {
     useEffect(() => {
         Animated.spring(scaleAnim, {
             toValue: 1,
-            delay: index * 120,
-            tension: 60,
+            delay: index * 100,
+            tension: 55,
             friction: 8,
             useNativeDriver: true,
         }).start();
     }, []);
 
-    const handlePressIn = () => {
-        Animated.spring(pressAnim, {
-            toValue: 0.95,
-            useNativeDriver: true,
-        }).start();
-    };
-
-    const handlePressOut = () => {
-        Animated.spring(pressAnim, {
-            toValue: 1,
-            useNativeDriver: true,
-        }).start();
-    };
+    const handlePressIn = () => Animated.spring(pressAnim, { toValue: 0.96, useNativeDriver: true }).start();
+    const handlePressOut = () => Animated.spring(pressAnim, { toValue: 1, useNativeDriver: true }).start();
 
     const horario = restaurant.horario || {};
     const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
     const hoy = dias[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
     const horarioHoy = horario[hoy] || 'Cerrado';
+    const abierto = horarioHoy !== 'Cerrado';
 
     return (
         <Animated.View style={{ transform: [{ scale: Animated.multiply(scaleAnim, pressAnim) }], opacity: scaleAnim }}>
@@ -60,49 +50,46 @@ const RestaurantCard = ({ restaurant, onPress, index }) => {
                 onPress={() => onPress(restaurant)}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
-                activeOpacity={0.92}
+                activeOpacity={1}
                 accessibilityRole="button"
                 accessibilityLabel={`Seleccionar ${restaurant.nombre}`}
             >
-                <LinearGradient
-                    colors={['#ffffff', '#fff8f0']}
-                    style={styles.cardGradient}
-                >
-                    <View style={styles.cardIconContainer}>
-                        {restaurant.logo_url ? (
-                            <Image source={{ uri: restaurant.logo_url }} style={styles.cardLogoImg} resizeMode="cover" accessibilityLabel={`Logo de ${restaurant.nombre}`} />
-                        ) : (
-                            <LinearGradient colors={['#ff8c00', '#ff6600']} style={styles.cardIcon}>
-                                <Ionicons name="restaurant" size={28} color="#fff" />
-                            </LinearGradient>
-                        )}
+                {/* Logo / banner */}
+                <View style={styles.cardHeader}>
+                    {restaurant.logo_url ? (
+                        <Image source={{ uri: restaurant.logo_url }} style={styles.cardBanner} resizeMode="cover" />
+                    ) : (
+                        <LinearGradient colors={['#ff8c00', '#ff6600']} style={styles.cardBanner}>
+                            <Ionicons name="restaurant" size={40} color="rgba(255,255,255,0.6)" />
+                        </LinearGradient>
+                    )}
+                    <View style={[styles.statusBadge, { backgroundColor: abierto ? '#10B981' : '#6B7280' }]}>
+                        <Text style={styles.statusText}>{abierto ? 'Abierto' : 'Cerrado'}</Text>
                     </View>
+                </View>
 
-                    <View style={styles.cardContent}>
-                        <Text style={styles.cardName} numberOfLines={1}>{restaurant.nombre}</Text>
-
-                        <View style={styles.cardRow}>
-                            <Ionicons name="location-outline" size={14} color="#888" />
-                            <Text style={styles.cardAddress} numberOfLines={1}>{restaurant.direccion}</Text>
-                        </View>
-
-                        <View style={styles.cardRow}>
-                            <Ionicons name="time-outline" size={14} color="#888" />
-                            <Text style={styles.cardSchedule}>Hoy: {horarioHoy}</Text>
-                        </View>
-
-                        {restaurant.telefono && (
-                            <View style={styles.cardRow}>
-                                <Ionicons name="call-outline" size={14} color="#888" />
-                                <Text style={styles.cardPhone}>{restaurant.telefono}</Text>
+                {/* Info */}
+                <View style={styles.cardBody}>
+                    <View style={styles.cardBodyRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.cardName} numberOfLines={1}>{restaurant.nombre}</Text>
+                            {restaurant.descripcion ? (
+                                <Text style={styles.cardDesc} numberOfLines={1}>{restaurant.descripcion}</Text>
+                            ) : null}
+                            <View style={styles.cardMeta}>
+                                <Ionicons name="location-outline" size={13} color="#999" />
+                                <Text style={styles.cardMetaText} numberOfLines={1}>{restaurant.direccion || 'Sin dirección'}</Text>
                             </View>
-                        )}
+                            <View style={styles.cardMeta}>
+                                <Ionicons name="time-outline" size={13} color="#999" />
+                                <Text style={styles.cardMetaText}>Hoy: {horarioHoy}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.cardArrow}>
+                            <Ionicons name="chevron-forward" size={20} color="#ff8c00" />
+                        </View>
                     </View>
-
-                    <View style={styles.cardArrow}>
-                        <Ionicons name="chevron-forward" size={22} color="#ff8c00" />
-                    </View>
-                </LinearGradient>
+                </View>
             </TouchableOpacity>
         </Animated.View>
     );
@@ -273,34 +260,73 @@ const styles = StyleSheet.create({
         paddingBottom: 30,
     },
     card: {
-        marginBottom: 14,
-        borderRadius: 16,
-        elevation: 3,
+        marginBottom: 16,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        overflow: 'hidden',
+        elevation: 4,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.1,
-        shadowRadius: 6,
+        shadowRadius: 8,
     },
-    cardGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        borderRadius: 16,
+    cardHeader: {
+        position: 'relative',
     },
-    cardIconContainer: {
-        marginRight: 14,
-    },
-    cardIcon: {
-        width: 52,
-        height: 52,
-        borderRadius: 14,
+    cardBanner: {
+        width: '100%',
+        height: 130,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    cardLogoImg: {
-        width: 52,
-        height: 52,
-        borderRadius: 14,
+    statusBadge: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 20,
+    },
+    statusText: {
+        color: '#fff',
+        fontSize: 11,
+        fontFamily: 'Poppins-Bold',
+        letterSpacing: 0.3,
+    },
+    cardBody: {
+        padding: 14,
+    },
+    cardBodyRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    cardName: {
+        fontSize: 16,
+        fontFamily: 'Poppins-Bold',
+        color: '#1a1a1a',
+        marginBottom: 2,
+    },
+    cardDesc: {
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        color: '#888',
+        marginBottom: 6,
+    },
+    cardMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 3,
+    },
+    cardMetaText: {
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        color: '#888',
+        flex: 1,
+    },
+    cardArrow: {
+        padding: 4,
+        marginLeft: 8,
     },
     emptyState: {
         flex: 1,
@@ -323,43 +349,9 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 20,
     },
-    cardContent: {
-        flex: 1,
-    },
-    cardName: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#222',
-        marginBottom: 4,
-    },
-    cardRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 3,
-    },
-    cardAddress: {
-        fontSize: 13,
-        color: '#666',
-        marginLeft: 5,
-        flex: 1,
-    },
-    cardSchedule: {
-        fontSize: 13,
-        color: '#666',
-        marginLeft: 5,
-    },
-    cardPhone: {
-        fontSize: 13,
-        color: '#666',
-        marginLeft: 5,
-    },
-    cardArrow: {
-        marginLeft: 8,
-    },
     skeletonCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
+        height: 200,
+        borderRadius: 20,
         backgroundColor: '#e8e8e8',
     },
     skeletonIcon: {

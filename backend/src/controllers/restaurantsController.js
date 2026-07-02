@@ -5,13 +5,10 @@ const db = require('../config/database');
 exports.getAll = async (req, res) => {
     try {
         const result = await db.query(
-            `SELECT r.id, r.nombre, r.descripcion, r.direccion, r.telefono, r.horario,
-                    COALESCE(r.logo_url, u.avatar_url) AS logo_url,
-                    r.estado, r.fecha_creacion
-             FROM restaurantes r
-             LEFT JOIN usuarios u ON u.id = r.admin_id
-             WHERE r.estado = 'activo'
-             ORDER BY r.nombre ASC`
+            `SELECT id, nombre, descripcion, direccion, telefono, horario, logo_url, estado, fecha_creacion
+             FROM restaurantes
+             WHERE estado = 'activo'
+             ORDER BY nombre ASC`
         );
 
         res.json({
