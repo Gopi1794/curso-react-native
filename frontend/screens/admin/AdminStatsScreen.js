@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Svg, Rect, Text as SvgText, Line, G } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 
 // En Expo Go usamos SVG; en builds nativos usamos Victory Native XL (Skia)
 const IS_EXPO_GO = Constants.appOwnership === 'expo';
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
     backBtn:   { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
     headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff', textAlign: 'center' },
     headerSub:   { fontSize: 12, color: 'rgba(255,255,255,0.8)', textAlign: 'center' },
-    content: { padding: 16, gap: 8 },
+    content: { padding: 16, gap: 8, paddingBottom: FLOATING_TAB_BAR_HEIGHT },
     sectionTitle: { fontSize: 12, fontWeight: '700', color: '#9CA3AF', letterSpacing: 0.8, marginTop: 8, marginBottom: 4 },
     // KPI
     kpiRow:            { flexDirection: 'row', gap: 8 },

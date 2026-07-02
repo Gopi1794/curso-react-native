@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppDispatch } from '../../store/hooks';
 import { selectRestaurant } from '../../store/slices/restaurantSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -59,19 +60,22 @@ const RestaurantCard = ({ restaurant, onPress, index }) => {
                 onPress={() => onPress(restaurant)}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
-                activeOpacity={1}
+                activeOpacity={0.92}
+                accessibilityRole="button"
+                accessibilityLabel={`Seleccionar ${restaurant.nombre}`}
             >
                 <LinearGradient
                     colors={['#ffffff', '#fff8f0']}
                     style={styles.cardGradient}
                 >
                     <View style={styles.cardIconContainer}>
-                        <LinearGradient
-                            colors={['#ff8c00', '#ff6600']}
-                            style={styles.cardIcon}
-                        >
-                            <Ionicons name="restaurant" size={28} color="#fff" />
-                        </LinearGradient>
+                        {restaurant.logo_url ? (
+                            <Image source={{ uri: restaurant.logo_url }} style={styles.cardLogoImg} resizeMode="cover" accessibilityLabel={`Logo de ${restaurant.nombre}`} />
+                        ) : (
+                            <LinearGradient colors={['#ff8c00', '#ff6600']} style={styles.cardIcon}>
+                                <Ionicons name="restaurant" size={28} color="#fff" />
+                            </LinearGradient>
+                        )}
                     </View>
 
                     <View style={styles.cardContent}>
@@ -106,6 +110,7 @@ const RestaurantCard = ({ restaurant, onPress, index }) => {
 
 export default function SelectRestaurantScreen() {
     const dispatch = useAppDispatch();
+    const insets = useSafeAreaInsets();
     const [restaurants, setRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
     const titleAnim = useRef(new Animated.Value(0)).current;
@@ -140,6 +145,7 @@ export default function SelectRestaurantScreen() {
             direccion: restaurant.direccion,
             telefono: restaurant.telefono,
             horario: restaurant.horario,
+            logo_url: restaurant.logo_url || '',
         };
         dispatch(selectRestaurant(data));
         try {
@@ -180,7 +186,7 @@ export default function SelectRestaurantScreen() {
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
                 <Image
                     source={require('../../assets/img/logoApp.png')}
                     style={styles.logo}
@@ -199,6 +205,12 @@ export default function SelectRestaurantScreen() {
                         <SkeletonCard />
                         <SkeletonCard />
                     </View>
+                ) : restaurants.length === 0 ? (
+                    <View style={styles.emptyState}>
+                        <Ionicons name="storefront-outline" size={56} color="#F97316" />
+                        <Text style={styles.emptyTitle}>Sin locales disponibles</Text>
+                        <Text style={styles.emptySubtitle}>No hay restaurantes activos por el momento.</Text>
+                    </View>
                 ) : (
                     <FlatList
                         data={restaurants}
@@ -210,7 +222,7 @@ export default function SelectRestaurantScreen() {
                                 index={index}
                             />
                         )}
-                        contentContainerStyle={styles.list}
+                        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 16 }]}
                         showsVerticalScrollIndicator={false}
                     />
                 )}
@@ -224,7 +236,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        paddingTop: (StatusBar.currentHeight || 40) + 20,
+        paddingTop: 20,
         paddingBottom: 30,
         paddingHorizontal: 24,
         alignItems: 'center',
@@ -284,6 +296,32 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    cardLogoImg: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+    },
+    emptyState: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 32,
+        paddingTop: 60,
+        gap: 8,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontFamily: 'Poppins-Bold',
+        color: '#222',
+        textAlign: 'center',
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        fontFamily: 'Poppins-Regular',
+        color: '#888',
+        textAlign: 'center',
+        lineHeight: 20,
     },
     cardContent: {
         flex: 1,

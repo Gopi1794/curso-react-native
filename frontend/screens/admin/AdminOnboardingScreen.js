@@ -7,6 +7,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useAppSelector } from '../../store/hooks';
 import API from '../../services/api';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
@@ -62,9 +64,25 @@ function Field({ label, value, onChangeText, placeholder, keyboardType, secureTe
 }
 
 // ── Step 1: Info del restaurante ──────────────────────────
-function StepNegocio({ data, onChange }) {
+function StepNegocio({ data, onChange, onPickLogo, uploadingLogo }) {
     return (
         <View style={styles.stepBody}>
+            <Text style={styles.fieldLabel}>Logo del negocio</Text>
+            <TouchableOpacity style={styles.logoPicker} onPress={onPickLogo} disabled={uploadingLogo}>
+                {data.logo_url ? (
+                    <Image source={{ uri: data.logo_url }} style={styles.logoPreview} />
+                ) : (
+                    <View style={styles.logoPlaceholder}>
+                        <Ionicons name="camera-outline" size={28} color="#9CA3AF" />
+                        <Text style={styles.logoPlaceholderText}>Subir logo</Text>
+                    </View>
+                )}
+                {uploadingLogo && (
+                    <View style={styles.logoUploading}>
+                        <ActivityIndicator color="#FF8700" />
+                    </View>
+                )}
+            </TouchableOpacity>
             <Field label="Nombre del negocio *" value={data.nombre} onChangeText={onChange('nombre')} placeholder="Ej: La Parrilla de Juan" autoCapitalize="words" />
             <Field label="Descripción" value={data.descripcion} onChangeText={onChange('descripcion')} placeholder="Qué tipo de comida hacen, qué los hace únicos..." multiline />
             <Field label="Dirección" value={data.direccion} onChangeText={onChange('direccion')} placeholder="Ej: Av. Corrientes 1234, CABA" autoCapitalize="words" />
@@ -171,6 +189,7 @@ export default function AdminOnboardingScreen({ navigation }) {
 
     const [step, setStep] = useState(0);
     const [saving, setSaving] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
     const slideAnim = useRef(new Animated.Value(0)).current;
     const [completed, setCompleted] = useState({ negocio: false, plato: false, repartidor: false, cupon: false });
 
@@ -179,12 +198,40 @@ export default function AdminOnboardingScreen({ navigation }) {
         descripcion: selectedRestaurant?.descripcion || '',
         direccion: selectedRestaurant?.direccion || '',
         telefono: selectedRestaurant?.telefono || '',
+        logo_url: selectedRestaurant?.logo_url || '',
     });
     const [plato, setPlato] = useState({ nombre: '', precio: '', descripcion: '', categoria: 'otros' });
     const [repartidor, setRepartidor] = useState({ nombre: '', apellido: '', email: '', telefono: '', password: '' });
     const [cupon, setCupon] = useState({ titulo: '', codigo: '', descuento: '10', valido_hasta: '' });
 
     const makeChanger = (setter) => (key) => (val) => setter(prev => ({ ...prev, [key]: val }));
+
+    const handlePickLogo = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') { showErrorMessage('Permiso requerido', 'Necesitamos acceso a tu galería'); return; }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+        });
+        if (result.canceled) return;
+
+        setUploadingLogo(true);
+        try {
+            const res = await API.admin.upload(result.assets[0].uri);
+            if (res.success) {
+                setNegocio(prev => ({ ...prev, logo_url: res.url }));
+            } else {
+                showErrorMessage('Error', 'No se pudo subir el logo');
+            }
+        } catch {
+            showErrorMessage('Error', 'No se pudo subir el logo');
+        } finally {
+            setUploadingLogo(false);
+        }
+    };
 
     const animateTo = (nextStep) => {
         Animated.timing(slideAnim, { toValue: -SCREEN_W, duration: 200, useNativeDriver: true }).start(() => {
@@ -284,7 +331,7 @@ export default function AdminOnboardingScreen({ navigation }) {
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                 <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
                     <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
-                        {step === 0 && <StepNegocio    data={negocio}    onChange={makeChanger(setNegocio)} />}
+                        {step === 0 && <StepNegocio    data={negocio}    onChange={makeChanger(setNegocio)} onPickLogo={handlePickLogo} uploadingLogo={uploadingLogo} />}
                         {step === 1 && <StepPlato       data={plato}      onChange={makeChanger(setPlato)} />}
                         {step === 2 && <StepRepartidor  data={repartidor} onChange={makeChanger(setRepartidor)} />}
                         {step === 3 && <StepCupon       data={cupon}      onChange={makeChanger(setCupon)} />}
@@ -293,7 +340,7 @@ export default function AdminOnboardingScreen({ navigation }) {
                 </ScrollView>
 
                 {!isDone && (
-                    <View style={[styles.footer, { paddingBottom: insets.bottom + 16 + FLOATING_TAB_BAR_HEIGHT }]}>
+                    <View style={[styles.footer, { paddingBottom: insets.bottom + FLOATING_TAB_BAR_HEIGHT }]}>
                         <TouchableOpacity style={styles.skipBtn} onPress={skipStep}>
                             <Text style={styles.skipText}>Saltar</Text>
                         </TouchableOpacity>
@@ -340,6 +387,11 @@ const styles = StyleSheet.create({
     fieldLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6, letterSpacing: 0.3 },
     input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111827' },
     inputMultiline: { height: 80, textAlignVertical: 'top', paddingTop: 12 },
+    logoPicker: { alignSelf: 'center', marginBottom: 16 },
+    logoPreview: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderColor: '#FF8700' },
+    logoPlaceholder: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderColor: '#E5E7EB', borderStyle: 'dashed', backgroundColor: '#F9FAFB', justifyContent: 'center', alignItems: 'center', gap: 4 },
+    logoPlaceholderText: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
+    logoUploading: { ...StyleSheet.absoluteFillObject, borderRadius: 48, backgroundColor: 'rgba(255,255,255,0.7)', justifyContent: 'center', alignItems: 'center' },
     chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
     chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
     chipSelected: { backgroundColor: '#FFF7ED', borderColor: '#FF8700' },
