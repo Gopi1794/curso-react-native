@@ -1,5 +1,5 @@
 // components/common/ActionBar.js
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,9 +28,12 @@ export const ActionBar = ({
 
     const totalPrice = calculateTotalPrice();
 
-    // Función que maneja el agregar al carrito con la cantidad correcta
+    const lastPressTime = useRef(0);
     const handleAddToCartPress = () => {
-        onAddToCart(quantity); // Pasar la cantidad actual al handler
+        const now = Date.now();
+        if (now - lastPressTime.current < 1000) return;
+        lastPressTime.current = now;
+        onAddToCart(quantity);
     };
 
     return (

@@ -61,6 +61,20 @@
   background: #ddd;
 }
 
+.carouselSkeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* Nav arrows */
 .carouselBtn {
   position: absolute;

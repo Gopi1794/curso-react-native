@@ -26,6 +26,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.tucompany.tufoodapp",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1,
       "softwareKeyboardLayoutMode": "pan",
       "config": {
@@ -46,6 +47,13 @@
         "icon": "./assets/icon.png",
         "color": "#ff8700",
         "defaultChannel": "default"
+      }],
+      ["expo-build-properties", {
+        "android": {
+          "compileSdkVersion": 36,
+          "targetSdkVersion": 36,
+          "minSdkVersion": 26
+        }
       }]
     ],
     "experiments": {

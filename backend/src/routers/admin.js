@@ -11,6 +11,7 @@ const recetasCtrl  = require('../controllers/adminRecetasController');
 const pedidosCtrl  = require('../controllers/adminPedidosController');
 const restCtrl     = require('../controllers/adminRestauranteController');
 const statsCtrl    = require('../controllers/adminStatsController');
+const reviewsCtrl  = require('../controllers/adminReviewsInsightsController');
 
 const router = Router();
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -31,6 +32,9 @@ router.use(authMiddleware, requireAdmin);
 
 // ── Stats ─────────────────────────────────────────────────
 router.get('/stats/:restauranteId', requireAdminOwnership, statsCtrl.getStats);
+
+// ── Reviews AI Insights ───────────────────────────────────
+router.get('/reviews/insights', reviewsCtrl.getInsights);
 
 // ── Restaurante ───────────────────────────────────────────
 router.get('/restaurante/:restauranteId',  requireAdminOwnership, restCtrl.getInfo);

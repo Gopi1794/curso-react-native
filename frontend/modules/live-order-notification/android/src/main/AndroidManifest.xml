@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Requerido desde Android 13 (API 33) para mostrar notificaciones -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Requerido para notificaciones ongoing en Android 14+ -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+</manifest>

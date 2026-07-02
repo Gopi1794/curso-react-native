@@ -296,9 +296,9 @@ exports.createPreference = async (req, res) => {
             body: {
                 items: mpItems,
                 back_urls: {
-                    success: 'tuappfood://payment/success',
-                    failure: 'tuappfood://payment/failure',
-                    pending: 'tuappfood://payment/pending',
+                    success: 'tu-app-food://payment/success',
+                    failure: 'tu-app-food://payment/failure',
+                    pending: 'tu-app-food://payment/pending',
                 },
                 notification_url: process.env.MP_NOTIFICATION_URL,
                 external_reference: String(pedido_id),

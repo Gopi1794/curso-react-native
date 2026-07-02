@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Lottie from "lottie-react";
 import { imageMap } from "../../../assets/utils/imageMap";
 import { useLang } from "../LanguageContext";
@@ -22,7 +22,21 @@ export default function FoodDetailModal({ item, onClose, onAddToCart }) {
   const { t, lang } = useLang();
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const touchStartX = useRef(null);
+
+  // Preload current image; when done preload next one in background
+  useEffect(() => {
+    if (!images[imgIdx]) return;
+    setImgLoaded(false);
+    const img = new Image();
+    img.onload = () => {
+      setImgLoaded(true);
+      if (images[imgIdx + 1]) new Image().src = images[imgIdx + 1];
+    };
+    img.src = images[imgIdx];
+    if (img.complete) setImgLoaded(true);
+  }, [imgIdx]);
 
   const getItemName = (i) => i[`name_${lang.toLowerCase()}`] || i.name;
 
@@ -52,11 +66,16 @@ export default function FoodDetailModal({ item, onClose, onAddToCart }) {
           onTouchEnd={handleTouchEnd}
         >
           {images.length > 0 ? (
-            <img
-              src={images[imgIdx]}
-              alt={getItemName(item)}
-              className={styles.carouselImg}
-            />
+            <>
+              <img
+                src={images[imgIdx]}
+                alt={getItemName(item)}
+                className={styles.carouselImg}
+                fetchpriority="high"
+                style={{ opacity: imgLoaded ? 1 : 0, transition: "opacity 0.2s" }}
+              />
+              {!imgLoaded && <div className={styles.carouselSkeleton} />}
+            </>
           ) : (
             <div className={styles.carouselPlaceholder} />
           )}
@@ -187,6 +206,11 @@ export default function FoodDetailModal({ item, onClose, onAddToCart }) {
 
           <button
             className={styles.addBtn}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              onAddToCart(item, qty);
+              onClose();
+            }}
             onClick={() => {
               onAddToCart(item, qty);
               onClose();

@@ -4,7 +4,7 @@ const { sendPushNotification } = require('../services/notificationService');
 // ── CREATE ORDER ──────────────────────────────────────────
 // POST /api/orders
 exports.createOrder = async (req, res) => {
-    const { restaurante_id, items, direccion_entrega, notas, metodo_pago } = req.body;
+    const { restaurante_id, items, direccion_entrega, notas, metodo_pago, cupon_codigo } = req.body;
 
     // 1. Validar estructura del body
     if (!restaurante_id || !items || !Array.isArray(items) || items.length === 0) {
@@ -102,18 +102,33 @@ exports.createOrder = async (req, res) => {
             };
         });
 
-        // 5. Insertar el pedido
+        // 5. Aplicar cupón si viene (validación server-side)
+        let descuento = 0;
+        if (cupon_codigo?.trim()) {
+            const cuponResult = await client.query(
+                `SELECT discount_percent FROM cupones
+                 WHERE UPPER(codigo) = UPPER($1) AND activo = TRUE AND valido_hasta >= CURRENT_DATE`,
+                [cupon_codigo.trim()]
+            );
+            if (cuponResult.rows[0]) {
+                const pct = cuponResult.rows[0].discount_percent;
+                descuento  = parseFloat((total * pct / 100).toFixed(2));
+                total      = parseFloat((total - descuento).toFixed(2));
+            }
+        }
+
+        // 6. Insertar el pedido
         const esEfectivo = metodo_pago === 'efectivo';
         const pedidoResult = await client.query(
-            `INSERT INTO pedidos (usuario_id, restaurante_id, estado, total, direccion_entrega, notas, metodo_pago)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
-             RETURNING id, usuario_id, restaurante_id, estado, total, direccion_entrega, notas, metodo_pago, fecha_creacion`,
-            [req.user.userId, restaurante_id, esEfectivo ? 'en_preparacion' : 'pendiente', total.toFixed(2), direccion_entrega || null, notas || null, metodo_pago || 'mercadopago']
+            `INSERT INTO pedidos (usuario_id, restaurante_id, estado, total, descuento, direccion_entrega, notas, metodo_pago)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             RETURNING id, usuario_id, restaurante_id, estado, total, descuento, direccion_entrega, notas, metodo_pago, fecha_creacion`,
+            [req.user.userId, restaurante_id, esEfectivo ? 'en_preparacion' : 'pendiente', total.toFixed(2), descuento.toFixed(2), direccion_entrega || null, notas || null, metodo_pago || 'mercadopago']
         );
 
         const pedido = pedidoResult.rows[0];
 
-        // 6. Insertar los ítems del pedido y descontar stock
+        // 7. Insertar los ítems del pedido y descontar stock
         for (const item of orderItems) {
             await client.query(
                 `INSERT INTO pedido_items (pedido_id, menu_item_id, nombre_item, precio_unitario, cantidad, ingredientes_removidos)

@@ -1,0 +1,9 @@
+{
+  "name": "live-order-notification",
+  "version": "1.0.0",
+  "description": "Live order tracking notifications with Android 16 ProgressStyle",
+  "main": "index.ts",
+  "peerDependencies": {
+    "expo-modules-core": "*"
+  }
+}

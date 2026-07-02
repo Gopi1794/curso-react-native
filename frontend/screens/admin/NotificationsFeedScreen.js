@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import API from '../../services/api';
+import { markNotificationsRead } from '../../hooks/useNotificationBadge';
 
 const ESTADO_CONFIG = {
     pendiente:   { icon: 'time-outline',        color: '#F59E0B', label: 'Nuevo pedido',        bg: '#FFFBEB' },
@@ -63,7 +64,7 @@ export default function NotificationsFeedScreen({ navigation }) {
         }
     }, []);
 
-    React.useEffect(() => { load(); }, [load]);
+    React.useEffect(() => { load(); markNotificationsRead(); }, [load]);
     const onRefresh = () => { setRefreshing(true); load(true); };
 
     const renderItem = ({ item }) => {

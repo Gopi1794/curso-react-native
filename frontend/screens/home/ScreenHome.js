@@ -24,6 +24,7 @@ import menuItemsData from '../../assets/data/menuItems.json';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { clearJustRegistered } from '../../store/slices/userSlice';
+import { useNotificationBadge } from '../../hooks/useNotificationBadge';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -212,6 +213,7 @@ export const ScreenHome = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [menuError, setMenuError] = useState(null);
     const [refreshing, setRefreshing] = useState(false);
+    const { unreadCount: unreadNotifications } = useNotificationBadge();
 
     const fetchMenu = useCallback(async (isRefresh = false) => {
         if (!selectedRestaurant) return;
@@ -386,6 +388,7 @@ export const ScreenHome = ({ navigation }) => {
                 onTicketPress={navigateToTicket}
                 onCartPress={navigateToCart}
                 onNotificationsPress={navigateToNotifications}
+                unreadNotifications={unreadNotifications}
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
                 onClearSearch={handleClearSearch}

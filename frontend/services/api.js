@@ -157,7 +157,7 @@ const restaurants = {
 
 // ── ORDERS ────────────────────────────────────────────────
 const orders = {
-    create: (restauranteId, items, direccionEntrega, notas, metodoPago) => request('/api/orders', {
+    create: (restauranteId, items, direccionEntrega, notas, metodoPago, cuponCodigo) => request('/api/orders', {
         method: 'POST',
         body: JSON.stringify({
             restaurante_id: restauranteId,
@@ -165,6 +165,7 @@ const orders = {
             direccion_entrega: direccionEntrega,
             notas,
             metodo_pago: metodoPago || 'mercadopago',
+            ...(cuponCodigo ? { cupon_codigo: cuponCodigo } : {}),
         }),
     }),
 
@@ -309,6 +310,7 @@ const admin = {
     },
     stats: {
         get: (restauranteId) => request(`/api/admin/stats/${restauranteId}`),
+        getReviewsInsights: (restauranteId) => request(`/api/admin/reviews/insights?restauranteId=${restauranteId}`),
     },
     restaurante: {
         getInfo: (restauranteId) => request(`/api/admin/restaurante/${restauranteId}`),

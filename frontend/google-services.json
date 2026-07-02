@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "279555469009",
+    "project_id": "turestauranteapp-529da",
+    "storage_bucket": "turestauranteapp-529da.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:279555469009:android:dbbdfbac9ad35d14c1dff0",
+        "android_client_info": {
+          "package_name": "com.tucompany.tufoodapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "279555469009-htsh3tk1pq4q6d65llk665gls4eotj1a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGufxFwU8SsXgEFpIDeutvPkPlw96DMvE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "279555469009-htsh3tk1pq4q6d65llk665gls4eotj1a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

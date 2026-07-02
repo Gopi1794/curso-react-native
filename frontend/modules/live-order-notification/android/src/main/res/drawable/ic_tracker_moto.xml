@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Moto tracker que viaja sobre la barra de progreso -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M19,8h-2.69c-0.31,-0.74 -0.99,-1.31 -1.81,-1.49L14.5,4H19V8zM7.5,15c-1.38,0 -2.5,1.12 -2.5,2.5S6.12,20 7.5,20s2.5,-1.12 2.5,-2.5S8.88,15 7.5,15zM16.5,15c-1.38,0 -2.5,1.12 -2.5,2.5s1.12,2.5 2.5,2.5 2.5,-1.12 2.5,-2.5S17.88,15 16.5,15zM11,9V7H2v2h3.17C4.45,9.6 4,10.44 4,11.39V15H2v3h3c0,-2.21 1.79,-4 4,-4s4,1.79 4,4h1v-3h-2v-3.61C12,11.1 11.62,10 11,9zM13,5v2H9V5H13z"/>
+</vector>

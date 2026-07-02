@@ -16,11 +16,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SvgXml } from 'react-native-svg';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
-import { WebView } from 'react-native-webview';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { MP_LOGO_COLOR } from '../../assets/img/mercadopago/logos';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
+import AddAddressSheet from '../../components/common/AddAddressSheet';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { clearCart, removeFromCart, updateQuantity } from '../../store/slices/cartSlice';
 import API from '../../services/api';
@@ -34,8 +36,6 @@ const CartScreen = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const cartItems = useAppSelector(state => state.cart.items);
     const selectedRestaurant = useAppSelector(state => state.restaurant.selected);
-    const [showMercadoPago, setShowMercadoPago] = useState(false);
-    const [checkoutUrl, setCheckoutUrl] = useState('');
     const [currentOrderId, setCurrentOrderId] = useState(null);
     const [currentOrderItems, setCurrentOrderItems] = useState([]);
     const [loadingMP, setLoadingMP] = useState(false);
@@ -50,24 +50,26 @@ const CartScreen = ({ navigation }) => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [addressPickerVisible, setAddressPickerVisible] = useState(false);
     const [loadingAddresses, setLoadingAddresses] = useState(true);
+    const [showAddSheet, setShowAddSheet] = useState(false);
 
-    useEffect(() => {
-        const loadAddresses = async () => {
-            try {
-                const res = await API.users.getAddresses();
-                if (res.success && res.addresses.length > 0) {
-                    setAddresses(res.addresses);
+    const loadAddresses = async () => {
+        try {
+            const res = await API.users.getAddresses();
+            if (res.success && res.addresses.length > 0) {
+                setAddresses(res.addresses);
+                if (!selectedAddress) {
                     const principal = res.addresses.find(a => a.es_principal) || res.addresses[0];
                     setSelectedAddress(principal);
                 }
-            } catch {
-                // sin direcciones
-            } finally {
-                setLoadingAddresses(false);
             }
-        };
-        loadAddresses();
-    }, []);
+        } catch {
+            // sin direcciones
+        } finally {
+            setLoadingAddresses(false);
+        }
+    };
+
+    useEffect(() => { loadAddresses(); }, []);
 
     const handleGoBack = () => {
         navigation.goBack();
@@ -217,7 +219,9 @@ const CartScreen = ({ navigation }) => {
                 selectedRestaurant.id,
                 orderItems,
                 selectedAddress ? `${selectedAddress.direccion}, ${selectedAddress.ciudad}` : 'Dirección registrada',
-                ''
+                '',
+                undefined,
+                couponApplied ? couponCode : null
             );
 
             if (!orderRes.success) {
@@ -233,10 +237,39 @@ const CartScreen = ({ navigation }) => {
             }
 
             const url = __DEV__ ? prefRes.sandbox_init_point : prefRes.init_point;
-            setCheckoutUrl(url);
-            setCurrentOrderId(orderRes.order.id);
-            setCurrentOrderItems([...cartItems]);
-            setShowMercadoPago(true);
+            const savedOrderId    = orderRes.order.id;
+            const savedOrderItems = [...cartItems];
+            const savedTotal      = calculateTotal();
+
+            setCurrentOrderId(savedOrderId);
+            setCurrentOrderItems(savedOrderItems);
+
+            // Abre Chrome Custom Tab — MP muestra todos los métodos de pago
+            const result = await WebBrowser.openBrowserAsync(url, {
+                dismissButtonStyle: 'cancel',
+                toolbarColor: '#009EE3',
+            });
+
+            // El usuario cerró el browser — chequeamos el resultado via deep link
+            // El webhook ya habrá procesado el pago exitoso en el backend
+            if (result.type === 'cancel' || result.type === 'dismiss') {
+                // Consultamos el estado del pedido para saber si el pago fue aprobado
+                try {
+                    const orderStatus = await API.orders.getById(savedOrderId);
+                    if (orderStatus.success && orderStatus.order?.estado === 'confirmado') {
+                        dispatch(clearCart());
+                        navigation.navigate('OrderConfirmation', {
+                            orderId: savedOrderId,
+                            orderTotal: savedTotal,
+                            orderItems: savedOrderItems,
+                        });
+                    } else {
+                        showWarningMessage('Pago pendiente', 'Si realizaste el pago, aparecerá en tus pedidos en unos minutos.');
+                    }
+                } catch {
+                    showWarningMessage('Pago pendiente', 'Si realizaste el pago, aparecerá en tus pedidos en unos minutos.');
+                }
+            }
         } catch {
             showErrorMessage('Error de conexión', 'No se pudo iniciar el pago. Revisá tu conexión.');
         } finally {
@@ -276,7 +309,8 @@ const CartScreen = ({ navigation }) => {
                 orderItems,
                 selectedAddress ? `${selectedAddress.direccion}, ${selectedAddress.ciudad}` : 'Dirección registrada',
                 '',
-                'efectivo'
+                'efectivo',
+                couponApplied ? couponCode : null
             );
 
             if (!orderRes.success) {
@@ -299,41 +333,6 @@ const CartScreen = ({ navigation }) => {
         }
     };
 
-    const handlePaymentFailure = () => {
-        setShowMercadoPago(false);
-        showErrorMessage('Pago Rechazado', 'El pago no pudo ser procesado. Por favor, intenta nuevamente.');
-    };
-
-    const handleWebViewNavigation = (navState) => {
-        const { url } = navState;
-        if (!url) return;
-
-        if (url.includes('tuappfood://payment/success') || url.includes('payment_status=approved')) {
-            setShowMercadoPago(false);
-            const total = calculateTotal();
-            const items = currentOrderItems;
-            dispatch(clearCart());
-            navigation.navigate('OrderConfirmation', {
-                orderId: currentOrderId,
-                orderTotal: total,
-                orderItems: items,
-            });
-            return;
-        }
-
-        if (url.includes('tuappfood://payment/failure') || url.includes('payment_status=rejected')) {
-            setShowMercadoPago(false);
-            showErrorMessage('Pago rechazado', 'El pago no pudo procesarse. Intentá de nuevo.');
-            return;
-        }
-
-        if (url.includes('tuappfood://payment/pending') || url.includes('payment_status=pending')) {
-            setShowMercadoPago(false);
-            showWarningMessage('Pago pendiente', 'Tu pago está siendo procesado. Te avisamos cuando se confirme.');
-            dispatch(clearCart());
-            navigation.navigate('OrdersTab');
-        }
-    };
 
     const totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
 
@@ -546,7 +545,7 @@ const CartScreen = ({ navigation }) => {
                             ) : addresses.length === 0 ? (
                                 <TouchableOpacity
                                     style={styles.addressEmpty}
-                                    onPress={() => navigation.navigate('Addresses')}
+                                    onPress={() => setShowAddSheet(true)}
                                 >
                                     <Ionicons name="add-circle-outline" size={18} color="#ff8700" />
                                     <Text style={styles.addressEmptyText}>Agregá una dirección para continuar</Text>
@@ -663,7 +662,7 @@ const CartScreen = ({ navigation }) => {
                             style={styles.addressModalAddBtn}
                             onPress={() => {
                                 setAddressPickerVisible(false);
-                                navigation.navigate('Addresses');
+                                setShowAddSheet(true);
                             }}
                         >
                             <Ionicons name="add-circle-outline" size={18} color="#ff8700" />
@@ -672,6 +671,15 @@ const CartScreen = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
             </Modal>
+
+            <AddAddressSheet
+                visible={showAddSheet}
+                onClose={() => setShowAddSheet(false)}
+                onSaved={async () => {
+                    await loadAddresses();
+                    showSuccessMessage('Dirección guardada');
+                }}
+            />
 
             <FlashMessageWrapper />
 
@@ -703,33 +711,6 @@ const CartScreen = ({ navigation }) => {
                 </Dialog>
             </Portal>
 
-            {/* Modal para Mercado Pago WebView */}
-            <Modal
-                visible={showMercadoPago}
-                animationType="slide"
-                onRequestClose={() => setShowMercadoPago(false)}
-            >
-                <View style={[styles.webViewContainer, { paddingTop: insets.top }]}>
-                    <View style={styles.webViewHeader}>
-                        <TouchableOpacity
-                            onPress={() => setShowMercadoPago(false)}
-                            style={styles.closeButton}
-                            accessibilityLabel="Cerrar pago"
-                            accessibilityRole="button"
-                        >
-                            <Ionicons name="close" size={24} color="white" />
-                        </TouchableOpacity>
-                        <Text style={styles.webViewTitle}>Mercado Pago</Text>
-                    </View>
-                    <WebView
-                        source={{ uri: checkoutUrl }}
-                        onNavigationStateChange={handleWebViewNavigation}
-                        style={styles.webView}
-                        sharedCookiesEnabled={true}
-                        thirdPartyCookiesEnabled={true}
-                    />
-                </View>
-            </Modal>
         </View>
     );
 };
@@ -1128,32 +1109,6 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins-Bold',
     },
 
-    /* WebView */
-    webViewContainer: {
-        flex: 1,
-    },
-    webViewHeader: {
-        backgroundColor: '#009EE3',
-        padding: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    closeButton: {
-        marginRight: 15,
-        width: 44,
-        height: 44,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    webViewTitle: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
-        fontFamily: 'Poppins-Bold',
-    },
-    webView: {
-        flex: 1,
-    },
 
     dialog: {
         borderRadius: 20,

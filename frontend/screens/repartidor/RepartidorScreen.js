@@ -12,6 +12,7 @@ import { imageMap } from '../../assets/utils/imageMap';
 import API from '../../services/api';
 import { useAppDispatch } from '../../store/hooks';
 import { logout } from '../../store/slices/userSlice';
+import { useNotificationBadge } from '../../hooks/useNotificationBadge';
 
 const ESTADO_LABEL = {
     preparando:     'Preparando',
@@ -46,6 +47,7 @@ export default function RepartidorScreen({ navigation }) {
     const [sortOrder, setSortOrder] = useState('desc');
     const [filterEstado, setFilterEstado] = useState('todos');
     const [resumen, setResumen] = useState({ pedidos_entregados: 0, ganancia: '0.00', efectivo_cobrado: '0.00' });
+    const { unreadCount: unreadNotifications } = useNotificationBadge();
 
     const loadResumen = useCallback(async () => {
         try {
@@ -323,6 +325,13 @@ export default function RepartidorScreen({ navigation }) {
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                     <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.getParent()?.navigate('NotificationsFeed')}>
                         <Ionicons name="notifications-outline" size={22} color="#FF8700" />
+                        {unreadNotifications > 0 && (
+                            <View style={styles.notifBadge}>
+                                <Text style={styles.notifBadgeText}>
+                                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                                </Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.headerBtn} onPress={() => setSortVisible(true)}>
                         <Ionicons name="options-outline" size={22} color="#FF8700" />
@@ -614,6 +623,17 @@ const styles = StyleSheet.create({
         width: 46, height: 46, borderRadius: 14,
         backgroundColor: '#fff',
         justifyContent: 'center', alignItems: 'center',
+        position: 'relative',
+    },
+    notifBadge: {
+        position: 'absolute', top: 6, right: 6,
+        backgroundColor: '#D80000',
+        minWidth: 16, height: 16, borderRadius: 8,
+        justifyContent: 'center', alignItems: 'center',
+        paddingHorizontal: 3,
+    },
+    notifBadgeText: {
+        color: '#fff', fontSize: 9, fontWeight: 'bold',
     },
 
     list: { padding: 16, paddingBottom: 32 },

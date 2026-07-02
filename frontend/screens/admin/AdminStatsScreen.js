@@ -54,7 +54,7 @@ const ESTADO_LABEL = {
 
 // ── Bar chart SVG ─────────────────────────────────────────
 
-function SvgBarChart({ data }) {
+function SvgBarChart({ data, formatY = fmtK }) {
     if (!data || data.length === 0) {
         return (
             <View style={styles.emptyChart}>
@@ -87,7 +87,7 @@ function SvgBarChart({ data }) {
                                 fontSize={9} fill="#9CA3AF"
                                 textAnchor="end"
                             >
-                                {fmtK(val)}
+                                {formatY(val)}
                             </SvgText>
                         )}
                     </G>
@@ -131,8 +131,8 @@ function SvgBarChart({ data }) {
 
 // ── Bar chart Victory Native XL (builds nativos) ─────────
 
-function VictoryBarChart({ data }) {
-    if (!CartesianChart || !VictoryBar) return <SvgBarChart data={data} />;
+function VictoryBarChart({ data, formatY = fmtK }) {
+    if (!CartesianChart || !VictoryBar) return <SvgBarChart data={data} formatY={formatY} />;
     return (
         <View style={{ height: CHART_H + PAD_B }}>
             <CartesianChart
@@ -143,7 +143,7 @@ function VictoryBarChart({ data }) {
                 axisOptions={{
                     tickCount: { x: data.length, y: 4 },
                     formatXLabel: (v) => v,
-                    formatYLabel: (v) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`,
+                    formatYLabel: formatY,
                     lineColor: '#F3F4F6',
                     labelColor: { x: '#9CA3AF', y: '#9CA3AF' },
                     labelOffset: { x: 4, y: 4 },
@@ -163,8 +163,10 @@ function VictoryBarChart({ data }) {
 }
 
 // Selector de implementación
-function BarChart({ data }) {
-    return IS_EXPO_GO ? <SvgBarChart data={data} /> : <VictoryBarChart data={data} />;
+function BarChart({ data, formatY }) {
+    return IS_EXPO_GO
+        ? <SvgBarChart data={data} formatY={formatY} />
+        : <VictoryBarChart data={data} formatY={formatY} />;
 }
 
 // ── KPI Card ──────────────────────────────────────────────
@@ -208,6 +210,8 @@ export default function AdminStatsScreen({ navigation }) {
     const [data,       setData]       = useState(null);
     const [loading,    setLoading]    = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [insights,   setInsights]   = useState(null);
+    const [loadingAI,  setLoadingAI]  = useState(false);
 
     const load = useCallback(async () => {
         try {
@@ -218,9 +222,29 @@ export default function AdminStatsScreen({ navigation }) {
         }
     }, [restaurant?.id]);
 
-    useEffect(() => { load().finally(() => setLoading(false)); }, [load]);
+    const loadInsights = useCallback(async () => {
+        if (!restaurant?.id) return;
+        setLoadingAI(true);
+        try {
+            const res = await API.admin.stats.getReviewsInsights(restaurant.id);
+            if (res.success) setInsights(res.insights);
+        } catch (e) {
+            console.warn('ReviewsInsights:', e);
+        } finally {
+            setLoadingAI(false);
+        }
+    }, [restaurant?.id]);
 
-    const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+    useEffect(() => {
+        load().finally(() => setLoading(false));
+        loadInsights();
+    }, [load, loadInsights]);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await Promise.all([load(), loadInsights()]);
+        setRefreshing(false);
+    };
 
     if (loading) {
         return <View style={styles.center}><ActivityIndicator size="large" color="#FF8700" /></View>;
@@ -230,14 +254,42 @@ export default function AdminStatsScreen({ navigation }) {
     const porDia     = data?.por_dia  || [];
     const topPlatos  = data?.top_platos || [];
     const porEstado  = data?.por_estado || [];
+    const clientes   = data?.clientes || {};
+    const horaPico   = data?.hora_pico || [];
 
     const pendientesHoy  = porEstado.find(e => e.estado === 'pendiente')?.total || 0;
     const ticketPromMes  = r.pedidos_mes  > 0 ? r.revenue_mes  / r.pedidos_mes  : 0;
-    const ticketPromHoy  = r.pedidos_hoy  > 0 ? r.revenue_hoy  / r.pedidos_hoy  : 0;
 
-    // Comparación hoy vs promedio diario de la semana
+    // Comparación hoy vs promedio diario de la semana (WoW proxy)
     const avgDia    = r.pedidos_semana > 0 ? r.revenue_semana / 7 : 0;
     const pctRev    = avgDia > 0 ? (((r.revenue_hoy - avgDia) / avgDia) * 100).toFixed(0) : null;
+
+    // MoM: este mes vs mes anterior
+    const pctRevMes = r.revenue_mes_anterior > 0
+        ? (((r.revenue_mes - r.revenue_mes_anterior) / r.revenue_mes_anterior) * 100).toFixed(0)
+        : null;
+    const pctPedidosMes = r.pedidos_mes_anterior > 0
+        ? (((r.pedidos_mes - r.pedidos_mes_anterior) / r.pedidos_mes_anterior) * 100).toFixed(0)
+        : null;
+
+    // Tasa de cancelación del mes
+    const tasaCancelMes = r.total_con_cancelados_mes > 0
+        ? Math.round((r.cancelados_mes / r.total_con_cancelados_mes) * 100)
+        : 0;
+
+    // Retención de clientes
+    const pctRecurrentes = clientes.total_clientes > 0
+        ? Math.round((clientes.clientes_recurrentes / clientes.total_clientes) * 100)
+        : 0;
+
+    // Hora pico chart (repurpose revenue field for pedidos count)
+    const horaPicoChart = horaPico.map(h => ({
+        label:   `${String(h.hora).padStart(2, '0')}h`,
+        revenue: h.pedidos,
+    }));
+    const peakHora = horaPico.length > 0
+        ? horaPico.reduce((max, h) => h.pedidos > max.pedidos ? h : max, horaPico[0])
+        : null;
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -280,16 +332,104 @@ export default function AdminStatsScreen({ navigation }) {
                 {/* Este mes */}
                 <SectionTitle>Este mes</SectionTitle>
                 <View style={styles.kpiRow}>
-                    <KpiCard icon="trending-up-outline" label="Revenue"   value={fmt(r.revenue_mes)}    wide />
-                    <KpiCard icon="layers-outline"      label="Pedidos"   value={r.pedidos_mes ?? 0} />
-                    <KpiCard icon="calculator-outline"  label="Ticket ∅"  value={fmt(ticketPromMes)} />
+                    <KpiCard
+                        icon="trending-up-outline" label="Revenue" value={fmt(r.revenue_mes)}
+                        sub={pctRevMes} subPositive={Number(pctRevMes) > 0}
+                        wide
+                    />
+                    <KpiCard
+                        icon="layers-outline" label="Pedidos" value={r.pedidos_mes ?? 0}
+                        sub={pctPedidosMes} subPositive={Number(pctPedidosMes) > 0}
+                    />
+                    <KpiCard icon="calculator-outline" label="Ticket ∅" value={fmt(ticketPromMes)} />
                 </View>
+
+                {/* Tasa de cancelación del mes */}
+                {r.total_con_cancelados_mes > 0 && (
+                    <View style={styles.kpiRow}>
+                        <KpiCard
+                            icon="close-circle-outline"
+                            label="Cancelados"
+                            value={r.cancelados_mes ?? 0}
+                            highlight={tasaCancelMes > 8}
+                        />
+                        <KpiCard
+                            icon="stats-chart-outline"
+                            label="Tasa cancel."
+                            value={`${tasaCancelMes}%`}
+                            highlight={tasaCancelMes > 8}
+                            wide
+                        />
+                    </View>
+                )}
+
+                {/* Clientes nuevos vs recurrentes */}
+                {clientes.total_clientes > 0 && (
+                    <>
+                        <SectionTitle>Clientes (este mes)</SectionTitle>
+                        <View style={styles.kpiRow}>
+                            <KpiCard
+                                icon="person-add-outline"
+                                label="Nuevos"
+                                value={clientes.clientes_nuevos ?? 0}
+                            />
+                            <KpiCard
+                                icon="repeat-outline"
+                                label="Recurrentes"
+                                value={clientes.clientes_recurrentes ?? 0}
+                                highlight={pctRecurrentes >= 50}
+                            />
+                            <KpiCard
+                                icon="heart-outline"
+                                label="Retención"
+                                value={`${pctRecurrentes}%`}
+                                highlight={pctRecurrentes >= 50}
+                            />
+                        </View>
+                    </>
+                )}
+
+                {/* Revenue bruto vs neto */}
+                {r.descuentos_mes > 0 && (
+                    <>
+                        <SectionTitle>Descuentos aplicados (este mes)</SectionTitle>
+                        <View style={styles.kpiRow}>
+                            <KpiCard
+                                icon="pricetag-outline"
+                                label="Descuentos"
+                                value={fmt(r.descuentos_mes)}
+                                highlight
+                            />
+                            <KpiCard
+                                icon="cash-outline"
+                                label="Bruto"
+                                value={fmt((r.revenue_mes || 0) + (r.descuentos_mes || 0))}
+                                wide
+                            />
+                        </View>
+                    </>
+                )}
 
                 {/* Gráfico 7 días */}
                 <SectionTitle>Revenue últimos 7 días</SectionTitle>
                 <View style={styles.chartCard}>
                     <BarChart data={porDia} />
                 </View>
+
+                {/* Hora pico */}
+                {horaPicoChart.length > 0 && (
+                    <>
+                        <SectionTitle>
+                            {`Pedidos por hora (últ. 30 días)${peakHora ? `  ·  pico ${String(peakHora.hora).padStart(2, '0')}h` : ''}`}
+                        </SectionTitle>
+                        <View style={styles.chartCard}>
+                            <BarChart
+                                data={horaPicoChart}
+                                formatY={(n) => String(Math.round(n))}
+                            />
+                        </View>
+                    </>
+                )}
 
                 {/* Top platos */}
                 {topPlatos.length > 0 && (
@@ -351,6 +491,70 @@ export default function AdminStatsScreen({ navigation }) {
                     <KpiCard icon="wallet-outline"  label="Revenue total" value={fmt(r.revenue_total)} wide />
                 </View>
 
+                {/* ── Reviews AI Insights ── */}
+                <SectionTitle>Análisis de reseñas (IA)</SectionTitle>
+                {loadingAI ? (
+                    <View style={styles.insightsLoading}>
+                        <ActivityIndicator size="small" color="#FF8700" />
+                        <Text style={styles.insightsLoadingText}>Analizando reseñas...</Text>
+                    </View>
+                ) : insights ? (
+                    <View style={styles.insightsContainer}>
+                        {/* Resumen de sentimiento */}
+                        <View style={styles.sentimientoRow}>
+                            <View style={[styles.sentimientoChip, { backgroundColor: '#D1FAE5' }]}>
+                                <Ionicons name="happy-outline" size={14} color="#10B981" />
+                                <Text style={[styles.sentimientoNum, { color: '#10B981' }]}>{insights.resumen?.positivos ?? 0}</Text>
+                                <Text style={styles.sentimientoLabel}>Positivas</Text>
+                            </View>
+                            <View style={[styles.sentimientoChip, { backgroundColor: '#FEE2E2' }]}>
+                                <Ionicons name="sad-outline" size={14} color="#EF4444" />
+                                <Text style={[styles.sentimientoNum, { color: '#EF4444' }]}>{insights.resumen?.negativos ?? 0}</Text>
+                                <Text style={styles.sentimientoLabel}>Negativas</Text>
+                            </View>
+                            <View style={[styles.sentimientoChip, { backgroundColor: '#F3F4F6' }]}>
+                                <Ionicons name="remove-circle-outline" size={14} color="#6B7280" />
+                                <Text style={[styles.sentimientoNum, { color: '#6B7280' }]}>{insights.resumen?.neutros ?? 0}</Text>
+                                <Text style={styles.sentimientoLabel}>Neutras</Text>
+                            </View>
+                        </View>
+
+                        {/* Top categorías con problemas */}
+                        {insights.porCategoria?.filter(c => c.sentimiento === 'negativo').slice(0, 3).map((cat, i) => (
+                            <View key={i} style={styles.categoriaRow}>
+                                <View style={styles.categoriaBullet} />
+                                <Text style={styles.categoriaText}>
+                                    <Text style={styles.categoriaNum}>{cat.total} menciones</Text>
+                                    {' de '}<Text style={styles.categoriaNombre}>{cat.categoria}</Text>
+                                </Text>
+                            </View>
+                        ))}
+
+                        {/* Últimas negativas */}
+                        {insights.negativas?.length > 0 && (
+                            <>
+                                <Text style={styles.negativasTitle}>Últimas críticas</Text>
+                                {insights.negativas.map((n, i) => (
+                                    <View key={i} style={styles.negativaItem}>
+                                        <View style={styles.negativaHeader}>
+                                            <Text style={styles.negativaPlato}>{n.plato}</Text>
+                                            <View style={styles.ratingBadge}>
+                                                <Ionicons name="star" size={10} color="#F59E0B" />
+                                                <Text style={styles.ratingText}>{n.rating}</Text>
+                                            </View>
+                                        </View>
+                                        <Text style={styles.negativaResumen}>"{n.resumen}"</Text>
+                                    </View>
+                                ))}
+                            </>
+                        )}
+
+                        {(!insights.resumen || insights.resumen.total === '0') && (
+                            <Text style={styles.insightsEmpty}>Sin reseñas en los últimos 30 días</Text>
+                        )}
+                    </View>
+                ) : null}
+
                 <View style={{ height: 40 }} />
             </ScrollView>
         </View>
@@ -360,6 +564,28 @@ export default function AdminStatsScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F9FAFB' },
     center:    { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+    // Reviews AI Insights
+    insightsLoading: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 16, marginBottom: 12 },
+    insightsLoadingText: { fontSize: 13, color: '#9CA3AF', fontFamily: 'Poppins-Regular' },
+    insightsContainer: { backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 16, marginBottom: 12, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+    sentimientoRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    sentimientoChip: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10 },
+    sentimientoNum: { fontSize: 16, fontFamily: 'Poppins-Bold', fontWeight: 'bold' },
+    sentimientoLabel: { fontSize: 11, color: '#6B7280', fontFamily: 'Poppins-Regular' },
+    categoriaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+    categoriaBullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#EF4444' },
+    categoriaText: { fontSize: 13, color: '#374151', fontFamily: 'Poppins-Regular' },
+    categoriaNum: { fontFamily: 'Poppins-SemiBold', color: '#EF4444' },
+    categoriaNombre: { fontFamily: 'Poppins-SemiBold', color: '#111827', textTransform: 'capitalize' },
+    negativasTitle: { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#374151', marginTop: 12, marginBottom: 8 },
+    negativaItem: { backgroundColor: '#FEF2F2', borderRadius: 10, padding: 10, marginBottom: 6 },
+    negativaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+    negativaPlato: { fontSize: 12, fontFamily: 'Poppins-SemiBold', color: '#111827' },
+    ratingBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#FEF3C7', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+    ratingText: { fontSize: 11, fontFamily: 'Poppins-Bold', color: '#92400E' },
+    negativaResumen: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#6B7280', fontStyle: 'italic' },
+    insightsEmpty: { fontSize: 13, color: '#9CA3AF', fontFamily: 'Poppins-Regular', textAlign: 'center', paddingVertical: 8 },
     header:    { paddingHorizontal: 20, paddingBottom: 16, paddingTop: 8 },
     headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     backBtn:   { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },

@@ -10,6 +10,7 @@ export const HeaderSection = ({
     onTicketPress,
     onCartPress,
     onNotificationsPress,
+    unreadNotifications = 0,
     searchQuery,
     onSearchChange,
     onClearSearch,
@@ -60,9 +61,16 @@ export const HeaderSection = ({
                         <TouchableOpacity
                             style={styles.iconBtn}
                             onPress={onNotificationsPress}
-                            accessibilityLabel="Notificaciones"
+                            accessibilityLabel={unreadNotifications > 0 ? `${unreadNotifications} notificaciones sin leer` : 'Notificaciones'}
                         >
                             <Ionicons name="notifications-outline" size={21} color="#222" />
+                            {unreadNotifications > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>
+                                        {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                                    </Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
                     )}
 

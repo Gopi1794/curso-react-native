@@ -6,7 +6,6 @@ import {
     FlatList,
     TouchableOpacity,
     Animated,
-    Dimensions,
     StatusBar,
     Image,
 } from 'react-native';
@@ -18,7 +17,19 @@ import { selectRestaurant } from '../../store/slices/restaurantSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API from '../../services/api';
 
-const { width: screenWidth } = Dimensions.get('window');
+const COLORS = {
+    brand: '#D95A00',
+    brandLight: '#FF8C00',
+    surface: '#FFFFFF',
+    background: '#F5F5F5',
+    textPrimary: '#1A1A1A',
+    textSecondary: '#6B6B6B',
+    textTertiary: '#9B9B9B',
+    open: '#10B981',
+    closed: '#6B7280',
+    skeleton: '#E8E8E8',
+    skeletonLine: '#D0D0D0',
+};
 
 const RestaurantCard = ({ restaurant, onPress, index }) => {
     const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -27,7 +38,7 @@ const RestaurantCard = ({ restaurant, onPress, index }) => {
     useEffect(() => {
         Animated.spring(scaleAnim, {
             toValue: 1,
-            delay: index * 100,
+            delay: index * 90,
             tension: 55,
             friction: 8,
             useNativeDriver: true,
@@ -44,9 +55,13 @@ const RestaurantCard = ({ restaurant, onPress, index }) => {
     const abierto = horarioHoy !== 'Cerrado';
 
     return (
-        <Animated.View style={{ transform: [{ scale: Animated.multiply(scaleAnim, pressAnim) }], opacity: scaleAnim }}>
+        <Animated.View
+            style={[
+                styles.card,
+                { transform: [{ scale: Animated.multiply(scaleAnim, pressAnim) }], opacity: scaleAnim },
+            ]}
+        >
             <TouchableOpacity
-                style={styles.card}
                 onPress={() => onPress(restaurant)}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
@@ -54,39 +69,56 @@ const RestaurantCard = ({ restaurant, onPress, index }) => {
                 accessibilityRole="button"
                 accessibilityLabel={`Seleccionar ${restaurant.nombre}`}
             >
-                {/* Logo / banner */}
-                <View style={styles.cardHeader}>
+                {/* Banner */}
+                <View style={styles.bannerContainer}>
                     {restaurant.logo_url ? (
-                        <Image source={{ uri: restaurant.logo_url }} style={styles.cardBanner} resizeMode="cover" />
+                        <Image
+                            source={{ uri: restaurant.logo_url }}
+                            style={styles.bannerImg}
+                            resizeMode="cover"
+                        />
                     ) : (
-                        <LinearGradient colors={['#ff8c00', '#ff6600']} style={styles.cardBanner}>
-                            <Ionicons name="restaurant" size={40} color="rgba(255,255,255,0.6)" />
+                        <LinearGradient
+                            colors={[COLORS.brand, COLORS.brandLight]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.bannerPlaceholder}
+                        >
+                            <Ionicons name="restaurant" size={36} color="rgba(255,255,255,0.5)" />
                         </LinearGradient>
                     )}
-                    <View style={[styles.statusBadge, { backgroundColor: abierto ? '#10B981' : '#6B7280' }]}>
-                        <Text style={styles.statusText}>{abierto ? 'Abierto' : 'Cerrado'}</Text>
+                    <View style={[styles.badge, { backgroundColor: abierto ? COLORS.open : COLORS.closed }]}>
+                        <Text style={styles.badgeText}>{abierto ? 'Abierto' : 'Cerrado'}</Text>
                     </View>
                 </View>
 
-                {/* Info */}
+                {/* Body */}
                 <View style={styles.cardBody}>
                     <View style={styles.cardBodyRow}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.cardName} numberOfLines={1}>{restaurant.nombre}</Text>
+                            <Text style={styles.cardName} numberOfLines={1}>
+                                {restaurant.nombre}
+                            </Text>
+                            <Text style={styles.cardDistance}>1.2 km • 8 min</Text>
                             {restaurant.descripcion ? (
-                                <Text style={styles.cardDesc} numberOfLines={1}>{restaurant.descripcion}</Text>
+                                <Text style={styles.cardDesc} numberOfLines={1}>
+                                    {restaurant.descripcion}
+                                </Text>
                             ) : null}
-                            <View style={styles.cardMeta}>
-                                <Ionicons name="location-outline" size={13} color="#999" />
-                                <Text style={styles.cardMetaText} numberOfLines={1}>{restaurant.direccion || 'Sin dirección'}</Text>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="location-outline" size={13} color={COLORS.textTertiary} />
+                                <Text style={styles.infoText} numberOfLines={1}>
+                                    {restaurant.direccion || 'Sin dirección'}
+                                </Text>
                             </View>
-                            <View style={styles.cardMeta}>
-                                <Ionicons name="time-outline" size={13} color="#999" />
-                                <Text style={styles.cardMetaText}>Hoy: {horarioHoy}</Text>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="time-outline" size={13} color={COLORS.textTertiary} />
+                                <Text style={styles.infoText}>Hoy: {horarioHoy}</Text>
                             </View>
                         </View>
-                        <View style={styles.cardArrow}>
-                            <Ionicons name="chevron-forward" size={20} color="#ff8c00" />
+
+                        <View style={styles.arrowBtn}>
+                            <Ionicons name="arrow-forward" size={18} color="#fff" />
                         </View>
                     </View>
                 </View>
@@ -150,13 +182,14 @@ export default function SelectRestaurantScreen() {
                 ])
             ).start();
         }, []);
-        const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+        const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.8] });
         return (
             <Animated.View style={[styles.card, styles.skeletonCard, { opacity }]}>
-                <View style={[styles.cardIcon, styles.skeletonIcon]} />
-                <View style={styles.cardContent}>
-                    <View style={styles.skeletonLine} />
-                    <View style={[styles.skeletonLine, { width: '80%' }]} />
+                <View style={styles.skeletonBanner} />
+                <View style={styles.skeletonBody}>
+                    <View style={[styles.skeletonLine, { width: '60%', marginBottom: 8 }]} />
+                    <View style={[styles.skeletonLine, { width: '35%', marginBottom: 12 }]} />
+                    <View style={[styles.skeletonLine, { width: '80%', marginBottom: 6 }]} />
                     <View style={[styles.skeletonLine, { width: '50%' }]} />
                 </View>
             </Animated.View>
@@ -165,7 +198,7 @@ export default function SelectRestaurantScreen() {
 
     return (
         <LinearGradient
-            colors={['#C2410C', '#EA580C', '#F97316']}
+            colors={['#B84500', '#D95A00', '#F97316']}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.container}
@@ -178,8 +211,21 @@ export default function SelectRestaurantScreen() {
                     source={require('../../assets/img/logoApp.png')}
                     style={styles.logo}
                 />
-                <Animated.View style={{ opacity: titleAnim, transform: [{ translateY: titleAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                    <Text style={styles.title}>Elegí tu local</Text>
+                <Animated.View
+                    style={{
+                        opacity: titleAnim,
+                        transform: [
+                            {
+                                translateY: titleAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [20, 0],
+                                }),
+                            },
+                        ],
+                        alignItems: 'center',
+                    }}
+                >
+                    <Text style={styles.title}>Elegí tu sucursal</Text>
                     <Text style={styles.subtitle}>Seleccioná la sucursal más cercana</Text>
                 </Animated.View>
             </View>
@@ -194,7 +240,7 @@ export default function SelectRestaurantScreen() {
                     </View>
                 ) : restaurants.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <Ionicons name="storefront-outline" size={56} color="#F97316" />
+                        <Ionicons name="storefront-outline" size={60} color={COLORS.brand} />
                         <Text style={styles.emptyTitle}>Sin locales disponibles</Text>
                         <Text style={styles.emptySubtitle}>No hay restaurantes activos por el momento.</Text>
                     </View>
@@ -209,7 +255,7 @@ export default function SelectRestaurantScreen() {
                                 index={index}
                             />
                         )}
-                        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 16 }]}
+                        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 20 }]}
                         showsVerticalScrollIndicator={false}
                     />
                 )}
@@ -223,11 +269,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        paddingTop: 20,
-        paddingBottom: 30,
+        paddingBottom: 32,
         paddingHorizontal: 24,
         alignItems: 'center',
-        overflow: 'hidden',
     },
     logo: {
         width: 70,
@@ -246,55 +290,74 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.8)',
         textAlign: 'center',
         marginTop: 6,
+        lineHeight: 20,
     },
     listContainer: {
         flex: 1,
-        marginTop: -15,
+        marginTop: -20,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         overflow: 'hidden',
-        backgroundColor: '#f9f9f9',
+        backgroundColor: COLORS.background,
     },
     list: {
-        padding: 16,
+        paddingHorizontal: 20,
+        paddingTop: 20,
         paddingBottom: 30,
     },
+
+    // ─── Card ─────────────────────────────────────────────────
     card: {
-        marginBottom: 16,
+        marginBottom: 18,
         borderRadius: 20,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.surface,
         overflow: 'hidden',
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
     },
-    cardHeader: {
+
+    // ─── Banner ───────────────────────────────────────────────
+    bannerContainer: {
         position: 'relative',
     },
-    cardBanner: {
+    bannerImg: {
+        width: '100%',
+        height: 130,
+    },
+    bannerPlaceholder: {
         width: '100%',
         height: 130,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    statusBadge: {
+
+    // ─── Badge ────────────────────────────────────────────────
+    badge: {
         position: 'absolute',
         top: 10,
         right: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 999,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
     },
-    statusText: {
+    badgeText: {
         color: '#fff',
         fontSize: 11,
         fontFamily: 'Poppins-Bold',
         letterSpacing: 0.3,
     },
+
+    // ─── Card body ────────────────────────────────────────────
     cardBody: {
-        padding: 14,
+        padding: 16,
     },
     cardBodyRow: {
         flexDirection: 'row',
@@ -302,32 +365,56 @@ const styles = StyleSheet.create({
     },
     cardName: {
         fontSize: 16,
-        fontFamily: 'Poppins-Bold',
-        color: '#1a1a1a',
+        fontFamily: 'Poppins-SemiBold',
+        color: COLORS.textPrimary,
         marginBottom: 2,
+        lineHeight: 22,
+    },
+    cardDistance: {
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        color: COLORS.textTertiary,
+        marginBottom: 6,
+        lineHeight: 17,
     },
     cardDesc: {
         fontSize: 12,
         fontFamily: 'Poppins-Regular',
-        color: '#888',
-        marginBottom: 6,
+        color: COLORS.textSecondary,
+        marginBottom: 8,
+        lineHeight: 18,
     },
-    cardMeta: {
+    infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
-        marginTop: 3,
+        gap: 6,
+        marginTop: 4,
     },
-    cardMetaText: {
+    infoText: {
         fontSize: 12,
         fontFamily: 'Poppins-Regular',
-        color: '#888',
+        color: COLORS.textTertiary,
         flex: 1,
+        lineHeight: 17,
     },
-    cardArrow: {
-        padding: 4,
-        marginLeft: 8,
+
+    // ─── Botón circular ───────────────────────────────────────
+    arrowBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.brand,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 12,
+        elevation: 4,
+        shadowColor: COLORS.brand,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.35,
+        shadowRadius: 6,
     },
+
+    // ─── Empty state ──────────────────────────────────────────
     emptyState: {
         flex: 1,
         alignItems: 'center',
@@ -339,30 +426,33 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: 18,
         fontFamily: 'Poppins-Bold',
-        color: '#222',
+        color: COLORS.textPrimary,
         textAlign: 'center',
     },
     emptySubtitle: {
         fontSize: 14,
         fontFamily: 'Poppins-Regular',
-        color: '#888',
+        color: COLORS.textSecondary,
         textAlign: 'center',
-        lineHeight: 20,
+        lineHeight: 22,
     },
+
+    // ─── Skeleton ─────────────────────────────────────────────
     skeletonCard: {
-        height: 200,
-        borderRadius: 20,
-        backgroundColor: '#e8e8e8',
+        backgroundColor: COLORS.surface,
     },
-    skeletonIcon: {
-        backgroundColor: '#d0d0d0',
-        marginRight: 14,
+    skeletonBanner: {
+        width: '100%',
+        height: 130,
+        backgroundColor: COLORS.skeleton,
+    },
+    skeletonBody: {
+        padding: 16,
     },
     skeletonLine: {
         height: 12,
         borderRadius: 6,
-        backgroundColor: '#d0d0d0',
-        marginBottom: 8,
+        backgroundColor: COLORS.skeletonLine,
         width: '100%',
     },
 });
