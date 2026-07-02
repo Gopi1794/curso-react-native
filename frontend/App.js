@@ -20,6 +20,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 // Navegación
 import AppNavigator from './navigation/AppNavigator';
 import RepartidorStack from './navigation/RepartidorStack';
+import SuperAdminStack from './navigation/SuperAdminStack';
 
 // Componentes
 import ComponenteLogin from './components/LoginForm';
@@ -247,6 +248,17 @@ function MainApp() {
           style={styles.loadingLogo}
         />
       </View>
+    );
+  }
+
+  // SuperAdmin — panel de gestión de tenants
+  if (isLoggedIn && userRol === 'superadmin') {
+    return (
+      <NavigationContainer>
+        <StatusBar style="dark" translucent backgroundColor="transparent" />
+        <SuperAdminStack />
+        <FlashMessageWrapper />
+      </NavigationContainer>
     );
   }
 

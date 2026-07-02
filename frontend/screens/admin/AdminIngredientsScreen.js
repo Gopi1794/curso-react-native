@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, FlatList, TouchableOpacity,
-    TextInput, Modal, ActivityIndicator, StatusBar, Alert,
+    TextInput, Modal, ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppHeader from '../../components/common/AppHeader';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
 
@@ -136,11 +136,21 @@ export default function AdminIngredientsScreen({ navigation }) {
     );
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-            <AppHeader title="Ingredientes" subtitle={`${ingredientes.length} registrados`} onBack={() => navigation.goBack()} />
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+            <LinearGradient colors={['#FF8700', '#FF5500']} style={styles.header}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <Ionicons name="arrow-back" size={22} color="#fff" />
+                    </TouchableOpacity>
+                    <View style={styles.headerCenter}>
+                        <Text style={styles.headerTitle}>Ingredientes</Text>
+                        <Text style={styles.headerSub}>{ingredientes.length} registrados</Text>
+                    </View>
+                    <View style={{ width: 38 }} />
+                </View>
+            </LinearGradient>
 
-            <View style={[styles.body, { paddingTop: insets.top + 76 }]}>
+            <View style={styles.body}>
                 <View style={styles.searchRow}>
                     <View style={styles.searchBox}>
                         <Ionicons name="search-outline" size={18} color="#aaa" style={{ marginRight: 8 }} />
@@ -236,7 +246,13 @@ export default function AdminIngredientsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8F8F8' },
-    body: { flex: 1, paddingHorizontal: 16 },
+    header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    backBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+    headerCenter: { alignItems: 'center' },
+    headerTitle: { fontSize: 20, fontFamily: 'Poppins-Bold', color: '#fff' },
+    headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 1 },
+    body: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
 
     searchRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
     searchBox: {

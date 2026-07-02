@@ -18,6 +18,8 @@ import AdminRecetasScreen from '../screens/admin/AdminRecetasScreen';
 import AdminPedidosScreen from '../screens/admin/AdminPedidosScreen';
 import AdminRepartidoresScreen from '../screens/admin/AdminRepartidoresScreen';
 import NotificationsFeedScreen from '../screens/admin/NotificationsFeedScreen';
+import AdminOnboardingScreen from '../screens/admin/AdminOnboardingScreen';
+import AdminStatsScreen from '../screens/admin/AdminStatsScreen';
 import FoodDetailScreen from '../screens/food/FoodDetailScreen';
 import PromoFoodDetailScreen from '../screens/food/PromoFoodDetailScreen';
 
@@ -44,6 +46,8 @@ export default function ProfileStack() {
             <Stack.Screen name="AdminPedidos" component={AdminPedidosScreen} />
             <Stack.Screen name="AdminRepartidores" component={AdminRepartidoresScreen} />
             <Stack.Screen name="NotificationsFeed" component={NotificationsFeedScreen} />
+            <Stack.Screen name="AdminOnboarding" component={AdminOnboardingScreen} />
+            <Stack.Screen name="AdminStats" component={AdminStatsScreen} />
             <Stack.Screen name="AdminFoodDetail" component={FoodDetailScreen} />
             <Stack.Screen name="AdminPromoFoodDetail" component={PromoFoodDetailScreen} />
         </Stack.Navigator>

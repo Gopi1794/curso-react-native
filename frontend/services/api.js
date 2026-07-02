@@ -307,6 +307,14 @@ const admin = {
         getByRestaurante: (restauranteId) => request(`/api/admin/recetas/${restauranteId}`),
         updateCantidad: (id, cantidad_usada) => request(`/api/admin/recetas/item/${id}`, { method: 'PUT', body: JSON.stringify({ cantidad_usada }) }),
     },
+    stats: {
+        get: (restauranteId) => request(`/api/admin/stats/${restauranteId}`),
+    },
+    restaurante: {
+        getInfo: (restauranteId) => request(`/api/admin/restaurante/${restauranteId}`),
+        updateInfo: (restauranteId, data) => request(`/api/admin/restaurante/${restauranteId}`, { method: 'PUT', body: JSON.stringify(data) }),
+        createRepartidor: (data) => request('/api/admin/repartidores', { method: 'POST', body: JSON.stringify(data) }),
+    },
     platos: {
         getAll: (restauranteId) => request(`/api/admin/platos/${restauranteId}`),
         create: (restauranteId, data) => request(`/api/admin/platos/${restauranteId}`, { method: 'POST', body: JSON.stringify(data) }),
@@ -314,6 +322,15 @@ const admin = {
         update: (id, data) => request(`/api/admin/platos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         remove: (id) => request(`/api/admin/platos/${id}`, { method: 'DELETE' }),
     },
+};
+
+// ── SUPERADMIN ────────────────────────────────────────────
+const superadmin = {
+    getStats: () => request('/api/superadmin/stats'),
+    getTenants: () => request('/api/superadmin/tenants'),
+    getTenantStats: (id) => request(`/api/superadmin/tenants/${id}/stats`),
+    createTenant: (data) => request('/api/superadmin/tenants', { method: 'POST', body: JSON.stringify(data) }),
+    toggleTenant: (id) => request(`/api/superadmin/tenants/${id}/toggle`, { method: 'PUT' }),
 };
 
 // ── SUPPORT ───────────────────────────────────────────────
@@ -332,4 +349,4 @@ const token = {
 };
 
 export { API_BASE_URL as API_URL };
-export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, admin, repartidor, token };
+export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, admin, repartidor, superadmin, token };

@@ -8,6 +8,8 @@ const stockCtrl    = require('../controllers/adminStockController');
 const ingCtrl      = require('../controllers/ingredientesController');
 const recetasCtrl  = require('../controllers/adminRecetasController');
 const pedidosCtrl  = require('../controllers/adminPedidosController');
+const restCtrl     = require('../controllers/adminRestauranteController');
+const statsCtrl    = require('../controllers/adminStatsController');
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -20,6 +22,14 @@ const requireAdmin = (req, res, next) => {
 };
 
 router.use(authMiddleware, requireAdmin);
+
+// ── Stats ─────────────────────────────────────────────────
+router.get('/stats/:restauranteId', statsCtrl.getStats);
+
+// ── Restaurante ───────────────────────────────────────────
+router.get('/restaurante/:restauranteId',  restCtrl.getInfo);
+router.put('/restaurante/:restauranteId',  restCtrl.updateInfo);
+router.post('/repartidores',               restCtrl.createRepartidor);
 
 // ── Upload ────────────────────────────────────────────────
 router.post('/upload', upload.single('image'), uploadCtrl.uploadImage);

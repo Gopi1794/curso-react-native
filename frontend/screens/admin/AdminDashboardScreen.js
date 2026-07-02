@@ -8,6 +8,14 @@ import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 
 const CARDS = [
     {
+        key: 'stats',
+        screen: 'AdminStats',
+        title: 'Estadísticas',
+        subtitle: 'Revenue, pedidos y top platos',
+        icon: 'bar-chart-outline',
+        colors: ['#0F4C75', '#1B6CA8'],
+    },
+    {
         key: 'platos',
         screen: 'AdminPlatos',
         title: 'Platos del menú',
@@ -77,6 +85,21 @@ export default function AdminDashboardScreen({ navigation }) {
                 contentContainerStyle={[styles.content, { paddingTop: insets.top + 76 }]}
                 showsVerticalScrollIndicator={false}
             >
+                <TouchableOpacity
+                    style={styles.onboardingBanner}
+                    onPress={() => navigation.navigate('AdminOnboarding')}
+                    activeOpacity={0.85}
+                >
+                    <View style={styles.onboardingIcon}>
+                        <Ionicons name="rocket-outline" size={20} color="#FF8700" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.onboardingTitle}>Configuración inicial</Text>
+                        <Text style={styles.onboardingSub}>Completá los 5 pasos para arrancar</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#FF8700" />
+                </TouchableOpacity>
+
                 <Text style={styles.greeting}>¿Qué querés gestionar?</Text>
 
                 {CARDS.map(card => (
@@ -125,4 +148,15 @@ const styles = StyleSheet.create({
     cardText: { flex: 1 },
     cardTitle: { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#fff', marginBottom: 2 },
     cardSub: { fontSize: 12, fontFamily: 'Poppins-Regular', color: 'rgba(255,255,255,0.8)' },
+    onboardingBanner: {
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        backgroundColor: '#FFF7ED', borderRadius: 14, padding: 14,
+        borderWidth: 1, borderColor: '#FFEDD5', marginBottom: 16,
+    },
+    onboardingIcon: {
+        width: 38, height: 38, borderRadius: 19,
+        backgroundColor: '#FFEDD5', justifyContent: 'center', alignItems: 'center',
+    },
+    onboardingTitle: { fontSize: 14, fontWeight: '700', color: '#92400E' },
+    onboardingSub: { fontSize: 12, color: '#B45309', marginTop: 1 },
 });
