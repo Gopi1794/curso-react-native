@@ -115,7 +115,7 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
                 telefono: response.user.telefono,
                 rol: response.user.rol,
                 estado: response.user.estado,
-                avatar: require('../assets/img/usuario-img.jpg'),
+                avatar_url: response.user.avatar_url || null,
                 token: response.token,
             }));
 
@@ -162,7 +162,7 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
                 telefono: result.user.telefono,
                 rol: result.user.rol,
                 estado: result.user.estado,
-                avatar: require('../assets/img/usuario-img.jpg'),
+                avatar_url: result.user.avatar_url || null,
                 token: result.token,
             }));
             await AsyncStorage.setItem('showWelcomePopup', 'true');

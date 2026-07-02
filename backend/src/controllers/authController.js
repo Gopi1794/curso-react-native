@@ -235,7 +235,8 @@ exports.login = async (req, res) => {
                 email: user.email,
                 telefono: user.telefono,
                 rol: user.rol,
-                estado: user.estado
+                estado: user.estado,
+                avatar_url: user.avatar_url || null,
             }
         });
 
@@ -364,7 +365,7 @@ exports.googleLogin = async (req, res) => {
 exports.getUserProfile = async (req, res) => {
     try {
         const result = await db.query(
-            `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado, fecha_creacion
+            `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado, avatar_url, fecha_creacion
              FROM usuarios WHERE id = $1`,
             [req.user.userId]
         );

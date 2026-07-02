@@ -167,7 +167,7 @@ function MainApp() {
           telefono: response.user.telefono,
           rol: response.user.rol,
           estado: response.user.estado,
-          avatar: require('./assets/img/usuario-img.jpg'),
+          avatar_url: response.user.avatar_url || null,
           token: savedToken,
         }));
 
