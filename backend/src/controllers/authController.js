@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../config/database');
 const emailService = require('../services/emailService');
-const { revokeToken } = require('../middleware/authMiddleware');
 
 // Genera código de 6 dígitos
 const generateVerificationCode = () => {
@@ -164,22 +163,53 @@ exports.login = async (req, res) => {
 
         const result = await db.query(
             `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado,
-                    email_verificado, avatar_url, password_hash
+                    email_verificado, avatar_url, password_hash,
+                    login_attempts, locked_until
              FROM usuarios WHERE email = $1`,
             [email.trim().toLowerCase()]
         );
 
+        // Siempre ejecutar bcrypt para evitar timing attacks (aunque el usuario no exista)
         const DUMMY_HASH = '$2b$12$invalidhashfortimingattackprotection000000000000000000';
         const user = result.rows[0] || null;
         const hashToCompare = user ? user.password_hash : DUMMY_HASH;
         const isPasswordValid = await bcrypt.compare(password, hashToCompare);
 
-        if (!user || !isPasswordValid) {
-            return res.status(401).json({
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
+        }
+
+        // Verificar bloqueo temporal (independientemente de la contraseña)
+        if (user.locked_until && new Date(user.locked_until) > new Date()) {
+            const minutesLeft = Math.ceil((new Date(user.locked_until) - Date.now()) / 60000);
+            return res.status(429).json({
                 success: false,
-                message: 'Credenciales incorrectas'
+                message: `Cuenta bloqueada por demasiados intentos. Intentá de nuevo en ${minutesLeft} minuto${minutesLeft !== 1 ? 's' : ''}.`,
             });
         }
+
+        if (!isPasswordValid) {
+            const newAttempts = (user.login_attempts || 0) + 1;
+            const shouldLock  = newAttempts >= 10;
+            await db.query(
+                `UPDATE usuarios
+                 SET login_attempts = $1,
+                     locked_until   = $2
+                 WHERE id = $3`,
+                [
+                    newAttempts,
+                    shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null,
+                    user.id,
+                ]
+            );
+            return res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
+        }
+
+        // Login exitoso — resetear intentos
+        await db.query(
+            'UPDATE usuarios SET login_attempts = 0, locked_until = NULL WHERE id = $1',
+            [user.id]
+        );
 
         if (user.estado !== 'activo') {
             return res.status(403).json({
@@ -246,14 +276,16 @@ exports.login = async (req, res) => {
 };
 
 // ── LOGOUT ────────────────────────────────────────────────
-exports.logout = (req, res) => {
-    if (req.token) {
-        revokeToken(req.token);
+exports.logout = async (req, res) => {
+    try {
+        await db.query(
+            'UPDATE usuarios SET last_logout_at = NOW() WHERE id = $1',
+            [req.user.userId]
+        );
+    } catch (err) {
+        console.error('logout last_logout_at:', err);
     }
-    res.json({
-        success: true,
-        message: 'Sesión cerrada correctamente'
-    });
+    res.json({ success: true, message: 'Sesión cerrada correctamente' });
 };
 
 // ── GOOGLE LOGIN ──────────────────────────────────────────
