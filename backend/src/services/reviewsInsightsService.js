@@ -87,7 +87,7 @@ async function getInsights(restauranteIds) {
          JOIN menu_items m ON m.id = c.menu_item_id
          WHERE m.restaurante_id = ANY($1)
            AND ai_categoria IS NOT NULL
-           AND c.fecha_creacion >= NOW() - INTERVAL '30 days'
+           AND c.fecha_creacion >= NOW() - INTERVAL '90 days'
          GROUP BY ai_categoria, ai_sentimiento
          ORDER BY total DESC`,
         [ids]
@@ -103,7 +103,7 @@ async function getInsights(restauranteIds) {
          WHERE m.restaurante_id = ANY($1)
            AND c.ai_sentimiento = 'negativo'
            AND c.ai_categoria IS NOT NULL
-           AND c.fecha_creacion >= NOW() - INTERVAL '30 days'
+           AND c.fecha_creacion >= NOW() - INTERVAL '90 days'
          ORDER BY c.fecha_creacion DESC
          LIMIT 5`,
         [ids]
@@ -120,7 +120,7 @@ async function getInsights(restauranteIds) {
          JOIN menu_items m ON m.id = c.menu_item_id
          WHERE m.restaurante_id = ANY($1)
            AND ai_categoria IS NOT NULL
-           AND c.fecha_creacion >= NOW() - INTERVAL '30 days'`,
+           AND c.fecha_creacion >= NOW() - INTERVAL '90 days'`,
         [ids]
     );
 
