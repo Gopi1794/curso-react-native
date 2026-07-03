@@ -121,26 +121,57 @@ function MainApp() {
     checkAuthenticationStatus();
   }, []);
 
-  // Listener: cuando llega una notificación de pago aprobado por MP (pago diferido)
+  // Navega a la pantalla correcta según el tipo de notificación
+  const handleNotificationNav = (data) => {
+    if (!navigationRef.isReady() || !data?.type) return;
+    switch (data.type) {
+      case 'pago_aprobado':
+      case 'estado_pedido':
+        navigationRef.navigate('OrdersTab', {
+          screen: 'OrderDetail',
+          params: { orderId: data.pedido_id ?? data.orderId },
+        });
+        break;
+      case 'new_order':
+      case 'nuevo_pedido':
+        // Admin: ir al home donde está el panel de pedidos
+        navigationRef.navigate('HomeTab');
+        break;
+      case 'nuevo_reparto':
+        // Repartidor — su stack ya tiene el listado como pantalla principal
+        break;
+      default:
+        navigationRef.navigate('HomeTab');
+    }
+  };
+
+  // Listeners de notificaciones push
   useEffect(() => {
-    const sub = Notifications.addNotificationReceivedListener(notification => {
+    // En foreground: si es pago aprobado, limpiar carrito inmediatamente
+    const foregroundSub = Notifications.addNotificationReceivedListener(notification => {
       const data = notification.request.content.data;
-      if (data?.type === 'pago_aprobado') {
-        dispatch(clearCart());
-      }
+      if (data?.type === 'pago_aprobado') dispatch(clearCart());
     });
-    const resSub = Notifications.addNotificationResponseReceivedListener(response => {
+
+    // El usuario toca la notificación (foreground, background o app cerrada)
+    const tapSub = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
-      if (data?.type === 'pago_aprobado') {
-        dispatch(clearCart());
-        if (navigationRef.isReady()) {
-          navigationRef.navigate('OrdersTab');
-        }
+      if (data?.type === 'pago_aprobado') dispatch(clearCart());
+      handleNotificationNav(data);
+    });
+
+    // App abierta desde notificación con la app cerrada
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response) {
+        const data = response.notification.request.content.data;
+        if (data?.type === 'pago_aprobado') dispatch(clearCart());
+        handleNotificationNav(data);
       }
     });
+
     return () => {
-      sub.remove();
-      resSub.remove();
+      foregroundSub.remove();
+      tapSub.remove();
     };
   }, [dispatch]);
 
