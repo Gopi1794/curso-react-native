@@ -1,4 +1,7 @@
 const db = require('../config/database');
+const cache = require('../utils/cache');
+
+const MENU_TTL = 5 * 60 * 1000; // 5 minutos
 
 // ── GET ALL RESTAURANTS ───────────────────────────────────
 // GET /api/restaurants
@@ -81,6 +84,10 @@ exports.getMenu = async (req, res) => {
                 message: 'ID de restaurante inválido'
             });
         }
+
+        const cacheKey = `menu:${id}:${category || 'all'}`;
+        const cached = cache.get(cacheKey);
+        if (cached) return res.json(cached);
 
         // Verificar que el restaurante exista
         const restaurantCheck = await db.query(
@@ -175,13 +182,15 @@ exports.getMenu = async (req, res) => {
             return { ...item, ingredientes, ingredientes_detalle };
         });
 
-        res.json({
+        const response = {
             success: true,
             restaurante_id: parseInt(id),
             category: category || 'all',
             count: items.length,
             items
-        });
+        };
+        cache.set(cacheKey, response, MENU_TTL);
+        res.json(response);
 
     } catch (error) {
         console.error('Error en getMenu:', error);

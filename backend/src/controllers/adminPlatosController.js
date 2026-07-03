@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const cache = require('../utils/cache');
 
 exports.getAll = async (req, res) => {
     try {
@@ -34,6 +35,7 @@ exports.create = async (req, res) => {
              RETURNING id, nombre, precio, categoria, descripcion, imagen_url, disponible`,
             [restauranteId, nombre.trim(), parseFloat(precio), categoria.trim(), descripcion?.trim() || null, imagen_url || null]
         );
+        cache.delByPrefix(`menu:${restauranteId}:`);
         res.status(201).json({ success: true, plato: result.rows[0] });
     } catch (error) {
         console.error('Error en create plato:', error);
@@ -53,10 +55,11 @@ exports.update = async (req, res) => {
                  descripcion = COALESCE($4, descripcion),
                  imagen_url = COALESCE($5, imagen_url)
              WHERE id = $6
-             RETURNING id, nombre, precio, categoria, descripcion, imagen_key, imagen_url, disponible`,
+             RETURNING id, nombre, precio, categoria, descripcion, imagen_key, imagen_url, disponible, restaurante_id`,
             [nombre || null, precio ? parseFloat(precio) : null, categoria || null, descripcion ?? null, imagen_url ?? null, id]
         );
         if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Plato no encontrado' });
+        cache.delByPrefix(`menu:${result.rows[0].restaurante_id}:`);
         res.json({ success: true, plato: result.rows[0] });
     } catch (error) {
         console.error('Error en update plato:', error);
@@ -81,12 +84,13 @@ exports.toggleDisponible = async (req, res) => {
     try {
         const result = await db.query(
             `UPDATE menu_items SET disponible = NOT disponible WHERE id = $1
-             RETURNING id, nombre, disponible`,
+             RETURNING id, nombre, disponible, restaurante_id`,
             [id]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Plato no encontrado' });
         }
+        cache.delByPrefix(`menu:${result.rows[0].restaurante_id}:`);
         res.json({ success: true, plato: result.rows[0] });
     } catch (error) {
         console.error('Error en toggleDisponible:', error);
