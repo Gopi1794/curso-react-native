@@ -1,6 +1,7 @@
 import { View, StyleSheet, Dimensions, Animated, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useEffect } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -11,6 +12,7 @@ const CIRCLE_SIZE = 54;
 export const FLOATING_TAB_BAR_HEIGHT = 162;
 
 export default function FloatingTabBar({ state, navigation, tabConfig }) {
+    const { bottom: bottomInset } = useSafeAreaInsets();
     const tabCount = tabConfig.length;
     const itemWidth = TAB_BAR_WIDTH / tabCount;
     const circleOffset = (itemWidth - CIRCLE_SIZE) / 2;
@@ -41,7 +43,7 @@ export default function FloatingTabBar({ state, navigation, tabConfig }) {
     }, [state.index]);
 
     return (
-        <View style={[styles.tabBar, { width: TAB_BAR_WIDTH, marginHorizontal: (screenWidth - TAB_BAR_WIDTH) / 2 }]}>
+        <View style={[styles.tabBar, { width: TAB_BAR_WIDTH, marginHorizontal: (screenWidth - TAB_BAR_WIDTH) / 2, bottom: 16 + bottomInset }]}>
             <Animated.View
                 style={[styles.activeCircle, { transform: [{ translateX: slideX }], top: (72 - CIRCLE_SIZE) / 2 }]}
             />
@@ -85,7 +87,6 @@ export default function FloatingTabBar({ state, navigation, tabConfig }) {
 const styles = StyleSheet.create({
     tabBar: {
         position: 'absolute',
-        bottom: 40,
         height: 74,
         backgroundColor: 'rgba(255, 255, 255, 0.97)',
         borderColor: '#ff8000',
