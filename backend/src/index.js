@@ -23,6 +23,23 @@ const superadminRouter   = require('./routers/superadmin');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Rate limiting ──────────────────────────────────────────
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 10,
+    message: { success: false, message: 'Demasiados intentos. Esperá 15 minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minuto
+    max: 120,
+    message: { success: false, message: 'Demasiadas solicitudes. Esperá un momento.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // ── Middleware global ──────────────────────────────────────
 app.set('trust proxy', 1);
 app.use(helmet());
@@ -46,20 +63,20 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ── Rutas ─────────────────────────────────────────────────
-app.use('/api/auth',        authRouter);
-app.use('/api/users',       usersRouter);
-app.use('/api/restaurants',      restaurantsRouter);
-app.use('/api/recommendations',  recommendationsRouter);
-app.use('/api/orders',      ordersRouter);
-app.use('/api/payments',    paymentsRouter);
-app.use('/api/cupones',     cuponesRouter);
-app.use('/api/menu-items/:menuItemId/comentarios', comentariosRouter);
-app.use('/api/favorites',   favoritosRouter);
-app.use('/api/support',       supportRouter);
-app.use('/api/admin/ingredientes', ingredientesRouter);
-app.use('/api/admin',              adminRouter);
-app.use('/api/repartidor',         repartidorRouter);
-app.use('/api/superadmin',         superadminRouter);
+app.use('/api/auth',        authLimiter, authRouter);
+app.use('/api/users',       apiLimiter, usersRouter);
+app.use('/api/restaurants',      apiLimiter, restaurantsRouter);
+app.use('/api/recommendations',  apiLimiter, recommendationsRouter);
+app.use('/api/orders',      apiLimiter, ordersRouter);
+app.use('/api/payments',    apiLimiter, paymentsRouter);
+app.use('/api/cupones',     apiLimiter, cuponesRouter);
+app.use('/api/menu-items/:menuItemId/comentarios', apiLimiter, comentariosRouter);
+app.use('/api/favorites',   apiLimiter, favoritosRouter);
+app.use('/api/support',       apiLimiter, supportRouter);
+app.use('/api/admin/ingredientes', apiLimiter, ingredientesRouter);
+app.use('/api/admin',              apiLimiter, adminRouter);
+app.use('/api/repartidor',         apiLimiter, repartidorRouter);
+app.use('/api/superadmin',         apiLimiter, superadminRouter);
 
 // ── Health check ───────────────────────────────────────────
 app.get('/health', async (req, res) => {
