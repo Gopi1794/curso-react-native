@@ -356,7 +356,7 @@ exports.mpWebhook = async (req, res) => {
             );
 
             await client.query(
-                "UPDATE pedidos SET estado = 'preparando' WHERE id = $1 AND estado = 'pendiente'",
+                "UPDATE pedidos SET estado = 'en_preparacion' WHERE id = $1 AND estado = 'pendiente'",
                 [pedidoId]
             );
 
