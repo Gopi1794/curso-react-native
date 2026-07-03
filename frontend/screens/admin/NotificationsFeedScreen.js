@@ -90,7 +90,7 @@ export default function NotificationsFeedScreen({ navigation }) {
                 onPress={() => handleItemPress(item)}
                 activeOpacity={0.7}
             >
-                <View style={[styles.iconWrap, { backgroundColor: cfg.color + '22' }]}>
+                <View style={styles.iconWrap}>
                     <Ionicons name={cfg.icon} size={22} color={cfg.color} />
                 </View>
                 <View style={styles.itemText}>
