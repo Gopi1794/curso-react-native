@@ -105,7 +105,7 @@ export default function RecommendationsSection({ restauranteId, onItemPress }) {
 }
 
 const styles = StyleSheet.create({
-    section: { marginBottom: 8 },
+    section: { marginBottom: 48 },
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 20, marginBottom: 12,
@@ -119,16 +119,15 @@ const styles = StyleSheet.create({
     },
     aiBadgeText: { fontFamily: 'Poppins-Bold', fontSize: 9, color: '#fff', letterSpacing: 0.5 },
 
-    list: { paddingHorizontal: 16, gap: 12 },
+    list: { paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
 
     card: {
         width: 140, backgroundColor: '#fff', borderRadius: 16,
-        overflow: 'hidden',
         shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
     },
-    cardImage: { width: '100%', height: 90 },
-    cardBody: { padding: 10, gap: 4 },
+    cardImage: { width: '100%', height: 90, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+    cardBody: { padding: 10, paddingBottom: 14, gap: 4 },
     cardName: { fontFamily: 'Poppins-SemiBold', fontSize: 12, color: '#1a1a1a' },
     razonRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     razon: { fontFamily: 'Poppins-Regular', fontSize: 10, color: '#FF8700', flex: 1 },
