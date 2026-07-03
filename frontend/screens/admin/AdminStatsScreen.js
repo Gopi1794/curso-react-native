@@ -309,7 +309,7 @@ export default function AdminStatsScreen({ navigation }) {
             <ScrollView
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" progressViewOffset={insets.top + 60} />}
             >
                 {/* Hoy */}
                 <SectionTitle>Hoy</SectionTitle>

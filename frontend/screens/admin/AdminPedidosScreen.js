@@ -235,7 +235,7 @@ if (pedRes.success) setPedidos(pedRes.pedidos);
                     style={{ flex: 1 }}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} progressViewOffset={insets.top + 76} />
                     }
                     ListEmptyComponent={
                         <View style={styles.empty}>

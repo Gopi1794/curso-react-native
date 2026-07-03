@@ -105,7 +105,7 @@ export default function AdminRepartidoresScreen({ navigation }) {
                 contentContainerStyle={[styles.list, { paddingTop: insets.top + 44 + 16, paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} progressViewOffset={insets.top + 60} />
                 }
                 ListHeaderComponent={repartidores.length > 0 ? (
                     <View style={styles.totalCard}>

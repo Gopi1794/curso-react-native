@@ -53,7 +53,7 @@ export default function RepartidorHistorialScreen() {
                 renderItem={renderItem}
                 contentContainerStyle={[styles.list, { paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} progressViewOffset={insets.top + 60} />}
                 ListEmptyComponent={loading ? null : (
                     <View style={styles.empty}>
                         <Ionicons name="time-outline" size={52} color="#ddd" />

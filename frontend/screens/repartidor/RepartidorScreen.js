@@ -346,7 +346,7 @@ export default function RepartidorScreen({ navigation }) {
                 contentContainerStyle={[styles.list, { paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" colors={['#FF8700']} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" colors={['#FF8700']} progressViewOffset={insets.top + 70} />
                 }
                 ListHeaderComponent={(
                     <View style={styles.resumenCard}>

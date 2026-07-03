@@ -110,7 +110,7 @@ export default function SuperAdminTenantDetailScreen({ route, navigation }) {
 
             <ScrollView
                 contentContainerStyle={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" progressViewOffset={insets.top + 60} />}
             >
                 {/* Status card */}
                 <View style={[styles.statusCard, { borderColor: isActivo ? '#10B981' : '#EF4444' }]}>

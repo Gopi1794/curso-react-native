@@ -232,7 +232,7 @@ export default function SuperAdminDashboardScreen({ navigation }) {
                     />
                 )}
                 contentContainerStyle={styles.list}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" progressViewOffset={insets.top + 60} />}
                 ListHeaderComponent={
                     <Text style={styles.listHeader}>
                         {tenants.length} {tenants.length === 1 ? 'tenant' : 'tenants'}

@@ -411,6 +411,7 @@ export const ScreenHome = ({ navigation }) => {
                         onRefresh={onRefresh}
                         colors={['#FF8700']}
                         tintColor="#FF8700"
+                        progressViewOffset={(StatusBar.currentHeight || 40) + 60}
                     />
                 }
             >

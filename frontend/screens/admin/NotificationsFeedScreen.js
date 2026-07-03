@@ -117,7 +117,7 @@ export default function NotificationsFeedScreen({ navigation }) {
                 contentContainerStyle={[styles.list, { paddingTop: insets.top + 60, paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} progressViewOffset={insets.top + 60} />
                 }
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
                 ListEmptyComponent={loading ? null : (
