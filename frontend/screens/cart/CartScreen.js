@@ -1,5 +1,5 @@
 // screens/cart/CartScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -18,6 +18,7 @@ import { SvgXml } from 'react-native-svg';
 import { Dialog, Portal, Button, Paragraph } from 'react-native-paper';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MP_LOGO_COLOR } from '../../assets/img/mercadopago/logos';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
@@ -51,6 +52,24 @@ const CartScreen = ({ navigation }) => {
     const [addressPickerVisible, setAddressPickerVisible] = useState(false);
     const [loadingAddresses, setLoadingAddresses] = useState(true);
     const [showAddSheet, setShowAddSheet] = useState(false);
+    const [pendingOrderId, setPendingOrderId] = useState(null);
+
+    const checkPendingOrder = useCallback(async () => {
+        try {
+            const stored = await AsyncStorage.getItem('pendingOrderId');
+            if (!stored) return;
+            const orderStatus = await API.orders.getById(Number(stored));
+            const aprobado = ['confirmado', 'preparando', 'en_preparacion', 'listo', 'entregado'].includes(orderStatus.order?.estado);
+            if (aprobado) {
+                await AsyncStorage.removeItem('pendingOrderId');
+                setPendingOrderId(null);
+            } else {
+                setPendingOrderId(Number(stored));
+            }
+        } catch {
+            setPendingOrderId(null);
+        }
+    }, []);
 
     const loadAddresses = async () => {
         try {
@@ -69,7 +88,10 @@ const CartScreen = ({ navigation }) => {
         }
     };
 
-    useEffect(() => { loadAddresses(); }, []);
+    useEffect(() => {
+        loadAddresses();
+        checkPendingOrder();
+    }, []);
 
     const handleGoBack = () => {
         navigation.goBack();
@@ -263,7 +285,13 @@ const CartScreen = ({ navigation }) => {
                         if (estadoAprobado) break;
                     }
 
-                    dispatch(clearCart());
+                    if (estadoAprobado) {
+                        dispatch(clearCart());
+                        await AsyncStorage.removeItem('pendingOrderId');
+                    } else {
+                        await AsyncStorage.setItem('pendingOrderId', String(savedOrderId));
+                        setPendingOrderId(savedOrderId);
+                    }
                     navigation.navigate('OrderConfirmation', {
                         orderId: savedOrderId,
                         orderTotal: savedTotal,
@@ -271,7 +299,8 @@ const CartScreen = ({ navigation }) => {
                         pagoPendiente: !estadoAprobado,
                     });
                 } catch {
-                    dispatch(clearCart());
+                    await AsyncStorage.setItem('pendingOrderId', String(savedOrderId));
+                    setPendingOrderId(savedOrderId);
                     navigation.navigate('OrderConfirmation', {
                         orderId: savedOrderId,
                         orderTotal: savedTotal,
@@ -582,11 +611,27 @@ const CartScreen = ({ navigation }) => {
                             )}
                         </View>
 
+                        {/* --- Banner pago pendiente --- */}
+                        {pendingOrderId && (
+                            <TouchableOpacity
+                                style={styles.pendingBanner}
+                                onPress={() => navigation.navigate('OrdersTab', { screen: 'OrderDetail', params: { orderId: pendingOrderId } })}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="time-outline" size={20} color="#FF8700" />
+                                <View style={{ flex: 1, marginLeft: 10 }}>
+                                    <Text style={styles.pendingBannerTitle}>Tenés un pago en proceso</Text>
+                                    <Text style={styles.pendingBannerSub}>No podés realizar un nuevo pedido hasta que se confirme. Tocá para ver el estado.</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#FF8700" />
+                            </TouchableOpacity>
+                        )}
+
                         {/* --- Boton efectivo --- */}
                         <TouchableOpacity
-                            style={[styles.efectivoButton, (loadingEfectivo || loadingMP || !selectedAddress) && styles.buttonDisabled]}
+                            style={[styles.efectivoButton, (loadingEfectivo || loadingMP || !selectedAddress || !!pendingOrderId) && styles.buttonDisabled]}
                             onPress={handleEfectivoPayment}
-                            disabled={loadingEfectivo || loadingMP || !selectedAddress}
+                            disabled={loadingEfectivo || loadingMP || !selectedAddress || !!pendingOrderId}
                         >
                             {loadingEfectivo ? (
                                 <ActivityIndicator color="#2E7D32" style={{ flex: 1 }} />
@@ -603,9 +648,9 @@ const CartScreen = ({ navigation }) => {
 
                         {/* --- Boton de pago --- */}
                         <TouchableOpacity
-                            style={[styles.payButton, (loadingMP || loadingEfectivo || !selectedAddress) && styles.buttonDisabled]}
+                            style={[styles.payButton, (loadingMP || loadingEfectivo || !selectedAddress || !!pendingOrderId) && styles.buttonDisabled]}
                             onPress={handleMercadoPagoPayment}
-                            disabled={loadingMP || loadingEfectivo || !selectedAddress}
+                            disabled={loadingMP || loadingEfectivo || !selectedAddress || !!pendingOrderId}
                             accessibilityLabel={`Pagar $${calculateTotal().toFixed(2)}`}
                             accessibilityRole="button"
                         >
@@ -1061,6 +1106,32 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontFamily: 'Poppins-Bold',
         color: '#FF8700',
+    },
+
+    /* Banner pago pendiente */
+    pendingBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF3E0',
+        borderWidth: 1.5,
+        borderColor: '#FF8700',
+        borderRadius: 14,
+        marginHorizontal: 16,
+        marginBottom: 12,
+        padding: 14,
+    },
+    pendingBannerTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        fontFamily: 'Poppins-SemiBold',
+        color: '#E65100',
+        marginBottom: 2,
+    },
+    pendingBannerSub: {
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        color: '#BF360C',
+        lineHeight: 16,
     },
 
     /* Boton efectivo */
