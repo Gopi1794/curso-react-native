@@ -80,9 +80,6 @@ app.use('/api/admin',              apiLimiter, adminRouter);
 app.use('/api/repartidor',         apiLimiter, repartidorRouter);
 app.use('/api/superadmin',         apiLimiter, superadminRouter);
 
-// ── Sentry test (remover después de verificar) ────────────
-app.get('/test-sentry', () => { throw new Error('Test Sentry - borrar este endpoint'); });
-
 // ── Health check ───────────────────────────────────────────
 app.get('/health', async (req, res) => {
     const db = require('./config/database');
