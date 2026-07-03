@@ -72,9 +72,11 @@ async function procesarNuevosComentarios() {
     return { procesados: resultados.length };
 }
 
-async function getInsights(restauranteId) {
+async function getInsights(restauranteIds) {
     // Primero procesa los que no tienen análisis
     await procesarNuevosComentarios();
+
+    const ids = Array.isArray(restauranteIds) ? restauranteIds : [restauranteIds];
 
     // Agrega por categoría (últimos 30 días)
     const porCategoria = await db.query(
@@ -83,12 +85,12 @@ async function getInsights(restauranteId) {
                 COUNT(*) AS total
          FROM comentarios c
          JOIN menu_items m ON m.id = c.menu_item_id
-         WHERE m.restaurante_id = $1
+         WHERE m.restaurante_id = ANY($1)
            AND ai_categoria IS NOT NULL
            AND c.fecha_creacion >= NOW() - INTERVAL '30 days'
          GROUP BY ai_categoria, ai_sentimiento
          ORDER BY total DESC`,
-        [restauranteId]
+        [ids]
     );
 
     // Últimas 5 reseñas negativas con su resumen
@@ -98,13 +100,13 @@ async function getInsights(restauranteId) {
                 m.nombre AS plato, c.fecha_creacion
          FROM comentarios c
          JOIN menu_items m ON m.id = c.menu_item_id
-         WHERE m.restaurante_id = $1
+         WHERE m.restaurante_id = ANY($1)
            AND c.ai_sentimiento = 'negativo'
            AND c.ai_categoria IS NOT NULL
            AND c.fecha_creacion >= NOW() - INTERVAL '30 days'
          ORDER BY c.fecha_creacion DESC
          LIMIT 5`,
-        [restauranteId]
+        [ids]
     );
 
     // Resumen general
@@ -116,10 +118,10 @@ async function getInsights(restauranteId) {
             COUNT(*) AS total
          FROM comentarios c
          JOIN menu_items m ON m.id = c.menu_item_id
-         WHERE m.restaurante_id = $1
+         WHERE m.restaurante_id = ANY($1)
            AND ai_categoria IS NOT NULL
            AND c.fecha_creacion >= NOW() - INTERVAL '30 days'`,
-        [restauranteId]
+        [ids]
     );
 
     return {
