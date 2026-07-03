@@ -323,6 +323,7 @@ exports.createPreference = async (req, res) => {
 // ── WEBHOOK ───────────────────────────────────────────────
 // POST /api/payments/webhook
 exports.mpWebhook = async (req, res) => {
+    const webhookRecibido = Date.now();
     const { type, data } = req.body;
 
     // MP envía ping de validación sin datos — respondemos 200 inmediatamente
@@ -330,9 +331,12 @@ exports.mpWebhook = async (req, res) => {
 
     if (type !== 'payment') return res.sendStatus(200);
 
+    console.log(`[webhook] ▶ Recibido type=${type} payment_id=${data.id} — ${new Date(webhookRecibido).toISOString()}`);
+
     try {
         const mpPayment = new Payment(getMpClient());
         const payment = await mpPayment.get({ id: data.id });
+        console.log(`[webhook] MP consulta resuelta en ${Date.now() - webhookRecibido}ms — status=${payment.status}`);
 
         if (payment.status !== 'approved') return res.sendStatus(200);
 
@@ -357,6 +361,7 @@ exports.mpWebhook = async (req, res) => {
             );
 
             await client.query('COMMIT');
+            console.log(`[webhook] DB actualizada en ${Date.now() - webhookRecibido}ms`);
         } catch (err) {
             await client.query('ROLLBACK');
             throw err;
@@ -376,6 +381,7 @@ exports.mpWebhook = async (req, res) => {
                 `Tu pedido #${pedidoId} fue confirmado y está siendo preparado`,
                 { type: 'pago_aprobado', pedido_id: pedidoId }
             );
+            console.log(`[webhook] Push cliente enviado en ${Date.now() - webhookRecibido}ms`);
         }
 
         // Notificar a todos los admins
@@ -390,10 +396,12 @@ exports.mpWebhook = async (req, res) => {
                 { type: 'nuevo_pedido', pedido_id: pedidoId }
             )
         ));
+        console.log(`[webhook] Push admins enviado en ${Date.now() - webhookRecibido}ms — admins=${admins.rows.length}`);
+        console.log(`[webhook] ✓ Total procesado en ${Date.now() - webhookRecibido}ms`);
 
         res.sendStatus(200);
     } catch (error) {
-        console.error('Error en mpWebhook:', error);
+        console.error(`[webhook] ✗ Error tras ${Date.now() - webhookRecibido}ms:`, error);
         res.sendStatus(500);
     }
 };
