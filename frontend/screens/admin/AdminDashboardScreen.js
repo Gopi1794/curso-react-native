@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -77,9 +77,52 @@ const CARDS = [
         title: 'Insights de reseñas',
         subtitle: 'Análisis IA de comentarios de clientes',
         icon: 'sparkles-outline',
-        colors: ['#4527A0', '#7B1FA2'],
+        colors: ['#7B2FF7', '#FF8700'],
     },
 ];
+
+function CardItem({ card, navigation }) {
+    const shineAnim = useRef(new Animated.Value(0)).current;
+    const isAI = card.key === 'reviews';
+
+    useEffect(() => {
+        if (!isAI) return;
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(shineAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+                Animated.delay(2000),
+            ])
+        ).start();
+    }, []);
+
+    const shineTranslate = shineAnim.interpolate({ inputRange: [0, 1], outputRange: [-80, 380] });
+
+    return (
+        <TouchableOpacity
+            onPress={() => navigation.navigate(card.screen)}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={card.title}
+        >
+            <LinearGradient colors={card.colors} style={styles.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                {isAI && (
+                    <Animated.View style={[
+                        styles.cardShine,
+                        { transform: [{ translateX: shineTranslate }, { skewX: '-15deg' }] },
+                    ]} />
+                )}
+                <View style={styles.cardIcon}>
+                    <Ionicons name={card.icon} size={28} color="#fff" />
+                </View>
+                <View style={styles.cardText}>
+                    <Text style={styles.cardTitle}>{card.title}</Text>
+                    <Text style={styles.cardSub}>{card.subtitle}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={22} color="rgba(255,255,255,0.7)" />
+            </LinearGradient>
+        </TouchableOpacity>
+    );
+}
 
 export default function AdminDashboardScreen({ navigation }) {
     const insets = useSafeAreaInsets();
@@ -111,24 +154,7 @@ export default function AdminDashboardScreen({ navigation }) {
                 <Text style={styles.greeting}>¿Qué querés gestionar?</Text>
 
                 {CARDS.map(card => (
-                    <TouchableOpacity
-                        key={card.key}
-                        onPress={() => navigation.navigate(card.screen)}
-                        activeOpacity={0.85}
-                        accessibilityRole="button"
-                        accessibilityLabel={card.title}
-                    >
-                        <LinearGradient colors={card.colors} style={styles.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                            <View style={styles.cardIcon}>
-                                <Ionicons name={card.icon} size={28} color="#fff" />
-                            </View>
-                            <View style={styles.cardText}>
-                                <Text style={styles.cardTitle}>{card.title}</Text>
-                                <Text style={styles.cardSub}>{card.subtitle}</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={22} color="rgba(255,255,255,0.7)" />
-                        </LinearGradient>
-                    </TouchableOpacity>
+                    <CardItem key={card.key} card={card} navigation={navigation} />
                 ))}
             </ScrollView>
         </View>
@@ -147,6 +173,14 @@ const styles = StyleSheet.create({
         borderRadius: 18, padding: 20, marginBottom: 14,
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15, shadowRadius: 10, elevation: 5,
+        overflow: 'hidden',
+    },
+    cardShine: {
+        position: 'absolute',
+        top: -20,
+        bottom: -20,
+        width: 50,
+        backgroundColor: 'rgba(255,255,255,0.22)',
     },
     cardIcon: {
         width: 52, height: 52, borderRadius: 16,

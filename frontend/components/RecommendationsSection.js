@@ -1,8 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import API from '../services/api';
 import { imageMap } from '../assets/utils/imageMap';
+
+const COLORS = {
+    brand: '#FF8700',
+    ai: '#7B2FF7',
+    text: '#1A1A1A',
+    white: '#FFFFFF',
+    cardBg: '#FFFFFF',
+    sectionBg: '#F8F4FF',
+};
 
 const getImageSource = (key) => {
     const k = Array.isArray(key) ? key[0] : key;
@@ -12,7 +22,6 @@ const getImageSource = (key) => {
         if (typeof src === 'string') return { uri: src };
         if (src?.uri) return { uri: src.uri };
     }
-    // fallback: usar como URI directa (Supabase URL u otro)
     if (typeof k === 'string' && k.startsWith('http')) return { uri: k };
     return null;
 };
@@ -30,16 +39,127 @@ const useShimmer = () => {
     return anim;
 };
 
+const usePulse = () => {
+    const anim = useRef(new Animated.Value(1)).current;
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(anim, { toValue: 1.25, duration: 1000, useNativeDriver: true }),
+                Animated.timing(anim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+            ])
+        ).start();
+    }, []);
+    return anim;
+};
+
+const useBadgeShine = () => {
+    const anim = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(anim, { toValue: 1, duration: 900, useNativeDriver: true }),
+                Animated.delay(2000),
+            ])
+        ).start();
+    }, []);
+    return anim;
+};
+
+const useRotation = () => {
+    const anim = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+        Animated.loop(
+            Animated.timing(anim, { toValue: 1, duration: 4000, useNativeDriver: true })
+        ).start();
+    }, []);
+    return anim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+};
+
 function SkeletonCard() {
     const opacity = useShimmer();
     return (
-        <Animated.View style={[styles.card, { opacity, backgroundColor: '#F0F0F0' }]}>
-            <View style={[styles.cardImage, { backgroundColor: '#E0E0E0' }]} />
-            <View style={{ padding: 10, gap: 6 }}>
-                <View style={{ width: '80%', height: 10, backgroundColor: '#E0E0E0', borderRadius: 5 }} />
-                <View style={{ width: '50%', height: 8, backgroundColor: '#E8E8E8', borderRadius: 4 }} />
-                <View style={{ width: '40%', height: 10, backgroundColor: '#E0E0E0', borderRadius: 5 }} />
+        <Animated.View style={[styles.card, { opacity, backgroundColor: '#EEE8FF' }]}>
+            <View style={[styles.imageContainer, { backgroundColor: '#DDD5F5' }]} />
+            <View style={{ padding: 10, gap: 8 }}>
+                <View style={{ width: '80%', height: 10, backgroundColor: '#DDD5F5', borderRadius: 5 }} />
+                <View style={{ width: '60%', height: 8, backgroundColor: '#E8E0FF', borderRadius: 4 }} />
+                <View style={{ width: '40%', height: 12, backgroundColor: '#DDD5F5', borderRadius: 5 }} />
             </View>
+        </Animated.View>
+    );
+}
+
+function RecommendationCard({ item, onPress, index }) {
+    const entryScale = useRef(new Animated.Value(0.88)).current;
+    const entryOpacity = useRef(new Animated.Value(0)).current;
+    const pressScale = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.spring(entryScale, {
+                toValue: 1,
+                delay: index * 75,
+                tension: 55,
+                friction: 8,
+                useNativeDriver: true,
+            }),
+            Animated.timing(entryOpacity, {
+                toValue: 1,
+                duration: 280,
+                delay: index * 75,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, []);
+
+    const handlePressIn = () => {
+        Animated.spring(pressScale, { toValue: 0.96, useNativeDriver: true, tension: 120, friction: 8 }).start();
+    };
+    const handlePressOut = () => {
+        Animated.spring(pressScale, { toValue: 1, useNativeDriver: true, tension: 120, friction: 8 }).start();
+    };
+
+    const imageSource = getImageSource(item.imagen_key);
+
+    return (
+        <Animated.View style={[
+            styles.cardShadow,
+            { transform: [{ scale: entryScale }, { scale: pressScale }], opacity: entryOpacity },
+        ]}>
+            <TouchableOpacity
+                style={styles.card}
+                onPress={() => onPress(item)}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                activeOpacity={1}
+                accessibilityLabel={`${item.nombre}, $${parseFloat(item.precio).toFixed(2)}`}
+            >
+                <View style={styles.imageContainer}>
+                    {imageSource ? (
+                        <Image source={imageSource} style={styles.cardImage} resizeMode="cover" />
+                    ) : (
+                        <LinearGradient
+                            colors={['#7B2FF7', '#FF8700']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.cardImage}
+                        />
+                    )}
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.6)']}
+                        style={styles.imageOverlay}
+                    />
+                    <Text style={styles.cardNameOverlay} numberOfLines={2}>{item.nombre}</Text>
+                </View>
+
+                <View style={styles.cardBody}>
+                    <View style={styles.razonRow}>
+                        <Ionicons name="sparkles" size={11} color={COLORS.ai} />
+                        <Text style={styles.razon} numberOfLines={2}>{item.razon}</Text>
+                    </View>
+                    <Text style={styles.price}>${parseFloat(item.precio).toFixed(2)}</Text>
+                </View>
+            </TouchableOpacity>
         </Animated.View>
     );
 }
@@ -47,6 +167,10 @@ function SkeletonCard() {
 export default function RecommendationsSection({ restauranteId, onItemPress }) {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const sparkleScale = usePulse();
+    const borderRotate = useRotation();
+    const badgeShine = useBadgeShine();
+    const shineTranslate = badgeShine.interpolate({ inputRange: [0, 1], outputRange: [-60, 200] });
 
     useEffect(() => {
         if (!restauranteId) return;
@@ -59,74 +183,195 @@ export default function RecommendationsSection({ restauranteId, onItemPress }) {
     if (!loading && items.length === 0) return null;
 
     return (
-        <View style={styles.section}>
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <Ionicons name="sparkles" size={16} color="#FF8700" />
-                    <Text style={styles.title}>Para vos</Text>
-                    <View style={styles.aiBadge}>
-                        <Text style={styles.aiBadgeText}>IA</Text>
-                    </View>
-                </View>
-                <Text style={styles.subtitle}>Recomendado por IA</Text>
-            </View>
+        <View style={styles.sectionShadow}>
+            {/* Clip del gradiente rotativo */}
+            <View style={styles.sectionBorderClip}>
+                <Animated.View style={[styles.rotatingBorder, { transform: [{ rotate: borderRotate }] }]}>
+                    <LinearGradient
+                        colors={['#7B2FF7', '#FF8700', '#7B2FF7']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{ flex: 1 }}
+                    />
+                </Animated.View>
 
-            <FlatList
-                data={loading ? [1, 2, 3] : items}
-                keyExtractor={(item, i) => loading ? String(i) : String(item.id)}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.list}
-                renderItem={({ item }) => loading ? (
-                    <SkeletonCard />
-                ) : (
-                    <TouchableOpacity style={styles.card} onPress={() => onItemPress(item)} activeOpacity={0.85}>
-                        <Image
-                            source={getImageSource(item.imagen_key)}
-                            style={styles.cardImage}
-                            resizeMode="cover"
-                        />
-                        <View style={styles.cardBody}>
-                            <Text style={styles.cardName} numberOfLines={1}>{item.nombre}</Text>
-                            <View style={styles.razonRow}>
-                                <Ionicons name="sparkles-outline" size={10} color="#FF8700" />
-                                <Text style={styles.razon} numberOfLines={1}>{item.razon}</Text>
-                            </View>
-                            <Text style={styles.price}>${parseFloat(item.precio).toFixed(2)}</Text>
+                {/* Contenido real de la sección */}
+                <View style={styles.sectionInner}>
+                    <View style={styles.header}>
+                        <View style={styles.headerLeft}>
+                            <Animated.View style={{ transform: [{ scale: sparkleScale }] }}>
+                                <Ionicons name="sparkles" size={18} color={COLORS.ai} />
+                            </Animated.View>
+                            <Text style={styles.title}>Para vos</Text>
                         </View>
-                    </TouchableOpacity>
-                )}
-            />
+                        <View style={styles.aiBadge}>
+                            <LinearGradient
+                                colors={['#7B2FF7', '#FF8700']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={StyleSheet.absoluteFillObject}
+                            />
+                            <Animated.View style={[
+                                styles.badgeShine,
+                                { transform: [{ translateX: shineTranslate }, { skewX: '-15deg' }] },
+                            ]} />
+                            <Ionicons name="sparkles" size={9} color={COLORS.white} />
+                            <Text style={styles.aiBadgeText}>Recomendado por IA</Text>
+                        </View>
+                    </View>
+
+                    <FlatList
+                        data={loading ? [1, 2, 3] : items}
+                        keyExtractor={(item, i) => loading ? String(i) : String(item.id)}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.list}
+                        renderItem={({ item, index }) => loading ? (
+                            <SkeletonCard />
+                        ) : (
+                            <RecommendationCard item={item} onPress={onItemPress} index={index} />
+                        )}
+                    />
+                </View>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    section: { marginBottom: 48 },
+    sectionShadow: {
+        marginBottom: 24,
+        marginHorizontal: 16,
+        borderRadius: 22,
+        shadowColor: '#7B2FF7',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 6,
+    },
+    sectionBorderClip: {
+        borderRadius: 22,
+        padding: 2,
+        overflow: 'hidden',
+    },
+    rotatingBorder: {
+        position: 'absolute',
+        width: 600,
+        height: 600,
+        top: -180,
+        left: -136,
+    },
+    sectionInner: {
+        backgroundColor: COLORS.sectionBg,
+        borderRadius: 20,
+        paddingTop: 16,
+        paddingBottom: 4,
+    },
     header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 20, marginBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        marginBottom: 14,
     },
-    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    title: { fontFamily: 'Poppins-Bold', fontSize: 16, color: '#1a1a1a' },
-    subtitle: { fontFamily: 'Poppins-Regular', fontSize: 12, color: '#999' },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    title: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 18,
+        color: COLORS.text,
+    },
     aiBadge: {
-        backgroundColor: '#FF8700', borderRadius: 6,
-        paddingHorizontal: 6, paddingVertical: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        overflow: 'hidden',
     },
-    aiBadgeText: { fontFamily: 'Poppins-Bold', fontSize: 9, color: '#fff', letterSpacing: 0.5 },
-
-    list: { paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
-
+    badgeShine: {
+        position: 'absolute',
+        top: -10,
+        bottom: -10,
+        width: 30,
+        backgroundColor: 'rgba(255,255,255,0.28)',
+    },
+    aiBadgeText: {
+        fontFamily: 'Poppins-SemiBold',
+        fontSize: 10,
+        color: COLORS.white,
+        letterSpacing: 0.3,
+    },
+    list: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        gap: 12,
+    },
+    cardShadow: {
+        borderRadius: 18,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+    },
     card: {
-        width: 140, backgroundColor: '#fff', borderRadius: 16,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+        width: 155,
+        backgroundColor: COLORS.cardBg,
+        borderRadius: 18,
+        overflow: 'hidden',
     },
-    cardImage: { width: '100%', height: 90, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
-    cardBody: { padding: 10, paddingBottom: 14, gap: 4 },
-    cardName: { fontFamily: 'Poppins-SemiBold', fontSize: 12, color: '#1a1a1a' },
-    razonRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    razon: { fontFamily: 'Poppins-Regular', fontSize: 10, color: '#FF8700', flex: 1 },
-    price: { fontFamily: 'Poppins-Bold', fontSize: 13, color: '#1a1a1a', marginTop: 2 },
+    imageContainer: {
+        width: '100%',
+        height: 108,
+        overflow: 'hidden',
+    },
+    cardImage: {
+        width: '100%',
+        height: '100%',
+    },
+    imageOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '65%',
+    },
+    cardNameOverlay: {
+        position: 'absolute',
+        bottom: 8,
+        left: 10,
+        right: 10,
+        fontFamily: 'Poppins-SemiBold',
+        fontSize: 12,
+        color: COLORS.white,
+        lineHeight: 16,
+    },
+    cardBody: {
+        padding: 10,
+        paddingTop: 9,
+        paddingBottom: 13,
+        gap: 5,
+    },
+    razonRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 5,
+    },
+    razon: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 10,
+        color: COLORS.ai,
+        flex: 1,
+        lineHeight: 14,
+    },
+    price: {
+        fontFamily: 'Poppins-Bold',
+        fontSize: 14,
+        color: COLORS.brand,
+    },
 });
