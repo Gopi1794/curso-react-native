@@ -1,12 +1,14 @@
 import 'react-native-gesture-handler';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+
+export const navigationRef = createNavigationContainerRef();
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Image, Animated, Dimensions } from 'react-native';
 import { Asset } from 'expo-asset';
 import { useState, useEffect, useRef } from 'react';
 import { useAppSelector, useAppDispatch } from './store/hooks';
 import { login, setFavorites } from './store/slices/userSlice';
-import { hydrateCart } from './store/slices/cartSlice';
+import { hydrateCart, clearCart } from './store/slices/cartSlice';
 import { selectRestaurant } from './store/slices/restaurantSlice';
 import { CART_STORAGE_KEY } from './store';
 import { Provider as PaperProvider } from 'react-native-paper';
@@ -118,6 +120,29 @@ function MainApp() {
     checkFirstTimeUser();
     checkAuthenticationStatus();
   }, []);
+
+  // Listener: cuando llega una notificación de pago aprobado por MP (pago diferido)
+  useEffect(() => {
+    const sub = Notifications.addNotificationReceivedListener(notification => {
+      const data = notification.request.content.data;
+      if (data?.type === 'pago_aprobado') {
+        dispatch(clearCart());
+      }
+    });
+    const resSub = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data?.type === 'pago_aprobado') {
+        dispatch(clearCart());
+        if (navigationRef.isReady()) {
+          navigationRef.navigate('OrdersTab');
+        }
+      }
+    });
+    return () => {
+      sub.remove();
+      resSub.remove();
+    };
+  }, [dispatch]);
 
   // Esperar a que Firebase esté listo
   useEffect(() => {
@@ -284,7 +309,7 @@ function MainApp() {
   }
 
   const linking = {
-    prefixes: ['tuappfood://', 'https://tuappfood.com'],
+    prefixes: ['tu-app-food://', 'https://tuappfood.com'],
     config: {
       screens: {
         HomeTab: {
@@ -313,7 +338,7 @@ function MainApp() {
   // Usuario logueado con restaurante seleccionado - mostrar app principal
   if (isLoggedIn) {
     return (
-      <NavigationContainer linking={linking}>
+      <NavigationContainer ref={navigationRef} linking={linking}>
         <StatusBar style="light" translucent backgroundColor="transparent" />
         <AppNavigator />
         <FlashMessageWrapper />

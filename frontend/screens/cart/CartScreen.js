@@ -255,8 +255,11 @@ const CartScreen = ({ navigation }) => {
             if (result.type === 'cancel' || result.type === 'dismiss') {
                 // Consultamos el estado del pedido para saber si el pago fue aprobado
                 try {
+                    // Esperar un momento para que el webhook de MP procese el pago
+                    await new Promise(r => setTimeout(r, 1500));
                     const orderStatus = await API.orders.getById(savedOrderId);
-                    if (orderStatus.success && orderStatus.order?.estado === 'confirmado') {
+                    const estadoAprobado = ['confirmado', 'preparando', 'en_preparacion'].includes(orderStatus.order?.estado);
+                    if (orderStatus.success && estadoAprobado) {
                         dispatch(clearCart());
                         navigation.navigate('OrderConfirmation', {
                             orderId: savedOrderId,
@@ -264,10 +267,11 @@ const CartScreen = ({ navigation }) => {
                             orderItems: savedOrderItems,
                         });
                     } else {
-                        showWarningMessage('Pago pendiente', 'Si realizaste el pago, aparecerá en tus pedidos en unos minutos.');
+                        // Pago pendiente (ej: transferencia bancaria) — el webhook notificará al cliente
+                        showWarningMessage('Pago pendiente', 'Si realizaste el pago, recibirás una notificación cuando sea confirmado.');
                     }
                 } catch {
-                    showWarningMessage('Pago pendiente', 'Si realizaste el pago, aparecerá en tus pedidos en unos minutos.');
+                    showWarningMessage('Pago pendiente', 'Si realizaste el pago, recibirás una notificación cuando sea confirmado.');
                 }
             }
         } catch {

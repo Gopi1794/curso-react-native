@@ -364,6 +364,20 @@ exports.mpWebhook = async (req, res) => {
             client.release();
         }
 
+        // Notificar al cliente que su pago fue aprobado
+        const cliente = await db.query(
+            "SELECT push_token FROM usuarios WHERE id = (SELECT usuario_id FROM pedidos WHERE id = $1)",
+            [pedidoId]
+        );
+        if (cliente.rows[0]?.push_token) {
+            await sendPushNotification(
+                cliente.rows[0].push_token,
+                '¡Pago aprobado!',
+                `Tu pedido #${pedidoId} fue confirmado y está siendo preparado`,
+                { type: 'pago_aprobado', pedido_id: pedidoId }
+            );
+        }
+
         // Notificar a todos los admins
         const admins = await db.query(
             "SELECT push_token FROM usuarios WHERE rol = 'admin' AND push_token IS NOT NULL"
