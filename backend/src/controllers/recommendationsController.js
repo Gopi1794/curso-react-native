@@ -4,6 +4,7 @@ const { getRecommendations } = require('../services/recommendationsService');
 exports.get = async (req, res) => {
     const { restauranteId } = req.params;
     const userId = req.user.userId;
+    console.log(`[Recs] userId=${userId} restauranteId=${restauranteId}`);
 
     try {
         const items = await getRecommendations(userId, restauranteId);
