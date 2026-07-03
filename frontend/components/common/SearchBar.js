@@ -6,6 +6,9 @@ export const SearchBar = ({
     value,
     onChangeText,
     onClearSearch,
+    onFocus,
+    onBlur,
+    onSubmitEditing,
     placeholder = "Buscar...",
     placeholderTextColor = "#999999"
 }) => {
@@ -19,6 +22,9 @@ export const SearchBar = ({
                     placeholderTextColor={placeholderTextColor}
                     value={value}
                     onChangeText={onChangeText}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    onSubmitEditing={onSubmitEditing}
                     returnKeyType="search"
                     autoCorrect={false}
                     autoCapitalize="none"

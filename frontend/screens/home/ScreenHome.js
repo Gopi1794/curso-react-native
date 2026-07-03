@@ -11,13 +11,14 @@ import {
 } from "react-native";
 // Componentes reutilizables
 import { HeaderSection } from '../../components/HeaderSection';
+import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { ErrorState } from '../../components/common/ErrorState';
 import { PromoSection } from '../../components/PromoSection';
 import MenuItem from '../../components/MenuItem';
-import ListSugerencias from '../../components/ListSugerencias';
 import RecommendationsSection from '../../components/RecommendationsSection';
 import WelcomePopup from '../../components/WelcomePopup';
+import RecentSearchesPanel from '../../components/common/RecentSearchesPanel';
 
 // API
 import API from '../../services/api';
@@ -78,27 +79,6 @@ const PromoSkeleton = () => {
     );
 };
 
-const SugerenciasSkeleton = () => {
-    const opacity = useShimmer();
-    return (
-        <View style={skeletonStyles.sugerenciasSection}>
-            {/* Header */}
-            <View style={skeletonStyles.sugerenciasHeader}>
-                <Animated.View style={[skeletonStyles.sugerenciasTitleLine, { opacity }]} />
-                <View style={skeletonStyles.sugerenciasDots}>
-                    {[0, 1, 2].map(i => (
-                        <Animated.View key={i} style={[skeletonStyles.promoDot, { opacity }]} />
-                    ))}
-                </View>
-            </View>
-            {/* Card */}
-            <Animated.View style={[skeletonStyles.sugerenciasCard, { opacity }]}>
-                <View style={skeletonStyles.sugerenciasLeft} />
-                <View style={skeletonStyles.sugerenciasRight} />
-            </Animated.View>
-        </View>
-    );
-};
 
 const skeletonStyles = StyleSheet.create({
     card: {
@@ -162,25 +142,6 @@ const skeletonStyles = StyleSheet.create({
     promoDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E0E0E0' },
     promoDotActive: { width: 20, backgroundColor: '#D0D0D0' },
 
-    // Sugerencias skeleton
-    sugerenciasSection: { minHeight: 217, paddingHorizontal: 16 },
-    sugerenciasHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    sugerenciasTitleLine: { width: 120, height: 14, borderRadius: 7, backgroundColor: '#E0E0E0' },
-    sugerenciasDots: { flexDirection: 'row', gap: 7 },
-    sugerenciasCard: {
-        height: 165,
-        borderRadius: 24,
-        flexDirection: 'row',
-        overflow: 'hidden',
-        backgroundColor: '#F0F0F0',
-    },
-    sugerenciasLeft: { width: '55%', backgroundColor: '#D8D0E8' },
-    sugerenciasRight: { flex: 1, backgroundColor: '#EDEAE4' },
 });
 
 const mapMenuItem = (item) => ({
@@ -207,6 +168,8 @@ export const ScreenHome = ({ navigation }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
+    const [searchFocused, setSearchFocused] = useState(false);
+    const [recentSearches, setRecentSearches] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState("TODOS");
     const [activePromoIndex, setActivePromoIndex] = useState(1);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
@@ -236,6 +199,41 @@ export const ScreenHome = ({ navigation }) => {
     }, [selectedRestaurant]);
 
     useEffect(() => { fetchMenu(); }, [fetchMenu]);
+
+    useEffect(() => {
+        AsyncStorage.getItem('recentSearches')
+            .then(raw => { if (raw) setRecentSearches(JSON.parse(raw)); })
+            .catch(() => {});
+    }, []);
+
+    const saveSearch = useCallback(async (term) => {
+        const trimmed = term.trim();
+        if (!trimmed) return;
+        setRecentSearches(prev => {
+            const updated = [trimmed, ...prev.filter(s => s !== trimmed)].slice(0, 6);
+            AsyncStorage.setItem('recentSearches', JSON.stringify(updated)).catch(() => {});
+            return updated;
+        });
+    }, []);
+
+    const handleRemoveRecentSearch = useCallback((term) => {
+        setRecentSearches(prev => {
+            const updated = prev.filter(s => s !== term);
+            AsyncStorage.setItem('recentSearches', JSON.stringify(updated)).catch(() => {});
+            return updated;
+        });
+    }, []);
+
+    const handleClearAllRecentSearches = useCallback(() => {
+        setRecentSearches([]);
+        AsyncStorage.removeItem('recentSearches').catch(() => {});
+    }, []);
+
+    const handleSelectRecentSearch = useCallback((term) => {
+        setSearchQuery(term);
+        setDebouncedQuery(term);
+        setSearchFocused(false);
+    }, []);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -307,6 +305,11 @@ export const ScreenHome = ({ navigation }) => {
         setDebouncedQuery("");
     }, []);
 
+    const handleSearchSubmit = useCallback(() => {
+        if (searchQuery.trim()) saveSearch(searchQuery);
+        setSearchFocused(false);
+    }, [searchQuery, saveSearch]);
+
     const handlePromoPress = useCallback((promo) => {
         const promoItem = menuItems.find(item => item.id === promo.id);
         const localItem = menuItemsData.find(item => item.id === promo.id);
@@ -336,8 +339,9 @@ export const ScreenHome = ({ navigation }) => {
 
     const handleAddToCart = useCallback((itemId) => {
         const foodItem = menuItems.find(item => item.id === itemId);
+        if (debouncedQuery.trim() && foodItem) saveSearch(foodItem.name);
         navigation.navigate('FoodDetail', { foodItem });
-    }, [menuItems, navigation]);
+    }, [menuItems, navigation, debouncedQuery, saveSearch]);
 
     const navigateToTicket = () => navigation.navigate('Tickets');
     const navigateToCart = () => navigation.navigate('Cart');
@@ -393,6 +397,9 @@ export const ScreenHome = ({ navigation }) => {
                 searchQuery={searchQuery}
                 onSearchChange={handleSearchChange}
                 onClearSearch={handleClearSearch}
+                onSearchFocus={() => setSearchFocused(true)}
+                onSearchBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                onSearchSubmit={handleSearchSubmit}
                 scrollY={scrollY}
             />
 
@@ -401,6 +408,8 @@ export const ScreenHome = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 removeClippedSubviews={true}
+                keyboardDismissMode="on-drag"
+                keyboardShouldPersistTaps="handled"
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
                     { useNativeDriver: false }
@@ -416,6 +425,15 @@ export const ScreenHome = ({ navigation }) => {
                     />
                 }
             >
+                {searchFocused && !debouncedQuery.trim() && recentSearches.length > 0 && (
+                    <RecentSearchesPanel
+                        searches={recentSearches}
+                        onSelect={handleSelectRecentSearch}
+                        onRemove={handleRemoveRecentSearch}
+                        onClearAll={handleClearAllRecentSearches}
+                    />
+                )}
+
                 <View style={styles.topSection}>
                     <CategoryFilter
                         categories={categories}
@@ -478,6 +496,7 @@ export const ScreenHome = ({ navigation }) => {
                         )}
 
                         {loading ? <PromoSkeleton /> : (
+                            <View style={{ marginTop: 16 }}>
                             <PromoSection
                                 promos={promos}
                                 activePromoIndex={activePromoIndex}
@@ -487,16 +506,9 @@ export const ScreenHome = ({ navigation }) => {
                                 promoFlatListRef={promoFlatListRef}
                                 onVerTodas={() => navigation.navigate('AllPromos', { promos })}
                             />
+                            </View>
                         )}
 
-                        <View style={styles.sugerenciasWrapper}>
-                            {loading ? <SugerenciasSkeleton /> : (
-                                <ListSugerencias
-                                    navigation={navigation}
-                                    menuItems={menuItems}
-                                />
-                            )}
-                        </View>
                     </>
                 )}
             </Animated.ScrollView>
@@ -520,7 +532,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: 24,
+        paddingBottom: FLOATING_TAB_BAR_HEIGHT + 24,
     },
     topSection: {
         minHeight: 300,
@@ -537,12 +549,7 @@ const styles = StyleSheet.create({
     menuItemsContent: {
         paddingHorizontal: 15,
     },
-    sugerenciasWrapper: {
-        marginTop: 20,
-        marginBottom: 20,
-        minHeight: 280,
-        paddingVertical: 10,
-    },
+
     searchResultsHeader: {
         paddingHorizontal: 20,
         paddingVertical: 10,

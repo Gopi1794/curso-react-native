@@ -14,6 +14,9 @@ export const HeaderSection = ({
     searchQuery,
     onSearchChange,
     onClearSearch,
+    onSearchFocus,
+    onSearchBlur,
+    onSearchSubmit,
     scrollY,
 }) => {
     const insets = useSafeAreaInsets();
@@ -112,6 +115,9 @@ export const HeaderSection = ({
                 value={searchQuery}
                 onChangeText={onSearchChange}
                 onClearSearch={onClearSearch}
+                onFocus={onSearchFocus}
+                onBlur={onSearchBlur}
+                onSubmitEditing={onSearchSubmit}
                 placeholder="Buscar platos o restaurantes..."
             />
         </View>
