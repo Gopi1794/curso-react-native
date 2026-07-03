@@ -16,6 +16,7 @@ import { ErrorState } from '../../components/common/ErrorState';
 import { PromoSection } from '../../components/PromoSection';
 import MenuItem from '../../components/MenuItem';
 import ListSugerencias from '../../components/ListSugerencias';
+import RecommendationsSection from '../../components/RecommendationsSection';
 import WelcomePopup from '../../components/WelcomePopup';
 
 // API
@@ -466,6 +467,16 @@ export const ScreenHome = ({ navigation }) => {
 
                 {!debouncedQuery.trim() && (
                     <>
+                        {!loading && selectedRestaurant && (
+                            <RecommendationsSection
+                                restauranteId={selectedRestaurant.id}
+                                onItemPress={(item) => {
+                                    const menuItem = menuItems.find(m => m.id === item.id);
+                                    if (menuItem) navigation.navigate('FoodDetail', { foodItem: menuItem });
+                                }}
+                            />
+                        )}
+
                         {loading ? <PromoSkeleton /> : (
                             <PromoSection
                                 promos={promos}

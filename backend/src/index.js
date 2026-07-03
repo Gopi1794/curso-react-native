@@ -5,9 +5,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-const authRouter        = require('./routers/auth');
-const usersRouter       = require('./routers/users');
-const restaurantsRouter = require('./routers/restaurants');
+const authRouter             = require('./routers/auth');
+const usersRouter            = require('./routers/users');
+const restaurantsRouter      = require('./routers/restaurants');
+const recommendationsRouter  = require('./routers/recommendations');
 const ordersRouter      = require('./routers/orders');
 const paymentsRouter    = require('./routers/payments');
 const cuponesRouter     = require('./routers/cupones');
@@ -47,7 +48,8 @@ if (process.env.NODE_ENV !== 'production') {
 // ── Rutas ─────────────────────────────────────────────────
 app.use('/api/auth',        authRouter);
 app.use('/api/users',       usersRouter);
-app.use('/api/restaurants', restaurantsRouter);
+app.use('/api/restaurants',      restaurantsRouter);
+app.use('/api/recommendations',  recommendationsRouter);
 app.use('/api/orders',      ordersRouter);
 app.use('/api/payments',    paymentsRouter);
 app.use('/api/cupones',     cuponesRouter);

@@ -350,5 +350,9 @@ const token = {
     get: () => SecureStore.getItemAsync(TOKEN_KEY),
 };
 
+const recommendations = {
+    get: (restauranteId) => request(`/api/recommendations/${restauranteId}`),
+};
+
 export { API_BASE_URL as API_URL };
-export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, admin, repartidor, superadmin, token };
+export default { auth, users, restaurants, orders, payments, comentarios, cupones, favorites, notifications, support, admin, repartidor, superadmin, token, recommendations };
