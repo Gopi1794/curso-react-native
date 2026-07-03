@@ -19,7 +19,7 @@ async function getRecommendations(userId, restauranteId) {
 
     // Menú disponible del restaurante
     const menu = await db.query(
-        `SELECT mi.id, mi.nombre, mi.categoria, mi.precio, mi.descripcion
+        `SELECT mi.id, mi.nombre, mi.categoria, mi.precio, mi.descripcion, mi.imagen_key
          FROM menu_items mi
          WHERE mi.restaurante_id = $1 AND mi.disponible = TRUE
          ORDER BY mi.categoria, mi.nombre`,
