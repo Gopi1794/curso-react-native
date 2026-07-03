@@ -67,8 +67,11 @@ export default function RecommendationsSection({ restauranteId, onItemPress }) {
                 <View style={styles.headerLeft}>
                     <Ionicons name="sparkles" size={16} color="#FF8700" />
                     <Text style={styles.title}>Para vos</Text>
+                    <View style={styles.aiBadge}>
+                        <Text style={styles.aiBadgeText}>IA</Text>
+                    </View>
                 </View>
-                <Text style={styles.subtitle}>Basado en tus pedidos</Text>
+                <Text style={styles.subtitle}>Recomendado por IA</Text>
             </View>
 
             <FlatList
@@ -110,6 +113,11 @@ const styles = StyleSheet.create({
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     title: { fontFamily: 'Poppins-Bold', fontSize: 16, color: '#1a1a1a' },
     subtitle: { fontFamily: 'Poppins-Regular', fontSize: 12, color: '#999' },
+    aiBadge: {
+        backgroundColor: '#FF8700', borderRadius: 6,
+        paddingHorizontal: 6, paddingVertical: 2,
+    },
+    aiBadgeText: { fontFamily: 'Poppins-Bold', fontSize: 9, color: '#fff', letterSpacing: 0.5 },
 
     list: { paddingHorizontal: 16, gap: 12 },
 
