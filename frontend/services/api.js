@@ -310,7 +310,7 @@ const admin = {
     },
     stats: {
         get: (restauranteId) => request(`/api/admin/stats/${restauranteId}`),
-        getReviewsInsights: (restauranteId) => request(`/api/admin/reviews/insights?restauranteId=${restauranteId}`),
+        getReviewsInsights: (restauranteId) => request(restauranteId ? `/api/admin/reviews/insights?restauranteId=${restauranteId}` : '/api/admin/reviews/insights'),
     },
     restaurante: {
         getInfo: (restauranteId) => request(`/api/admin/restaurante/${restauranteId}`),

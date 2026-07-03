@@ -1,11 +1,20 @@
 const { getInsights } = require('../services/reviewsInsightsService');
+const db = require('../config/database');
 
 // GET /api/admin/reviews/insights?restauranteId=X
 exports.getInsights = async (req, res) => {
-    const restauranteId = req.query.restauranteId || req.user.restauranteId;
+    let restauranteId = req.query.restauranteId;
 
     if (!restauranteId) {
-        return res.status(400).json({ success: false, message: 'Se requiere restauranteId' });
+        const r = await db.query(
+            'SELECT id FROM restaurantes WHERE admin_id = $1 LIMIT 1',
+            [req.user.userId]
+        );
+        restauranteId = r.rows[0]?.id;
+    }
+
+    if (!restauranteId) {
+        return res.status(400).json({ success: false, message: 'No se encontró restaurante para este admin' });
     }
 
     try {

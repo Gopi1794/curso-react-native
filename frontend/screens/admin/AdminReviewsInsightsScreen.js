@@ -68,7 +68,6 @@ function SentimientoBar({ label, value, total, color }) {
 
 export default function AdminReviewsInsightsScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const restauranteId = useAppSelector(state => state.restaurant.selected?.id);
     const [insights, setInsights] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -77,7 +76,7 @@ export default function AdminReviewsInsightsScreen({ navigation }) {
     const load = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setError(false);
         try {
-            const res = await API.admin.stats.getReviewsInsights(restauranteId);
+            const res = await API.admin.stats.getReviewsInsights(undefined);
             if (res.success) {
                 setInsights(res.insights);
                 setError(false);
