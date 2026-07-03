@@ -6,10 +6,14 @@ import { imageMap } from '../assets/utils/imageMap';
 
 const getImageSource = (key) => {
     const k = Array.isArray(key) ? key[0] : key;
+    if (!k) return null;
     const src = imageMap[k];
-    if (!src) return null;
-    if (typeof src === 'string') return { uri: src };
-    if (src?.uri) return { uri: src.uri };
+    if (src) {
+        if (typeof src === 'string') return { uri: src };
+        if (src?.uri) return { uri: src.uri };
+    }
+    // fallback: usar como URI directa (Supabase URL u otro)
+    if (typeof k === 'string' && k.startsWith('http')) return { uri: k };
     return null;
 };
 

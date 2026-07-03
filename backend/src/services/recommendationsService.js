@@ -74,7 +74,7 @@ async function getRecommendations(userId, restauranteId) {
     const result = menu.rows
         .filter(m => recsIds.includes(parseInt(m.id)))
         .map(m => ({ ...m, razon: recsMap[m.id] || recsMap[parseInt(m.id)] }));
-    console.log(`[Recs] matched=${result.length}`);
+    console.log(`[Recs] matched=${result.length}, sample imagen_key=${result[0]?.imagen_key}`);
     return result;
 }
 
