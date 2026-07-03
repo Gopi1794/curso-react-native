@@ -38,7 +38,7 @@ async function analizarComentarios(comentarios) {
         system: PROMPT_SISTEMA,
     });
 
-    const raw = response.content[0].text.trim();
+    const raw = response.content[0].text.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
     const parsed = JSON.parse(raw);
     return parsed.resultados;
 }
