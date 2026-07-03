@@ -253,13 +253,17 @@ const CartScreen = ({ navigation }) => {
             // El usuario cerró el browser — chequeamos el resultado via deep link
             // El webhook ya habrá procesado el pago exitoso en el backend
             if (result.type === 'cancel' || result.type === 'dismiss') {
-                // Consultamos el estado del pedido para saber si el pago fue aprobado
                 try {
-                    // Esperar un momento para que el webhook de MP procese el pago
-                    await new Promise(r => setTimeout(r, 1500));
-                    const orderStatus = await API.orders.getById(savedOrderId);
-                    const estadoAprobado = ['confirmado', 'preparando', 'en_preparacion'].includes(orderStatus.order?.estado);
-                    if (orderStatus.success && estadoAprobado) {
+                    // Reintentar hasta 4 veces — el webhook de MP puede tardar hasta ~5s
+                    let estadoAprobado = false;
+                    for (let intento = 0; intento < 4; intento++) {
+                        await new Promise(r => setTimeout(r, 1500));
+                        const orderStatus = await API.orders.getById(savedOrderId);
+                        estadoAprobado = ['confirmado', 'preparando', 'en_preparacion'].includes(orderStatus.order?.estado);
+                        if (estadoAprobado) break;
+                    }
+
+                    if (estadoAprobado) {
                         dispatch(clearCart());
                         navigation.navigate('OrderConfirmation', {
                             orderId: savedOrderId,
@@ -267,7 +271,6 @@ const CartScreen = ({ navigation }) => {
                             orderItems: savedOrderItems,
                         });
                     } else {
-                        // Pago pendiente (ej: transferencia bancaria) — el webhook notificará al cliente
                         showWarningMessage('Pago pendiente', 'Si realizaste el pago, recibirás una notificación cuando sea confirmado.');
                     }
                 } catch {
