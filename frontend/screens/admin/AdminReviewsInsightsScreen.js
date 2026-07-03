@@ -68,7 +68,7 @@ function SentimientoBar({ label, value, total, color }) {
 
 export default function AdminReviewsInsightsScreen({ navigation }) {
     const insets = useSafeAreaInsets();
-    const restauranteId = useAppSelector(state => state.user.userInfo?.restaurante_id);
+    const restauranteId = useAppSelector(state => state.restaurant.selected?.id);
     const [insights, setInsights] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
