@@ -102,10 +102,10 @@ export default function AdminRepartidoresScreen({ navigation }) {
                 data={repartidores}
                 keyExtractor={i => String(i.id)}
                 renderItem={renderItem}
-                contentContainerStyle={[styles.list, { paddingTop: insets.top + 44 + 16, paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
+                contentContainerStyle={[styles.list, { paddingTop: insets.top + 80, paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} progressViewOffset={insets.top + 60} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} progressViewOffset={insets.top + 80} />
                 }
                 ListHeaderComponent={repartidores.length > 0 ? (
                     <View style={styles.totalCard}>
@@ -122,7 +122,7 @@ export default function AdminRepartidoresScreen({ navigation }) {
                             </View>
                             <View style={styles.statDivider} />
                             <View style={styles.totalStat}>
-                                <Text style={[styles.totalValue, { color: '#2E7D32' }]}>${totales.efectivo.toFixed(2)}</Text>
+                                <Text style={styles.totalValue}>${totales.efectivo.toFixed(2)}</Text>
                                 <Text style={styles.totalLabel}>Efectivo total</Text>
                             </View>
                         </View>

@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
-    View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity,
+    View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,11 +50,35 @@ const buildMessage = (noti) => {
     }
 };
 
+function SkeletonItem() {
+    const anim = useRef(new Animated.Value(0.4)).current;
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
+                Animated.timing(anim, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+            ])
+        ).start();
+    }, []);
+    return (
+        <Animated.View style={[styles.item, styles.skeletonItem, { opacity: anim }]}>
+            <View style={[styles.iconWrap, styles.skeletonBox, { width: 46, height: 46, borderRadius: 14 }]} />
+            <View style={{ flex: 1, gap: 8 }}>
+                <View style={[styles.skeletonBox, { width: '40%', height: 12, borderRadius: 6 }]} />
+                <View style={[styles.skeletonBox, { width: '80%', height: 12, borderRadius: 6 }]} />
+                <View style={[styles.skeletonBox, { width: '30%', height: 10, borderRadius: 6 }]} />
+            </View>
+            <View style={[styles.skeletonBox, { width: 48, height: 16, borderRadius: 6 }]} />
+        </Animated.View>
+    );
+}
+
 export default function NotificationsFeedScreen({ navigation }) {
     const insets = useSafeAreaInsets();
     const userRol = useAppSelector(state => state.user.userInfo?.rol);
     const [notificaciones, setNotificaciones] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
     const handleItemPress = (item) => {
@@ -70,9 +94,17 @@ export default function NotificationsFeedScreen({ navigation }) {
     };
 
     const load = useCallback(async (isRefresh = false) => {
+        if (!isRefresh) setError(false);
         try {
             const res = await API.notifications.getFeed();
-            if (res.success) setNotificaciones(res.notificaciones);
+            if (res.success) {
+                setNotificaciones(res.notificaciones);
+                setError(false);
+            } else {
+                setError(true);
+            }
+        } catch {
+            setError(true);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -91,7 +123,7 @@ export default function NotificationsFeedScreen({ navigation }) {
                 activeOpacity={0.7}
             >
                 <View style={styles.iconWrap}>
-                    <Ionicons name={cfg.icon} size={22} color={cfg.color} />
+                    <Ionicons name={cfg.icon} size={30} color={cfg.color} />
                 </View>
                 <View style={styles.itemText}>
                     <Text style={styles.itemLabel}>{cfg.label}</Text>
@@ -100,7 +132,7 @@ export default function NotificationsFeedScreen({ navigation }) {
                 </View>
                 <View style={styles.itemRight}>
                     <Text style={styles.itemAmount}>${parseFloat(item.total).toFixed(2)}</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#ccc" />
+                    <Ionicons name="chevron-forward" size={16} color="#999" />
                 </View>
             </TouchableOpacity>
         );
@@ -114,25 +146,41 @@ export default function NotificationsFeedScreen({ navigation }) {
                 data={notificaciones}
                 keyExtractor={i => String(i.id)}
                 renderItem={renderItem}
-                contentContainerStyle={[styles.list, { paddingTop: insets.top + 60, paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
+                contentContainerStyle={[styles.list, { paddingTop: insets.top + 80, paddingBottom: FLOATING_TAB_BAR_HEIGHT }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} progressViewOffset={insets.top + 60} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8700" colors={['#FF8700']} progressViewOffset={insets.top + 80} />
                 }
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
-                ListEmptyComponent={loading ? null : (
-                    <View style={styles.empty}>
-                        <Ionicons name="notifications-off-outline" size={52} color="#ddd" />
-                        <Text style={styles.emptyText}>Sin notificaciones recientes</Text>
+                ListHeaderComponent={loading ? (
+                    <View style={{ gap: 8 }}>
+                        {[...Array(5)].map((_, i) => <SkeletonItem key={i} />)}
                     </View>
-                )}
+                ) : null}
+                ListEmptyComponent={!loading ? (
+                    error ? (
+                        <View style={styles.empty}>
+                            <Ionicons name="cloud-offline-outline" size={52} color="#ddd" />
+                            <Text style={styles.emptyText}>No se pudieron cargar las notificaciones</Text>
+                            <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }}>
+                                <Ionicons name="refresh" size={16} color="#fff" />
+                                <Text style={styles.retryText}>Reintentar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={styles.empty}>
+                            <Ionicons name="notifications-off-outline" size={52} color="#ddd" />
+                            <Text style={styles.emptyText}>Sin notificaciones recientes</Text>
+                        </View>
+                    )
+                ) : null}
             />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F5F5F5' },
+    container: { flex: 1, backgroundColor: '#E0E0E0' },
     list: { paddingHorizontal: 16 },
 
     item: {
@@ -149,10 +197,15 @@ const styles = StyleSheet.create({
     itemMsg:   { fontFamily: 'Poppins-Regular', fontSize: 13, color: '#1a1a1a', lineHeight: 18 },
     itemTime:  { fontFamily: 'Poppins-Regular', fontSize: 11, color: '#999', marginTop: 4 },
     itemRight: { alignItems: 'flex-end', gap: 4, flexShrink: 0 },
-    itemAmount: { fontFamily: 'Poppins-Bold', fontSize: 14, color: '#1a1a1a' },
+    itemAmount: { fontFamily: 'Poppins-Bold', fontSize: 16, color: '#1a1a1a', fontWeight: '800' },
 
     separator: { height: 8 },
 
-    empty: { alignItems: 'center', paddingTop: 80 },
-    emptyText: { fontFamily: 'Poppins-SemiBold', fontSize: 15, color: '#bbb', marginTop: 16 },
+    skeletonItem: { backgroundColor: '#fff' },
+    skeletonBox: { backgroundColor: '#E0E0E0' },
+
+    empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
+    emptyText: { fontFamily: 'Poppins-SemiBold', fontSize: 15, color: '#bbb', textAlign: 'center', paddingHorizontal: 32 },
+    retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF8700', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginTop: 4 },
+    retryText: { fontFamily: 'Poppins-SemiBold', fontSize: 13, color: '#fff' },
 });

@@ -102,8 +102,8 @@ export const HeaderSection = ({
             {/* Heading — colapsa al hacer scroll */}
             <Animated.View style={{ height: headingHeight, opacity: headingOpacity, overflow: 'hidden' }}>
                 <Text style={styles.heading}>
-                    {'¿Qué se te antoja '}
-                    <Text style={styles.headingAccent}>Hoy?</Text>
+                    {'¿Qué te gustaría '}
+                    <Text style={styles.headingAccent}>comer hoy?</Text>
                 </Text>
             </Animated.View>
 

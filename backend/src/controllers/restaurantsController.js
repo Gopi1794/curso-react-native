@@ -114,7 +114,23 @@ exports.getMenu = async (req, res) => {
             query += ` AND mi.categoria = $${values.length}`;
         }
 
-        query += ' ORDER BY mi.categoria ASC, mi.nombre ASC';
+        query += `
+            ORDER BY
+                CASE mi.categoria
+                    WHEN 'ensaladas'   THEN 1
+                    WHEN 'promos'      THEN 2
+                    WHEN 'promoDia'    THEN 3
+                    WHEN 'burgers'     THEN 4
+                    WHEN 'pizzas'      THEN 5
+                    WHEN 'pastas'      THEN 6
+                    WHEN 'emplatados'  THEN 7
+                    WHEN 'sandwichs'   THEN 8
+                    WHEN 'postres'     THEN 9
+                    WHEN 'helados'     THEN 10
+                    WHEN 'bebidas'     THEN 11
+                    ELSE 99
+                END ASC,
+                mi.nombre ASC`;
 
         const result = await db.query(query, values);
 
