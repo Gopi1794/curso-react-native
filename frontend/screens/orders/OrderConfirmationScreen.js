@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Lottie from 'lottie-react-native';
 
 const OrderConfirmationScreen = ({ route, navigation }) => {
-    const { orderTotal, orderItems, orderId } = route.params || {};
+    const { orderTotal, orderItems, orderId, pagoPendiente = false } = route.params || {};
 
     const handleBackToHome = () => {
         navigation.navigate('HomeScreen');
@@ -36,10 +36,12 @@ const OrderConfirmationScreen = ({ route, navigation }) => {
             <View style={styles.backgroundGradient} />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, pagoPendiente && styles.headerPendiente]}>
                 <View style={styles.headerContent}>
                     <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>¡Pedido Confirmado!</Text>
+                        <Text style={styles.headerTitle}>
+                            {pagoPendiente ? 'Pago en proceso' : '¡Pedido Confirmado!'}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -49,22 +51,32 @@ const OrderConfirmationScreen = ({ route, navigation }) => {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Animación de éxito */}
+                {/* Animación de éxito / pendiente */}
                 <View style={styles.animationContainer}>
-                    <Lottie
-                        source={require('../../assets/animations/conffeti.json')}
-                        autoPlay
-                        loop={false}
-                        style={styles.confettiAnimation}
+                    {!pagoPendiente && (
+                        <Lottie
+                            source={require('../../assets/animations/conffeti.json')}
+                            autoPlay
+                            loop={false}
+                            style={styles.confettiAnimation}
+                        />
+                    )}
+                    <Ionicons
+                        name={pagoPendiente ? 'time-outline' : 'checkmark-circle'}
+                        size={80}
+                        color={pagoPendiente ? '#FF8700' : '#4CAF50'}
                     />
-                    <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
                 </View>
 
                 {/* Mensaje de confirmación */}
                 <View style={styles.messageContainer}>
-                    <Text style={styles.successTitle}>¡Pago Exitoso!</Text>
+                    <Text style={[styles.successTitle, pagoPendiente && styles.pendingTitle]}>
+                        {pagoPendiente ? 'Pago en proceso' : '¡Pago Exitoso!'}
+                    </Text>
                     <Text style={styles.successMessage}>
-                        Tu pedido ha sido confirmado y está siendo preparado
+                        {pagoPendiente
+                            ? 'Tu pedido fue registrado. Cuando el pago sea confirmado por MercadoPago recibirás una notificación.'
+                            : 'Tu pedido ha sido confirmado y está siendo preparado'}
                     </Text>
 
                     <View style={styles.orderSummary}>
@@ -201,11 +213,17 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
     },
+    headerPendiente: {
+        backgroundColor: '#FF8700',
+    },
     successTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         color: '#4CAF50',
         marginBottom: 10,
+    },
+    pendingTitle: {
+        color: '#FF8700',
     },
     successMessage: {
         fontSize: 16,

@@ -263,18 +263,21 @@ const CartScreen = ({ navigation }) => {
                         if (estadoAprobado) break;
                     }
 
-                    if (estadoAprobado) {
-                        dispatch(clearCart());
-                        navigation.navigate('OrderConfirmation', {
-                            orderId: savedOrderId,
-                            orderTotal: savedTotal,
-                            orderItems: savedOrderItems,
-                        });
-                    } else {
-                        showWarningMessage('Pago pendiente', 'Si realizaste el pago, recibirás una notificación cuando sea confirmado.');
-                    }
+                    dispatch(clearCart());
+                    navigation.navigate('OrderConfirmation', {
+                        orderId: savedOrderId,
+                        orderTotal: savedTotal,
+                        orderItems: savedOrderItems,
+                        pagoPendiente: !estadoAprobado,
+                    });
                 } catch {
-                    showWarningMessage('Pago pendiente', 'Si realizaste el pago, recibirás una notificación cuando sea confirmado.');
+                    dispatch(clearCart());
+                    navigation.navigate('OrderConfirmation', {
+                        orderId: savedOrderId,
+                        orderTotal: savedTotal,
+                        orderItems: savedOrderItems,
+                        pagoPendiente: true,
+                    });
                 }
             }
         } catch {
