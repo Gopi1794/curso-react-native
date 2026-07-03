@@ -44,7 +44,7 @@ export const HeaderSection = ({
                     onPress={() => selectedRestaurant && dispatch(clearRestaurant())}
                     activeOpacity={selectedRestaurant ? 0.7 : 1}
                 >
-                    <Text style={styles.deliverLabel}>Entregar en</Text>
+                    <Text style={styles.deliverLabel}>Estás en</Text>
                     <View style={styles.locationRow}>
                         <Ionicons name="location-sharp" size={14} color="#ff8700" />
                         <Text style={styles.locationText} numberOfLines={1}>
