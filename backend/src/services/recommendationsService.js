@@ -26,6 +26,7 @@ async function getRecommendations(userId, restauranteId) {
         [restauranteId]
     );
 
+    console.log(`[Recs] historial=${historial.rows.length} items, menu=${menu.rows.length} items`);
     if (menu.rows.length === 0) return [];
 
     // Sin historial: devolver los 5 más pedidos del restaurante
@@ -67,10 +68,14 @@ async function getRecommendations(userId, restauranteId) {
 
     const recsIds = parsed.recomendaciones.map(r => r.id);
     const recsMap = Object.fromEntries(parsed.recomendaciones.map(r => [r.id, r.razon]));
+    console.log(`[Recs] Claude suggested IDs:`, recsIds);
+    console.log(`[Recs] Menu IDs:`, menu.rows.map(m => m.id));
 
-    return menu.rows
-        .filter(m => recsIds.includes(m.id))
-        .map(m => ({ ...m, razon: recsMap[m.id] }));
+    const result = menu.rows
+        .filter(m => recsIds.includes(parseInt(m.id)))
+        .map(m => ({ ...m, razon: recsMap[m.id] || recsMap[parseInt(m.id)] }));
+    console.log(`[Recs] matched=${result.length}`);
+    return result;
 }
 
 module.exports = { getRecommendations };
