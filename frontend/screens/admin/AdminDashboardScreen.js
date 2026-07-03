@@ -71,6 +71,14 @@ const CARDS = [
         icon: 'cash-outline',
         colors: ['#00838F', '#00ACC1'],
     },
+    {
+        key: 'reviews',
+        screen: 'AdminReviewsInsights',
+        title: 'Insights de reseñas',
+        subtitle: 'Análisis IA de comentarios de clientes',
+        icon: 'sparkles-outline',
+        colors: ['#4527A0', '#7B1FA2'],
+    },
 ];
 
 export default function AdminDashboardScreen({ navigation }) {
