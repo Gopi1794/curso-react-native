@@ -8,6 +8,8 @@ import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import API from '../../services/api';
 import { markNotificationsRead } from '../../hooks/useNotificationBadge';
+import { navigationRef } from '../../navigation/navigationRef';
+import { useAppSelector } from '../../store/hooks';
 
 const ESTADO_CONFIG = {
     pendiente:   { icon: 'time-outline',        color: '#F59E0B', label: 'Nuevo pedido',        bg: '#FFFBEB' },
@@ -50,9 +52,22 @@ const buildMessage = (noti) => {
 
 export default function NotificationsFeedScreen({ navigation }) {
     const insets = useSafeAreaInsets();
+    const userRol = useAppSelector(state => state.user.userInfo?.rol);
     const [notificaciones, setNotificaciones] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    const handleItemPress = (item) => {
+        if (userRol === 'repartidor') {
+            navigation.goBack();
+        } else if (navigationRef.isReady()) {
+            // admin y cliente — navegar al detalle del pedido en la tab de Pedidos
+            navigationRef.navigate('OrdersTab', {
+                screen: 'OrderDetail',
+                params: { orderId: item.id },
+            });
+        }
+    };
 
     const load = useCallback(async (isRefresh = false) => {
         try {
@@ -70,7 +85,11 @@ export default function NotificationsFeedScreen({ navigation }) {
     const renderItem = ({ item }) => {
         const cfg = ESTADO_CONFIG[item.estado] ?? ESTADO_CONFIG.pendiente;
         return (
-            <View style={[styles.item, { backgroundColor: cfg.bg }]}>
+            <TouchableOpacity
+                style={[styles.item, { backgroundColor: cfg.bg }]}
+                onPress={() => handleItemPress(item)}
+                activeOpacity={0.7}
+            >
                 <View style={[styles.iconWrap, { backgroundColor: cfg.color + '22' }]}>
                     <Ionicons name={cfg.icon} size={22} color={cfg.color} />
                 </View>
@@ -79,8 +98,11 @@ export default function NotificationsFeedScreen({ navigation }) {
                     <Text style={styles.itemMsg}>{buildMessage(item)}</Text>
                     <Text style={styles.itemTime}>{formatTime(item.fecha_actualizacion)}</Text>
                 </View>
-                <Text style={styles.itemAmount}>${parseFloat(item.total).toFixed(2)}</Text>
-            </View>
+                <View style={styles.itemRight}>
+                    <Text style={styles.itemAmount}>${parseFloat(item.total).toFixed(2)}</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#ccc" />
+                </View>
+            </TouchableOpacity>
         );
     };
 
@@ -126,7 +148,8 @@ const styles = StyleSheet.create({
     itemLabel: { fontFamily: 'Poppins-SemiBold', fontSize: 12, color: '#555', marginBottom: 2 },
     itemMsg:   { fontFamily: 'Poppins-Regular', fontSize: 13, color: '#1a1a1a', lineHeight: 18 },
     itemTime:  { fontFamily: 'Poppins-Regular', fontSize: 11, color: '#999', marginTop: 4 },
-    itemAmount: { fontFamily: 'Poppins-Bold', fontSize: 14, color: '#1a1a1a', flexShrink: 0 },
+    itemRight: { alignItems: 'flex-end', gap: 4, flexShrink: 0 },
+    itemAmount: { fontFamily: 'Poppins-Bold', fontSize: 14, color: '#1a1a1a' },
 
     separator: { height: 8 },
 

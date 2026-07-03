@@ -1,7 +1,6 @@
 import 'react-native-gesture-handler';
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
-
-export const navigationRef = createNavigationContainerRef();
+import { NavigationContainer } from '@react-navigation/native';
+import { navigationRef } from './navigation/navigationRef';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Image, Animated, Dimensions } from 'react-native';
 import { Asset } from 'expo-asset';
