@@ -89,7 +89,7 @@ export default function AdminReviewsInsightsScreen({ navigation }) {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [restauranteId]);
+    }, []);
 
     useEffect(() => { load(); }, [load]);
     const onRefresh = () => { setRefreshing(true); load(true); };
