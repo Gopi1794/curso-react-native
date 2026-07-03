@@ -47,8 +47,11 @@ export default function RecommendationsSection({ restauranteId, onItemPress }) {
     useEffect(() => {
         if (!restauranteId) return;
         API.recommendations.get(restauranteId)
-            .then(res => { if (res.success) setItems(res.items); })
-            .catch(() => {})
+            .then(res => {
+                console.log('[Recs] response:', JSON.stringify(res).slice(0, 200));
+                if (res.success) setItems(res.items);
+            })
+            .catch(err => console.error('[Recs] error:', err))
             .finally(() => setLoading(false));
     }, [restauranteId]);
 
