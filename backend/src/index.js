@@ -1,9 +1,16 @@
 require('dotenv').config();
 
+const Sentry = require('@sentry/node');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+
+Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.2,
+});
 
 const authRouter             = require('./routers/auth');
 const usersRouter            = require('./routers/users');
@@ -87,6 +94,14 @@ app.get('/health', async (req, res) => {
     } catch (err) {
         res.status(500).json({ status: 'error', database: 'disconnected', message: err.message });
     }
+});
+
+// ── Error handlers ────────────────────────────────────────
+Sentry.setupExpressErrorHandler(app);
+
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
 });
 
 // ── 404 ───────────────────────────────────────────────────
