@@ -44,7 +44,7 @@
       "expo-secure-store",
       "expo-web-browser",
       ["expo-notifications", {
-        "icon": "./assets/icon.png",
+        "icon": "./assets/notification-icon.png",
         "color": "#ff8700",
         "defaultChannel": "default"
       }],
