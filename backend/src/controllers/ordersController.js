@@ -240,10 +240,13 @@ exports.getOrderById = async (req, res) => {
         // Verificar que el pedido existe y pertenece al usuario
         const pedidoResult = await db.query(
             `SELECT p.id, p.restaurante_id, p.estado, p.total, p.direccion_entrega, p.notas,
-                    p.fecha_creacion, p.fecha_actualizacion,
-                    r.nombre AS restaurante_nombre, r.direccion AS restaurante_direccion
+                    p.fecha_creacion, p.fecha_actualizacion, p.pago_confirmado_at,
+                    r.nombre AS restaurante_nombre, r.direccion AS restaurante_direccion,
+                    rep.nombre AS repartidor_nombre, rep.apellido AS repartidor_apellido,
+                    rep.telefono AS repartidor_telefono
              FROM pedidos p
              JOIN restaurantes r ON p.restaurante_id = r.id
+             LEFT JOIN usuarios rep ON rep.id = p.repartidor_id
              WHERE p.id = $1 AND p.usuario_id = $2`,
             [id, req.user.userId]
         );

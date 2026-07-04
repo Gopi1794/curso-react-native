@@ -1,11 +1,23 @@
 const db = require('../config/database');
 const { sendPushNotification } = require('../services/notificationService');
+const { transicionarPedido } = require('../utils/pedidoTransitions');
+
+const getAdminRestauranteId = async (req) => {
+    if (req.user.restauranteId) return req.user.restauranteId;
+    const row = await db.query('SELECT restaurante_id FROM usuarios WHERE id = $1', [req.user.userId]);
+    return row.rows[0]?.restaurante_id || null;
+};
 
 exports.getAll = async (req, res) => {
     try {
+        const restauranteId = await getAdminRestauranteId(req);
+        if (!restauranteId) {
+            return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
+        }
+
         const result = await db.query(
             `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.notas, p.fecha_creacion,
-                    p.metodo_pago, p.monto_recibido,
+                    p.metodo_pago, p.monto_recibido, p.pago_confirmado_at,
                     u.nombre AS cliente_nombre, u.apellido AS cliente_apellido, u.telefono AS cliente_telefono,
                     r.nombre AS repartidor_nombre, r.apellido AS repartidor_apellido, r.id AS repartidor_id,
                     json_agg(json_build_object(
@@ -18,10 +30,11 @@ exports.getAll = async (req, res) => {
              LEFT JOIN usuarios r ON r.id = p.repartidor_id
              LEFT JOIN pedido_items pi ON pi.pedido_id = p.id
              LEFT JOIN menu_items mi ON mi.id = pi.menu_item_id
+             WHERE p.restaurante_id = $1
              GROUP BY p.id, u.nombre, u.apellido, u.telefono, r.nombre, r.apellido, r.id
              ORDER BY p.fecha_creacion DESC
              LIMIT 100`,
-            []
+            [restauranteId]
         );
         res.json({ success: true, pedidos: result.rows });
     } catch (error) {
@@ -100,12 +113,6 @@ exports.getRepartidores = async (req, res) => {
     }
 };
 
-const TRANSICIONES_ADMIN = {
-    pendiente:      ['en_preparacion', 'cancelado'],
-    confirmado:     ['en_preparacion', 'cancelado'],
-    en_preparacion: ['cancelado'],
-};
-
 const NOTIF_ESTADO = {
     en_preparacion: { title: '¡Tu pedido está siendo preparado!', body: 'Ya está en cocina.' },
     en_camino:      { title: '¡Tu pedido está en camino!',        body: 'El repartidor ya salió.' },
@@ -121,28 +128,19 @@ exports.updateEstado = async (req, res) => {
         return res.status(400).json({ success: false, message: 'estado requerido' });
     }
 
+    const client = await db.getClient();
     try {
-        const current = await db.query('SELECT estado, usuario_id FROM pedidos WHERE id = $1', [id]);
-        if (current.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
-        }
+        await client.query('BEGIN');
 
-        const estadoActual = current.rows[0].estado;
-        const permitidos = TRANSICIONES_ADMIN[estadoActual] || [];
+        await transicionarPedido(client, id, estado, 'admin', req.user.userId);
 
-        if (!permitidos.includes(estado)) {
-            return res.status(400).json({
-                success: false,
-                message: `No se puede pasar de "${estadoActual}" a "${estado}"`,
-            });
-        }
+        const pedido = (await client.query(
+            'SELECT id, estado, usuario_id FROM pedidos WHERE id = $1',
+            [id]
+        )).rows[0];
 
-        const result = await db.query(
-            `UPDATE pedidos SET estado = $1 WHERE id = $2 RETURNING id, estado, usuario_id`,
-            [estado, id]
-        );
+        await client.query('COMMIT');
 
-        const pedido = result.rows[0];
         const notif = NOTIF_ESTADO[estado];
         if (notif) {
             const cliente = await db.query('SELECT push_token FROM usuarios WHERE id = $1', [pedido.usuario_id]);
@@ -158,27 +156,30 @@ exports.updateEstado = async (req, res) => {
 
         res.json({ success: true, pedido });
     } catch (error) {
+        await client.query('ROLLBACK');
+        if (error.status === 404) return res.status(404).json({ success: false, message: error.message });
+        if (error.status === 400) return res.status(400).json({ success: false, message: error.message });
         console.error('Error en updateEstado admin:', error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    } finally {
+        client.release();
     }
 };
 
 exports.prepararPedido = async (req, res) => {
     const { id } = req.params;
 
+    const client = await db.getClient();
     try {
-        const result = await db.query(
-            `UPDATE pedidos SET estado = 'en_preparacion'
-             WHERE id = $1 AND estado NOT IN ('entregado', 'cancelado')
-             RETURNING id, estado, usuario_id`,
-            [id]
-        );
+        await client.query('BEGIN');
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Pedido no encontrado o no se puede cambiar su estado' });
-        }
+        await transicionarPedido(client, id, 'en_preparacion', 'admin', req.user.userId);
 
-        const pedido = result.rows[0];
+        const pedido = (await client.query(
+            'SELECT id, estado, usuario_id FROM pedidos WHERE id = $1', [id]
+        )).rows[0];
+
+        await client.query('COMMIT');
 
         const cliente = await db.query('SELECT push_token FROM usuarios WHERE id = $1', [pedido.usuario_id]);
         if (cliente.rows[0]?.push_token) {
@@ -192,8 +193,13 @@ exports.prepararPedido = async (req, res) => {
 
         res.json({ success: true, pedido });
     } catch (error) {
+        await client.query('ROLLBACK');
+        if (error.status === 400) return res.status(400).json({ success: false, message: error.message });
+        if (error.status === 404) return res.status(404).json({ success: false, message: error.message });
         console.error('Error en prepararPedido:', error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    } finally {
+        client.release();
     }
 };
 
@@ -205,35 +211,62 @@ exports.asignarRepartidor = async (req, res) => {
         return res.status(400).json({ success: false, message: 'repartidor_id requerido' });
     }
 
+    const client = await db.getClient();
     try {
-        const result = await db.query(
-            `UPDATE pedidos SET repartidor_id = $1, estado = 'en_camino'
-             WHERE id = $2
-             RETURNING id, estado, repartidor_id, direccion_entrega, total`,
+        await client.query('BEGIN');
+
+        // Asignar repartidor
+        await client.query(
+            'UPDATE pedidos SET repartidor_id = $1 WHERE id = $2',
             [repartidor_id, id]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
-        }
+        // Transición validada: en_preparacion → en_camino
+        await transicionarPedido(client, id, 'en_camino', 'admin', req.user.userId);
 
+        const pedido = (await client.query(
+            'SELECT id, estado, repartidor_id, direccion_entrega, total, usuario_id FROM pedidos WHERE id = $1',
+            [id]
+        )).rows[0];
+
+        await client.query('COMMIT');
+
+        // Push al repartidor
         const repartidor = await db.query(
             'SELECT push_token, nombre FROM usuarios WHERE id = $1',
             [repartidor_id]
         );
-
         if (repartidor.rows[0]?.push_token) {
             await sendPushNotification(
                 repartidor.rows[0].push_token,
                 '¡Nuevo reparto asignado!',
-                `Pedido #${id} — ${result.rows[0].direccion_entrega || 'Ver dirección en la app'}`,
+                `Pedido #${id} — ${pedido.direccion_entrega || 'Ver dirección en la app'}`,
                 { type: 'nuevo_reparto', pedido_id: id }
             );
         }
 
-        res.json({ success: true, pedido: result.rows[0] });
+        // Push al cliente
+        const cliente = await db.query(
+            'SELECT push_token FROM usuarios WHERE id = $1',
+            [pedido.usuario_id]
+        );
+        if (cliente.rows[0]?.push_token) {
+            await sendPushNotification(
+                cliente.rows[0].push_token,
+                '¡Tu pedido está en camino!',
+                'El repartidor ya salió con tu pedido.',
+                { type: 'estado_pedido', pedido_id: id, estado: 'en_camino' }
+            );
+        }
+
+        res.json({ success: true, pedido });
     } catch (error) {
+        await client.query('ROLLBACK');
+        if (error.status === 400) return res.status(400).json({ success: false, message: error.message });
+        if (error.status === 404) return res.status(404).json({ success: false, message: error.message });
         console.error('Error en asignarRepartidor:', error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    } finally {
+        client.release();
     }
 };

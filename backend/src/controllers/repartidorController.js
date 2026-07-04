@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { sendPushNotification } = require('../services/notificationService');
+const { transicionarPedido } = require('../utils/pedidoTransitions');
 
 exports.getMisPedidos = async (req, res) => {
     try {
@@ -125,39 +126,48 @@ exports.updateEstado = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Estado inválido' });
     }
 
+    // Verificar que el pedido está asignado a este repartidor
+    const asignado = await db.query(
+        'SELECT id, usuario_id FROM pedidos WHERE id = $1 AND repartidor_id = $2',
+        [id, req.user.userId]
+    );
+    if (asignado.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Pedido no encontrado o no asignado a vos' });
+    }
+
+    const client = await db.getClient();
     try {
-        const result = await db.query(
-            `UPDATE pedidos SET estado = $1
-             WHERE id = $2 AND repartidor_id = $3
-             RETURNING id, estado, usuario_id`,
-            [estado, id, req.user.userId]
-        );
+        await client.query('BEGIN');
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Pedido no encontrado o no asignado a vos' });
-        }
+        await transicionarPedido(client, id, estado, 'repartidor', req.user.userId);
 
-        const cliente = await db.query(
+        await client.query('COMMIT');
+
+        const clienteRow = await db.query(
             'SELECT push_token FROM usuarios WHERE id = $1',
-            [result.rows[0].usuario_id]
+            [asignado.rows[0].usuario_id]
         );
 
-        if (cliente.rows[0]?.push_token) {
+        if (clienteRow.rows[0]?.push_token) {
             const msgs = {
                 en_camino: { title: '¡Tu pedido está en camino!', body: 'El repartidor ya salió con tu pedido.' },
                 entregado:  { title: '¡Pedido entregado!',        body: 'Gracias por tu compra. ¡Buen provecho!' },
             };
             await sendPushNotification(
-                cliente.rows[0].push_token,
+                clienteRow.rows[0].push_token,
                 msgs[estado].title,
                 msgs[estado].body,
                 { type: 'estado_pedido', pedido_id: id, estado }
             );
         }
 
-        res.json({ success: true, pedido: result.rows[0] });
+        res.json({ success: true, pedido: { id: Number(id), estado } });
     } catch (error) {
+        await client.query('ROLLBACK');
+        if (error.status === 400) return res.status(400).json({ success: false, message: error.message });
         console.error('Error en updateEstado repartidor:', error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    } finally {
+        client.release();
     }
 };

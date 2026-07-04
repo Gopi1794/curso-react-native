@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import API from '../services/api';
 import { useAppDispatch } from '../store/hooks';
 import { login } from '../store/slices/userSlice';
+import { selectRestaurant } from '../store/slices/restaurantSlice';
 import { showErrorMessage, showInfoMessage } from './FlashMessageWrapper';
 import { registerForPushNotifications } from '../services/pushNotifications';
 
@@ -116,8 +117,13 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
                 rol: response.user.rol,
                 estado: response.user.estado,
                 avatar_url: response.user.avatar_url || null,
+                restaurante_id: response.user.restaurante_id || null,
                 token: response.token,
             }));
+
+            if (response.user.rol === 'admin' && response.user.restaurante) {
+                dispatch(selectRestaurant(response.user.restaurante));
+            }
 
             await AsyncStorage.setItem('showWelcomePopup', 'true');
 

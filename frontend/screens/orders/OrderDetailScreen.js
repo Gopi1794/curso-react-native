@@ -8,15 +8,17 @@ import {
   StatusBar,
   Animated,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import API from '../../services/api';
 import ReviewBottomSheet from '../../components/ReviewBottomSheet';
 
 const ORANGE = '#ff8700';
 
-const STEP_KEYS   = ['pendiente', 'preparando', 'en_camino', 'entregado'];
+const STEP_KEYS   = ['pendiente', 'en_preparacion', 'en_camino', 'entregado'];
 const STEP_LABELS = ['Aceptado', 'Preparando', 'Recogido', 'Entregado'];
 const STEP_ICONS  = [
   'cube-outline',
@@ -26,14 +28,13 @@ const STEP_ICONS  = [
 ];
 
 const STATUS_INFO = {
-  pendiente:  { title: 'Pedido recibido',      subtitle: 'Esperando al restaurante' },
-  preparando: { title: 'Preparando tu pedido', subtitle: 'El chef ya está cocinando' },
-  en_camino:  { title: 'En camino',            subtitle: 'Tu pedido está llegando' },
-  entregado:  { title: '¡Pedido entregado!',   subtitle: '¡Buen provecho!' },
-  cancelado:  { title: 'Pedido cancelado',     subtitle: 'Este pedido fue cancelado' },
+  pendiente:       { title: 'Pedido recibido',      subtitle: 'Esperando al restaurante' },
+  confirmado:      { title: 'Pedido confirmado',    subtitle: 'El restaurante recibió tu pedido' },
+  en_preparacion:  { title: 'Preparando tu pedido', subtitle: 'El chef ya está cocinando' },
+  en_camino:       { title: 'En camino',            subtitle: 'Tu pedido está llegando' },
+  entregado:       { title: '¡Pedido entregado!',   subtitle: '¡Buen provecho!' },
+  cancelado:       { title: 'Pedido cancelado',     subtitle: 'Este pedido fue cancelado' },
 };
-
-const TIP_OPTIONS = ['$2.00', '$5.00', '$10.00', '$15.00'];
 
 // ── Spinner animado para paso activo ──────────────────────
 function SpinnerIcon() {
@@ -120,84 +121,42 @@ function AvatarInitials({ name }) {
 }
 
 // ── Card del repartidor ───────────────────────────────────
-function DeliveryCard({ estado, onViewMap }) {
-  const showActions = ['preparando', 'en_camino'].includes(estado);
-  const showMapBtn  = ['preparando', 'en_camino'].includes(estado);
-  const repartidor  = { nombre: 'Carlos Méndez', rating: '4.8' };
-  const subtitle    = {
-    preparando: 'Pronto saldrá a entregar',
-    en_camino:  'En camino hacia vos',
-    entregado:  'Pedido entregado',
+function DeliveryCard({ estado, nombre, apellido, telefono }) {
+  const showContact = ['en_preparacion', 'en_camino'].includes(estado);
+  const nombreCompleto = [nombre, apellido].filter(Boolean).join(' ') || 'Repartidor';
+  const subtitle = {
+    en_preparacion: 'Pronto saldrá a entregar',
+    en_camino:      'En camino hacia vos',
+    entregado:      'Pedido entregado',
   }[estado] ?? '';
 
   return (
     <View style={styles.card}>
       <View style={styles.deliveryRow}>
-        <AvatarInitials name={repartidor.nombre} />
+        <AvatarInitials name={nombreCompleto} />
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.deliveryName}>{repartidor.nombre}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={styles.deliverySub}>{subtitle}</Text>
-            <Ionicons name="star" size={12} color={ORANGE} />
-            <Text style={[styles.deliverySub, { color: '#555' }]}>{repartidor.rating}</Text>
-          </View>
+          <Text style={styles.deliveryName}>{nombreCompleto}</Text>
+          <Text style={styles.deliverySub}>{subtitle}</Text>
         </View>
-        {showActions && (
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <TouchableOpacity style={styles.actionBtn}>
-              <Ionicons name="chatbubble-ellipses-outline" size={20} color={ORANGE} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn}>
-              <Ionicons name="call-outline" size={20} color={ORANGE} />
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
-      {showMapBtn && (
-        <TouchableOpacity style={styles.mapBtn} onPress={onViewMap}>
-          <Ionicons name="map-outline" size={15} color="#fff" />
-          <Text style={styles.mapBtnText}>Ver en mapa</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
+      {showContact && telefono && (
+        <View style={styles.contactRow}>
+          <TouchableOpacity
+            style={[styles.contactBtn, { backgroundColor: '#E8F5E9' }]}
+            onPress={() => Linking.openURL(`tel:${telefono}`)}
+          >
+            <Ionicons name="call-outline" size={18} color="#43A047" />
+            <Text style={[styles.contactText, { color: '#43A047' }]}>Llamar</Text>
+          </TouchableOpacity>
 
-// ── Sección de propina ────────────────────────────────────
-function TipSection() {
-  const [selected,  setSelected]  = useState(null);
-  const [confirmed, setConfirmed] = useState(false);
-
-  const handleTip = (tip) => {
-    if (confirmed) return;
-    setSelected(tip);
-    setTimeout(() => setConfirmed(true), 500);
-  };
-
-  return (
-    <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Dale propina a tu repartidor</Text>
-      <Text style={styles.tipSubtitle}>Todos merecen un poco de reconocimiento</Text>
-
-      {confirmed ? (
-        <View style={styles.tipConfirmed}>
-          <Ionicons name="heart" size={16} color={ORANGE} />
-          <Text style={styles.tipConfirmedText}>¡Gracias! Enviaste {selected}</Text>
-        </View>
-      ) : (
-        <View style={styles.tipChips}>
-          {TIP_OPTIONS.map(tip => (
-            <TouchableOpacity
-              key={tip}
-              style={[styles.tipChip, selected === tip && styles.tipChipOn]}
-              onPress={() => handleTip(tip)}
-            >
-              <Text style={[styles.tipChipText, selected === tip && styles.tipChipTextOn]}>
-                {tip}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity
+            style={[styles.contactBtn, { backgroundColor: '#E8F5E9' }]}
+            onPress={() => Linking.openURL(`whatsapp://send?phone=${telefono}`)}
+          >
+            <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+            <Text style={[styles.contactText, { color: '#25D366' }]}>WhatsApp</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -210,11 +169,13 @@ export default function OrderDetailScreen({ route, navigation }) {
 
   const [order,        setOrder]        = useState(null);
   const [loading,      setLoading]      = useState(true);
+  const [refreshing,   setRefreshing]   = useState(false);
   const [error,        setError]        = useState(null);
   const [headerH,      setHeaderH]      = useState((StatusBar.currentHeight || 40) + 90);
   const [navigatingId, setNavigatingId] = useState(null);
   const [showReview,   setShowReview]   = useState(false);
   const [reviewDone,   setReviewDone]   = useState(false);
+  const intervalRef = useRef(null);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -227,6 +188,12 @@ export default function OrderDetailScreen({ route, navigation }) {
       setLoading(false);
     }
   }, [orderId]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchOrder();
+    setRefreshing(false);
+  }, [fetchOrder]);
 
   const handleItemPress = useCallback(async (item) => {
     if (!item.menu_item_id || !order?.restaurante_id) return;
@@ -252,12 +219,18 @@ export default function OrderDetailScreen({ route, navigation }) {
     }
   }, [order, navigation]);
 
-  useFocusEffect(useCallback(() => { fetchOrder(); }, [fetchOrder]));
+  useFocusEffect(useCallback(() => {
+    fetchOrder();
+    intervalRef.current = setInterval(fetchOrder, 10000);
+    return () => clearInterval(intervalRef.current);
+  }, [fetchOrder]));
 
   const info         = order ? (STATUS_INFO[order.estado] ?? STATUS_INFO.pendiente) : null;
-  const showDelivery = order && ['preparando', 'en_camino', 'entregado'].includes(order.estado);
-  const showTip      = order && ['en_camino', 'entregado'].includes(order.estado);
-  const isCancelled  = order?.estado === 'cancelado';
+  const showDelivery   = order && ['en_preparacion', 'en_camino', 'entregado'].includes(order.estado);
+  const isCancelled    = order?.estado === 'cancelado';
+  const canReview      = order?.estado === 'entregado' &&
+    order.fecha_actualizacion &&
+    (Date.now() - new Date(order.fecha_actualizacion).getTime()) >= 30 * 60 * 1000;
 
   return (
     <View style={styles.container}>
@@ -306,7 +279,23 @@ export default function OrderDetailScreen({ route, navigation }) {
         <ScrollView
           contentContainerStyle={[styles.scrollContent, { paddingTop: headerH + 8 }]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[ORANGE]}
+              tintColor={ORANGE}
+            />
+          }
         >
+          {/* Badge pago confirmado MP */}
+          {order.pago_confirmado_at && (
+            <View style={styles.pagoConfirmadoBadge}>
+              <Ionicons name="checkmark-circle" size={16} color="#2E7D32" />
+              <Text style={styles.pagoConfirmadoText}>Pago confirmado por MercadoPago</Text>
+            </View>
+          )}
+
           {/* Stepper / Cancelado */}
           <View style={[styles.card, isCancelled && styles.cardCancelled]}>
             {isCancelled ? (
@@ -322,7 +311,9 @@ export default function OrderDetailScreen({ route, navigation }) {
           {showDelivery && (
             <DeliveryCard
               estado={order.estado}
-              onViewMap={() => navigation.navigate('OrderTracking', { orderId: order.id })}
+              nombre={order.repartidor_nombre}
+              apellido={order.repartidor_apellido}
+              telefono={order.repartidor_telefono}
             />
           )}
 
@@ -385,9 +376,7 @@ export default function OrderDetailScreen({ route, navigation }) {
             </View>
           </View>
 
-          {showTip && <TipSection />}
-
-          {order.estado === 'entregado' && (
+          {canReview && (
             <View style={styles.card}>
               {reviewDone ? (
                 <View style={styles.reviewDoneRow}>
@@ -461,6 +450,16 @@ const styles = StyleSheet.create({
   // Scroll
   scrollContent: { paddingHorizontal: 16, paddingBottom: 120 },
 
+  // Pago confirmado
+  pagoConfirmadoBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#E8F5E9', borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 8, marginTop: 12,
+  },
+  pagoConfirmadoText: {
+    fontFamily: 'Poppins-SemiBold', fontSize: 12, color: '#2E7D32',
+  },
+
   // Card base
   card: {
     backgroundColor: '#fff', borderRadius: 18, padding: 16, marginTop: 12,
@@ -486,11 +485,12 @@ const styles = StyleSheet.create({
   deliveryRow:  { flexDirection: 'row', alignItems: 'center' },
   deliveryName: { fontFamily: 'Poppins-SemiBold', color: '#111', fontSize: 15 },
   deliverySub:  { fontFamily: 'Poppins-Regular', color: '#888', fontSize: 12 },
-  actionBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    borderWidth: 1.5, borderColor: ORANGE,
-    justifyContent: 'center', alignItems: 'center',
+  contactRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  contactBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, borderRadius: 12, paddingVertical: 10,
   },
+  contactText: { fontFamily: 'Poppins-SemiBold', fontSize: 13 },
 
   // Resumen
   sectionTitle: {
@@ -514,25 +514,6 @@ const styles = StyleSheet.create({
   totalRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontFamily: 'Poppins-SemiBold', color: '#111', fontSize: 15 },
   totalValue: { fontFamily: 'Poppins-Bold', color: ORANGE, fontSize: 20 },
-
-  // Propina
-  tipSubtitle: {
-    fontFamily: 'Poppins-Regular', color: '#888', fontSize: 12,
-    marginTop: -6, marginBottom: 14,
-  },
-  tipChips: { flexDirection: 'row', gap: 8 },
-  tipChip: {
-    flex: 1, paddingVertical: 11, borderRadius: 12,
-    borderWidth: 1.5, borderColor: '#e0e0e0', alignItems: 'center',
-  },
-  tipChipOn:       { backgroundColor: ORANGE, borderColor: ORANGE },
-  tipChipText:     { fontFamily: 'Poppins-SemiBold', color: '#555', fontSize: 13 },
-  tipChipTextOn:   { color: '#fff' },
-  tipConfirmed: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    justifyContent: 'center', paddingVertical: 8,
-  },
-  tipConfirmedText: { fontFamily: 'Poppins-SemiBold', color: ORANGE, fontSize: 14 },
 
   // Reseña
   reviewSubtitle: {
@@ -575,21 +556,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // Botón mapa
-  mapBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 12,
-    backgroundColor: ORANGE,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  mapBtnText: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#fff',
-    fontSize: 13,
-  },
 });

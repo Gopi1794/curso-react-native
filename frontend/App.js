@@ -133,8 +133,13 @@ function MainApp() {
         break;
       case 'new_order':
       case 'nuevo_pedido':
-        // Admin: ir al home donde está el panel de pedidos
-        navigationRef.navigate('HomeTab');
+        if (userRol === 'admin') {
+          navigationRef.navigate('ProfileTab', {
+            screen: 'AdminPedidos',
+          });
+        } else {
+          navigationRef.navigate('HomeTab');
+        }
         break;
       case 'nuevo_reparto':
         // Repartidor — su stack ya tiene el listado como pantalla principal
@@ -223,14 +228,20 @@ function MainApp() {
           rol: response.user.rol,
           estado: response.user.estado,
           avatar_url: response.user.avatar_url || null,
+          restaurante_id: response.user.restaurante_id || null,
           token: savedToken,
         }));
 
-        // Restaurar restaurante seleccionado desde AsyncStorage
-        try {
-          const saved = await AsyncStorage.getItem('selectedRestaurant');
-          if (saved) dispatch(selectRestaurant(JSON.parse(saved)));
-        } catch {}
+        // Admin: auto-seleccionar su restaurante desde el servidor
+        if (response.user.rol === 'admin' && response.user.restaurante) {
+          dispatch(selectRestaurant(response.user.restaurante));
+        } else {
+          // Restaurar restaurante seleccionado desde AsyncStorage (usuarios normales)
+          try {
+            const saved = await AsyncStorage.getItem('selectedRestaurant');
+            if (saved) dispatch(selectRestaurant(JSON.parse(saved)));
+          } catch {}
+        }
 
         // Restaurar carrito guardado desde AsyncStorage
         try {
@@ -312,6 +323,17 @@ function MainApp() {
       <NavigationContainer>
         <StatusBar style="dark" translucent backgroundColor="transparent" />
         <SuperAdminStack />
+        <FlashMessageWrapper />
+      </NavigationContainer>
+    );
+  }
+
+  // Admin — nunca puede ver SelectRestaurantScreen ni restaurantes de otros
+  if (isLoggedIn && userRol === 'admin') {
+    return (
+      <NavigationContainer ref={navigationRef}>
+        <StatusBar style="light" translucent backgroundColor="transparent" />
+        <AppNavigator />
         <FlashMessageWrapper />
       </NavigationContainer>
     );

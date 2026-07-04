@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const { sendPushNotification } = require('../services/notificationService');
+const { transicionarPedido } = require('../utils/pedidoTransitions');
 
 const getMpClient = () => new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN,
@@ -356,9 +357,10 @@ exports.mpWebhook = async (req, res) => {
             );
 
             await client.query(
-                "UPDATE pedidos SET estado = 'en_preparacion' WHERE id = $1 AND estado = 'pendiente'",
+                'UPDATE pedidos SET pago_confirmado_at = NOW() WHERE id = $1',
                 [pedidoId]
             );
+            await transicionarPedido(client, pedidoId, 'en_preparacion', 'sistema');
 
             await client.query('COMMIT');
             console.log(`[webhook] DB actualizada en ${Date.now() - webhookRecibido}ms`);

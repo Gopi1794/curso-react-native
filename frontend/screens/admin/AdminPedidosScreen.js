@@ -174,6 +174,12 @@ if (pedRes.success) setPedidos(pedRes.pedidos);
                             {item.metodo_pago === 'efectivo' ? 'Efectivo' : 'MercadoPago'}
                         </Text>
                     </View>
+                    {item.pago_confirmado_at && (
+                        <View style={styles.pagoConfirmadoBadge}>
+                            <Ionicons name="checkmark-circle" size={12} color="#2E7D32" />
+                            <Text style={styles.pagoConfirmadoText}>Pago confirmado</Text>
+                        </View>
+                    )}
                     {item.metodo_pago === 'efectivo' && item.monto_recibido ? (
                         <Text style={styles.cobradoInfo}>
                             Cobrado ${parseFloat(item.monto_recibido).toFixed(2)}
@@ -405,6 +411,13 @@ const styles = StyleSheet.create({
 
     cancelBtn: { marginTop: 8, alignItems: 'center', padding: 14 },
     cancelText: { fontFamily: 'Poppins-SemiBold', fontSize: 15, color: '#888' },
+
+    pagoConfirmadoBadge: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: '#E8F5E9', borderRadius: 20,
+        paddingHorizontal: 8, paddingVertical: 3,
+    },
+    pagoConfirmadoText: { fontFamily: 'Poppins-SemiBold', fontSize: 11, color: '#2E7D32' },
 
     payRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' },
     metodoBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },

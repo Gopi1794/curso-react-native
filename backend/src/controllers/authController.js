@@ -164,7 +164,7 @@ exports.login = async (req, res) => {
         const result = await db.query(
             `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado,
                     email_verificado, avatar_url, password_hash,
-                    login_attempts, locked_until
+                    login_attempts, locked_until, restaurante_id
              FROM usuarios WHERE email = $1`,
             [email.trim().toLowerCase()]
         );
@@ -244,10 +244,19 @@ exports.login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { userId: user.id, uuid: user.uuid, email: user.email, rol: user.rol },
+            { userId: user.id, uuid: user.uuid, email: user.email, rol: user.rol, restauranteId: user.restaurante_id || null },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRE || '30m' }
         );
+
+        let restaurante = null;
+        if (user.rol === 'admin' && user.restaurante_id) {
+            const resRow = await db.query(
+                'SELECT id, nombre, descripcion, direccion, telefono, horario FROM restaurantes WHERE id = $1',
+                [user.restaurante_id]
+            );
+            restaurante = resRow.rows[0] || null;
+        }
 
         res.json({
             success: true,
@@ -263,6 +272,8 @@ exports.login = async (req, res) => {
                 rol: user.rol,
                 estado: user.estado,
                 avatar_url: user.avatar_url || null,
+                restaurante_id: user.restaurante_id || null,
+                restaurante,
             }
         });
 
@@ -393,7 +404,7 @@ exports.googleLogin = async (req, res) => {
 exports.getUserProfile = async (req, res) => {
     try {
         const result = await db.query(
-            `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado, avatar_url, fecha_creacion
+            `SELECT id, uuid, nombre, apellido, email, telefono, rol, estado, avatar_url, fecha_creacion, restaurante_id
              FROM usuarios WHERE id = $1`,
             [req.user.userId]
         );
@@ -405,9 +416,19 @@ exports.getUserProfile = async (req, res) => {
             });
         }
 
+        const userData = result.rows[0];
+        let restaurante = null;
+        if (userData.rol === 'admin' && userData.restaurante_id) {
+            const resRow = await db.query(
+                'SELECT id, nombre, descripcion, direccion, telefono, horario FROM restaurantes WHERE id = $1',
+                [userData.restaurante_id]
+            );
+            restaurante = resRow.rows[0] || null;
+        }
+
         res.json({
             success: true,
-            user: result.rows[0]
+            user: { ...userData, restaurante }
         });
 
     } catch (error) {
