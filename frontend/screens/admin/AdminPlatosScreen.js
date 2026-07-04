@@ -16,7 +16,7 @@ import { useAppSelector } from '../../store/hooks';
 
 const ITEMS_PER_PAGE = 10;
 
-const CATEGORIAS = ['burgers','pizzas','sushi','pasta','ensaladas','bebidas','postres','otros'];
+const CATEGORIAS = ['burgers', 'pizzas', 'sushi', 'pasta', 'ensaladas', 'bebidas', 'postres', 'otros'];
 
 const CATEGORIA_ICON = {
     burgers: 'fast-food-outline', pizzas: 'pizza-outline', bebidas: 'wine-outline',
@@ -333,7 +333,7 @@ export default function AdminPlatosScreen({ navigation }) {
 
                         {/* Pagination */}
                         {filtered.length > 0 && (
-                            <View style={[styles.pagination, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 52 }]}>
+                            <View style={[styles.pagination, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 8 }]}>
                                 <Text style={styles.paginationInfo}>
                                     Mostrando {startItem} - {endItem} de {filtered.length}
                                 </Text>
@@ -381,7 +381,7 @@ export default function AdminPlatosScreen({ navigation }) {
                                     ? <Image source={src} style={styles.actionThumb} />
                                     : <View style={[styles.actionThumb, styles.actionThumbEmpty]}>
                                         <Ionicons name="fast-food-outline" size={26} color="#ddd" />
-                                      </View>;
+                                    </View>;
                             })()}
                             <View style={styles.actionHeaderInfo}>
                                 <Text style={styles.actionNombre} numberOfLines={1}>{actionItem?.nombre}</Text>
@@ -394,14 +394,22 @@ export default function AdminPlatosScreen({ navigation }) {
 
                         {/* Acciones */}
                         {[
-                            { icon: 'eye-outline',       label: 'Ver detalle', color: '#1976D2',
-                              onPress: () => { setActionItem(null); goToDetail(actionItem); } },
-                            { icon: 'pencil-outline',    label: 'Editar',      color: '#FF8700',
-                              onPress: () => { setActionItem(null); openEdit(actionItem); } },
-                            { icon: 'copy-outline',      label: 'Duplicar',    color: '#7B1FA2',
-                              onPress: () => { const i = actionItem; setActionItem(null); handleDuplicate(i); } },
-                            { icon: 'trash-outline',     label: 'Eliminar',    color: '#E53935',
-                              onPress: () => { const i = actionItem; setActionItem(null); handleDelete(i); } },
+                            {
+                                icon: 'eye-outline', label: 'Ver detalle', color: '#1976D2',
+                                onPress: () => { setActionItem(null); goToDetail(actionItem); }
+                            },
+                            {
+                                icon: 'pencil-outline', label: 'Editar', color: '#FF8700',
+                                onPress: () => { setActionItem(null); openEdit(actionItem); }
+                            },
+                            {
+                                icon: 'copy-outline', label: 'Duplicar', color: '#7B1FA2',
+                                onPress: () => { const i = actionItem; setActionItem(null); handleDuplicate(i); }
+                            },
+                            {
+                                icon: 'trash-outline', label: 'Eliminar', color: '#E53935',
+                                onPress: () => { const i = actionItem; setActionItem(null); handleDelete(i); }
+                            },
                         ].map(({ icon, label, color, onPress }) => (
                             <TouchableOpacity key={label} style={styles.actionRow} onPress={onPress} activeOpacity={0.7}>
                                 <View style={[styles.actionIconBox, { backgroundColor: color + '15' }]}>

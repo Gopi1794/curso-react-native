@@ -31,6 +31,8 @@ export const HeaderSection = ({
 
     const cartItems          = useAppSelector(state => state.cart.items);
     const selectedRestaurant = useAppSelector(state => state.restaurant.selected);
+    const userRol            = useAppSelector(state => state.user.userInfo?.rol);
+    const isAdmin            = userRol === 'admin';
 
     const totalItems   = cartItems.reduce((sum, item) => sum + item.quantity, 0);
     const locationName = selectedRestaurant
@@ -44,8 +46,8 @@ export const HeaderSection = ({
             <View style={styles.topRow}>
                 <TouchableOpacity
                     style={styles.locationBtn}
-                    onPress={() => selectedRestaurant && dispatch(clearRestaurant())}
-                    activeOpacity={selectedRestaurant ? 0.7 : 1}
+                    onPress={() => !isAdmin && selectedRestaurant && dispatch(clearRestaurant())}
+                    activeOpacity={!isAdmin && selectedRestaurant ? 0.7 : 1}
                 >
                     <Text style={styles.deliverLabel}>Estás en</Text>
                     <View style={styles.locationRow}>
@@ -53,7 +55,7 @@ export const HeaderSection = ({
                         <Text style={styles.locationText} numberOfLines={1}>
                             {locationName}
                         </Text>
-                        {selectedRestaurant && (
+                        {selectedRestaurant && !isAdmin && (
                             <Ionicons name="chevron-down" size={14} color="#555" />
                         )}
                     </View>

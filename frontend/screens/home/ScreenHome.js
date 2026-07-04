@@ -148,6 +148,7 @@ const mapMenuItem = (item) => ({
     id: item.id,
     name: item.nombre,
     price: `$${parseFloat(item.precio).toFixed(2)}`,
+    basePrice: parseFloat(item.precio),
     imageKey: item.imagen_key,
     category: item.categoria,
     calories: item.calories ?? item.calorias ?? null,
@@ -156,6 +157,7 @@ const mapMenuItem = (item) => ({
     ingredientText: item.ingredientes || [],
     ingredientesDetalle: item.ingredientes_detalle || [],
     disponible: item.disponible,
+    opciones: item.opciones || null,
 });
 
 export const ScreenHome = ({ navigation }) => {

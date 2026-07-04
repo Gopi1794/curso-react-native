@@ -79,6 +79,15 @@ const FoodDetailScreen = ({ route }) => {
     const cartItems  = useAppSelector(state => state.cart.items);
     const isInCart   = cartItems.some(i => i.id === foodItem?.id);
 
+    const opciones = React.useMemo(() => {
+        if (!foodItem.opciones) return null;
+        if (typeof foodItem.opciones === 'string') {
+            try { return JSON.parse(foodItem.opciones); } catch { return null; }
+        }
+        return Array.isArray(foodItem.opciones) ? foodItem.opciones : null;
+    }, [foodItem.opciones]);
+
+    const [selectedOption, setSelectedOption] = useState(() => opciones?.[0] ?? null);
     const [isFavorite, setIsFavorite] = useState(false);
     const [quantity, setQuantity] = useState(1);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -351,14 +360,19 @@ const FoodDetailScreen = ({ route }) => {
         const allIngredients = foodItem.ingredientText || [];
         const removedIngredients = allIngredients.filter(i => !selectedIngredients.has(i));
 
+        const effectivePrice = selectedOption
+            ? selectedOption.price
+            : parseFloat(foodItem.price.replace('$', ''));
+
         const cartItem = {
             id: foodItem.id,
             name: foodItem.name,
-            price: parseFloat(foodItem.price.replace('$', '')),
+            price: effectivePrice,
             image: imageMap[mainImageKey],
             quantity: selectedQuantity,
             description: foodItem.descriptionText,
             removedIngredients,
+            ...(selectedOption ? { varianteLabel: selectedOption.label } : {}),
         };
 
         dispatch(addToCart(cartItem));
@@ -545,7 +559,11 @@ const FoodDetailScreen = ({ route }) => {
                     {/* Título y Precio */}
                     <View style={styles.titleSection}>
                         <Text style={styles.foodTitle}>{foodItem.name}</Text>
-                        <Text style={styles.foodPrice}>{foodItem.price}</Text>
+                        <Text style={styles.foodPrice}>
+                            ${selectedOption
+                                ? selectedOption.price.toFixed(2)
+                                : parseFloat(foodItem.price.replace('$', '')).toFixed(2)}
+                        </Text>
                     </View>
 
                     {/* Rating y Estadísticas */}
@@ -593,6 +611,33 @@ const FoodDetailScreen = ({ route }) => {
                         <Text style={styles.descriptionText}>{foodItem.descriptionText}</Text>
                     </View>
 
+                    {/* Selector de variantes */}
+                    {opciones && opciones.length > 0 && (
+                        <View style={styles.opcionesSection}>
+                            <Text style={styles.sectionTitle}>Tamaño / Variante</Text>
+                            <View style={styles.opcionesList}>
+                                {opciones.map((op, idx) => {
+                                    const isSelected = selectedOption?.label === op.label;
+                                    return (
+                                        <TouchableOpacity
+                                            key={idx}
+                                            style={[styles.opcionChip, isSelected && styles.opcionChipSelected]}
+                                            onPress={() => setSelectedOption(op)}
+                                            activeOpacity={0.75}
+                                        >
+                                            <Text style={[styles.opcionLabel, isSelected && styles.opcionLabelSelected]}>
+                                                {op.label}
+                                            </Text>
+                                            <Text style={[styles.opcionPrice, isSelected && styles.opcionPriceSelected]}>
+                                                ${op.price.toFixed(2)}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    )}
+
                     {/* Botón de personalización */}
                     {foodItem.ingredientText && foodItem.ingredientText.length > 0 && (
                         <TouchableOpacity
@@ -631,7 +676,9 @@ const FoodDetailScreen = ({ route }) => {
                         onIncrease={handleIncreaseQuantity}
                         onDecrease={handleDecreaseQuantity}
                         onAddToCart={handleAddToCart}
-                        price={foodItem.price}
+                        price={selectedOption
+                            ? `$${selectedOption.price.toFixed(2)}`
+                            : foodItem.price}
                         buttonText="Añadir al carrito"
                         style={styles.inlineActionBar}
                     />
@@ -1310,6 +1357,45 @@ const styles = StyleSheet.create({
         borderRadius: 18,
     },
     // Action Bar
+    opcionesSection: {
+        marginBottom: 24,
+    },
+    opcionesList: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    opcionChip: {
+        borderWidth: 1.5,
+        borderColor: '#FF8000',
+        borderRadius: 14,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        alignItems: 'center',
+        backgroundColor: '#FFF3E8',
+        minWidth: 80,
+    },
+    opcionChipSelected: {
+        backgroundColor: '#FF8000',
+        borderColor: '#FF8000',
+    },
+    opcionLabel: {
+        fontSize: 13,
+        fontFamily: 'Poppins-SemiBold',
+        color: '#FF8000',
+    },
+    opcionLabelSelected: {
+        color: 'white',
+    },
+    opcionPrice: {
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        color: '#FF8000',
+        marginTop: 2,
+    },
+    opcionPriceSelected: {
+        color: 'rgba(255,255,255,0.85)',
+    },
 });
 
 export default FoodDetailScreen;

@@ -105,7 +105,7 @@ exports.getMenu = async (req, res) => {
         // Construir query: usar vista de disponibilidad + ingredientes desde tablas nuevas
         let query = `
             SELECT mi.id, mi.nombre, mi.precio, mi.categoria, mi.descripcion, mi.imagen_key,
-                   mi.calorias, mi.peso, mi.ingredientes AS ingredientes_raw,
+                   mi.calorias, mi.peso, mi.ingredientes AS ingredientes_raw, mi.opciones,
                    COALESCE(vd.disponible, TRUE) AS disponible
             FROM menu_items mi
             LEFT JOIN vista_disponibilidad_platos vd
