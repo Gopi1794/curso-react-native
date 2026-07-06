@@ -264,6 +264,14 @@ const repartidor = {
     updateEstado: (id, estado) => request(`/api/repartidor/pedidos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
     cobrarEfectivo: (id, monto_recibido) => request(`/api/repartidor/pedidos/${id}/cobrar`, { method: 'PUT', body: JSON.stringify({ monto_recibido }) }),
     getResumenDia: () => request('/api/repartidor/resumen-dia'),
+    getRuta: (pedidoId, destino) => request('/api/repartidor/ruta', {
+        method: 'POST',
+        body: JSON.stringify({ pedido_id: pedidoId, destino }),
+    }),
+    updateUbicacion: (lat, lng) => request('/api/repartidor/ubicacion', {
+        method: 'PUT',
+        body: JSON.stringify({ lat, lng }),
+    }),
 };
 
 // ── ADMIN ─────────────────────────────────────────────────
