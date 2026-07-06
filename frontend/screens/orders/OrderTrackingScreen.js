@@ -163,8 +163,14 @@ export default function OrderTrackingScreen({ route, navigation }) {
         return Math.max(1, Math.round(restanteMs / 60000)); // nunca mostrar 0 o negativo
     })();
 
-    const midLat = (restaurante.lat + (destinoCoords?.lat ?? restaurante.lat)) / 2;
-    const midLng = (restaurante.lng + (destinoCoords?.lng ?? restaurante.lng)) / 2;
+    const restauranteValido = restaurante.lat != null && restaurante.lng != null;
+
+    const midLat = restauranteValido
+        ? (restaurante.lat + (destinoCoords?.lat ?? restaurante.lat)) / 2
+        : (destinoCoords?.lat ?? -34.6037);
+    const midLng = restauranteValido
+        ? (restaurante.lng + (destinoCoords?.lng ?? restaurante.lng)) / 2
+        : (destinoCoords?.lng ?? -58.3816);
 
     return (
         <View style={styles.container}>
@@ -194,14 +200,16 @@ export default function OrderTrackingScreen({ route, navigation }) {
                     longitudeDelta: 0.04,
                 }}
             >
-                <Marker
-                    coordinate={{ latitude: restaurante.lat, longitude: restaurante.lng }}
-                    title="Restaurante"
-                >
-                    <View style={styles.pinRestaurante}>
-                        <Ionicons name="storefront" size={16} color="#fff" />
-                    </View>
-                </Marker>
+                {restauranteValido && (
+                    <Marker
+                        coordinate={{ latitude: restaurante.lat, longitude: restaurante.lng }}
+                        title="Restaurante"
+                    >
+                        <View style={styles.pinRestaurante}>
+                            <Ionicons name="storefront" size={16} color="#fff" />
+                        </View>
+                    </Marker>
+                )}
 
                 {destinoCoords && (
                     <Marker
@@ -228,7 +236,9 @@ export default function OrderTrackingScreen({ route, navigation }) {
                 {destinoCoords && (
                     <Polyline
                         coordinates={[
-                            { latitude: restaurante.lat,  longitude: restaurante.lng },
+                            ...(restauranteValido
+                                ? [{ latitude: restaurante.lat, longitude: restaurante.lng }]
+                                : []),
                             ...(repartidor.lat != null && repartidor.lng != null
                                 ? [{ latitude: repartidor.lat, longitude: repartidor.lng }]
                                 : []),
