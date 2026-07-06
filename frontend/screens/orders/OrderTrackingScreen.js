@@ -83,20 +83,22 @@ export default function OrderTrackingScreen({ route, navigation }) {
             const res = await API.orders.getTracking(orderId);
             if (!res.success) { setError('No se pudo cargar el tracking'); return; }
 
-            if (!markerCoord.current) {
-                markerCoord.current = new AnimatedRegion({
-                    latitude:        res.repartidor.lat,
-                    longitude:       res.repartidor.lng,
-                    latitudeDelta:   0,
-                    longitudeDelta:  0,
-                });
-            } else {
-                markerCoord.current.timing({
-                    latitude:       res.repartidor.lat,
-                    longitude:      res.repartidor.lng,
-                    duration:       800,
-                    useNativeDriver: false,
-                }).start();
+            if (res.repartidor.lat != null && res.repartidor.lng != null) {
+                if (!markerCoord.current) {
+                    markerCoord.current = new AnimatedRegion({
+                        latitude:        res.repartidor.lat,
+                        longitude:       res.repartidor.lng,
+                        latitudeDelta:   0,
+                        longitudeDelta:  0,
+                    });
+                } else {
+                    markerCoord.current.timing({
+                        latitude:       res.repartidor.lat,
+                        longitude:      res.repartidor.lng,
+                        duration:       800,
+                        useNativeDriver: false,
+                    }).start();
+                }
             }
 
             setTrackingData(res);
@@ -212,7 +214,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
                     </Marker>
                 )}
 
-                {markerCoord.current && (
+                {markerCoord.current && repartidor.lat != null && repartidor.lng != null && (
                     <MarkerAnimated
                         coordinate={markerCoord.current}
                         title={repartidor.nombre}
@@ -227,7 +229,9 @@ export default function OrderTrackingScreen({ route, navigation }) {
                     <Polyline
                         coordinates={[
                             { latitude: restaurante.lat,  longitude: restaurante.lng },
-                            { latitude: repartidor.lat,   longitude: repartidor.lng },
+                            ...(repartidor.lat != null && repartidor.lng != null
+                                ? [{ latitude: repartidor.lat, longitude: repartidor.lng }]
+                                : []),
                             { latitude: destinoCoords.lat, longitude: destinoCoords.lng },
                         ]}
                         strokeColor={ORANGE}

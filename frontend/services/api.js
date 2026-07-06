@@ -266,7 +266,7 @@ const repartidor = {
     getResumenDia: () => request('/api/repartidor/resumen-dia'),
     getRuta: (pedidoId, destino) => request('/api/repartidor/ruta', {
         method: 'POST',
-        body: JSON.stringify({ pedido_id: pedidoId, destino }),
+        body: JSON.stringify({ pedido_id: pedidoId, destino: { lat: destino.latitude, lng: destino.longitude } }),
     }),
     updateUbicacion: (lat, lng) => request('/api/repartidor/ubicacion', {
         method: 'PUT',

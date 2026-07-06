@@ -376,7 +376,10 @@ exports.getTracking = async (req, res) => {
                 lat: row.ubicacion_lat != null ? parseFloat(row.ubicacion_lat) : null,
                 lng: row.ubicacion_lng != null ? parseFloat(row.ubicacion_lng) : null,
             },
-            restaurante: { lat: parseFloat(row.restaurante_lat), lng: parseFloat(row.restaurante_lng) },
+            restaurante: {
+                lat: row.restaurante_lat != null ? parseFloat(row.restaurante_lat) : null,
+                lng: row.restaurante_lng != null ? parseFloat(row.restaurante_lng) : null,
+            },
             distanciaMetros: row.distancia_metros,
             duracionSegundos: row.duracion_segundos,
             etaCalculadoEn: row.eta_calculado_en,

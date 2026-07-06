@@ -181,7 +181,7 @@ export default function RepartidorMapaScreen() {
         const polylinePlano = routePoints.map(p => ({ lat: p.latitude, lng: p.longitude }));
         const desvioMetros = distanceToPolylineMeters(puntoActual, polylinePlano);
 
-        const etaProximaACero = etaTarget && (etaTarget.getTime() - Date.now()) < 60000;
+        const etaProximaACero = etaTarget && (etaTarget.getTime() - Date.now()) < 60000 && selected.estado === 'en_camino';
 
         if (desvioMetros > 70 || etaProximaACero) {
             fetchRoute(selected);
