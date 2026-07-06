@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const authMiddleware = require('../middleware/authMiddleware');
 const ctrl = require('../controllers/repartidorController');
+const rutaCtrl = require('../controllers/rutaController');
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.get('/historial',            ctrl.getHistorial);
 router.put('/pedidos/:id/estado',   ctrl.updateEstado);
 router.put('/pedidos/:id/cobrar',   ctrl.cobrarEfectivo);
 router.put('/ubicacion',            ctrl.actualizarUbicacion);
+router.post('/ruta',                rutaCtrl.calcularRuta);
 
 module.exports = router;
