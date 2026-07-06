@@ -171,3 +171,23 @@ exports.updateEstado = async (req, res) => {
         client.release();
     }
 };
+
+exports.actualizarUbicacion = async (req, res) => {
+    const { lat, lng } = req.body;
+
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+        return res.status(400).json({ success: false, message: 'lat y lng son requeridos y deben ser números' });
+    }
+
+    try {
+        await db.query(
+            `UPDATE usuarios SET ubicacion_lat = $1, ubicacion_lng = $2, ubicacion_actualizada_en = NOW()
+             WHERE id = $3`,
+            [lat, lng, req.user.userId]
+        );
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error en actualizarUbicacion:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
