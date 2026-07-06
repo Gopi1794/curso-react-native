@@ -70,9 +70,10 @@ function initials(name) {
 export default function OrderTrackingScreen({ route, navigation }) {
     const { orderId } = route.params;
 
-    const [trackingData, setTrackingData] = useState(null);
-    const [error, setError]               = useState(null);
-    const [mapError, setMapError]         = useState(false);
+    const [trackingData, setTrackingData]   = useState(null);
+    const [error, setError]                 = useState(null);
+    const [mapError, setMapError]           = useState(false);
+    const [destinoCoords, setDestinoCoords] = useState(null);
 
     const markerCoord = useRef(null);
     const intervalRef = useRef(null);
@@ -115,6 +116,20 @@ export default function OrderTrackingScreen({ route, navigation }) {
         return () => clearInterval(intervalRef.current);
     }, [orderId]);
 
+    useEffect(() => {
+        if (!trackingData?.direccionEntrega || destinoCoords) return;
+        (async () => {
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(trackingData.direccionEntrega)}&format=json&limit=1`;
+                const res = await fetch(url, { headers: { 'User-Agent': 'TuAppFood/1.0' } });
+                const data = await res.json();
+                if (data.length > 0) {
+                    setDestinoCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+                }
+            } catch {}
+        })();
+    }, [trackingData]);
+
     if (error) {
         return (
             <View style={[styles.container, styles.center]}>
@@ -136,11 +151,18 @@ export default function OrderTrackingScreen({ route, navigation }) {
         );
     }
 
-    const { repartidor, restaurante, destino, estado } = trackingData;
+    const { repartidor, restaurante, estado, distanciaMetros, duracionSegundos, etaCalculadoEn } = trackingData;
     const statusInfo = STATUS_TEXT[estado] || STATUS_TEXT.pendiente;
 
-    const midLat = (restaurante.lat + destino.lat) / 2;
-    const midLng = (restaurante.lng + destino.lng) / 2;
+    const etaMinutosRestantes = (() => {
+        if (!etaCalculadoEn || !duracionSegundos) return null;
+        const objetivoMs = new Date(etaCalculadoEn).getTime() + duracionSegundos * 1000;
+        const restanteMs = objetivoMs - Date.now();
+        return Math.max(1, Math.round(restanteMs / 60000)); // nunca mostrar 0 o negativo
+    })();
+
+    const midLat = (restaurante.lat + (destinoCoords?.lat ?? restaurante.lat)) / 2;
+    const midLng = (restaurante.lng + (destinoCoords?.lng ?? restaurante.lng)) / 2;
 
     return (
         <View style={styles.container}>
@@ -179,14 +201,16 @@ export default function OrderTrackingScreen({ route, navigation }) {
                     </View>
                 </Marker>
 
-                <Marker
-                    coordinate={{ latitude: destino.lat, longitude: destino.lng }}
-                    title="Tu dirección"
-                >
-                    <View style={styles.pinDestino}>
-                        <Ionicons name="home" size={16} color="#fff" />
-                    </View>
-                </Marker>
+                {destinoCoords && (
+                    <Marker
+                        coordinate={{ latitude: destinoCoords.lat, longitude: destinoCoords.lng }}
+                        title="Tu dirección"
+                    >
+                        <View style={styles.pinDestino}>
+                            <Ionicons name="home" size={16} color="#fff" />
+                        </View>
+                    </Marker>
+                )}
 
                 {markerCoord.current && (
                     <MarkerAnimated
@@ -199,16 +223,18 @@ export default function OrderTrackingScreen({ route, navigation }) {
                     </MarkerAnimated>
                 )}
 
-                <Polyline
-                    coordinates={[
-                        { latitude: restaurante.lat, longitude: restaurante.lng },
-                        { latitude: repartidor.lat,  longitude: repartidor.lng },
-                        { latitude: destino.lat,     longitude: destino.lng },
-                    ]}
-                    strokeColor={ORANGE}
-                    strokeWidth={3}
-                    lineDashPattern={[6, 4]}
-                />
+                {destinoCoords && (
+                    <Polyline
+                        coordinates={[
+                            { latitude: restaurante.lat,  longitude: restaurante.lng },
+                            { latitude: repartidor.lat,   longitude: repartidor.lng },
+                            { latitude: destinoCoords.lat, longitude: destinoCoords.lng },
+                        ]}
+                        strokeColor={ORANGE}
+                        strokeWidth={3}
+                        lineDashPattern={[6, 4]}
+                    />
+                )}
             </MapView>
             )}
 
@@ -230,6 +256,9 @@ export default function OrderTrackingScreen({ route, navigation }) {
                             <Ionicons name="star" size={12} color={ORANGE} />
                             <Text style={styles.driverRating}>{repartidor.rating} · {statusInfo.subtitle}</Text>
                         </View>
+                        {etaMinutosRestantes != null && (
+                            <Text style={styles.driverRating}>Llega en {etaMinutosRestantes} min</Text>
+                        )}
                     </View>
                     <View style={styles.driverActions}>
                         <TouchableOpacity style={styles.driverBtn}>
