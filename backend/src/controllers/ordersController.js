@@ -340,9 +340,6 @@ exports.cancelOrder = async (req, res) => {
 
 // ── GET ORDER TRACKING ─────────────────────────────────────
 // GET /api/orders/:id/tracking
-const RESTAURANTE_COORDS = { lat: -34.6100, lng: -58.3900 };
-const DESTINO_COORDS     = { lat: -34.5980, lng: -58.3750 };
-
 exports.getTracking = async (req, res) => {
     try {
         const { id } = req.params;
@@ -352,8 +349,13 @@ exports.getTracking = async (req, res) => {
         }
 
         const result = await db.query(
-            `SELECT p.estado, p.fecha_en_camino
+            `SELECT p.estado, p.direccion_entrega, p.distancia_metros, p.duracion_segundos, p.eta_calculado_en,
+                    rep.nombre AS repartidor_nombre,
+                    rep.ubicacion_lat, rep.ubicacion_lng,
+                    rest.lat AS restaurante_lat, rest.lng AS restaurante_lng
              FROM pedidos p
+             JOIN restaurantes rest ON rest.id = p.restaurante_id
+             LEFT JOIN usuarios rep ON rep.id = p.repartidor_id
              WHERE p.id = $1 AND p.usuario_id = $2`,
             [id, req.user.userId]
         );
@@ -362,27 +364,22 @@ exports.getTracking = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
         }
 
-        const { estado, fecha_en_camino } = result.rows[0];
-
-        const minutosTranscurridos = fecha_en_camino
-            ? (Date.now() - new Date(fecha_en_camino)) / 60000
-            : 0;
-        const progress = Math.min(minutosTranscurridos / 20, 0.95);
-
-        const repartidorLat = RESTAURANTE_COORDS.lat + (DESTINO_COORDS.lat - RESTAURANTE_COORDS.lat) * progress;
-        const repartidorLng = RESTAURANTE_COORDS.lng + (DESTINO_COORDS.lng - RESTAURANTE_COORDS.lng) * progress;
+        const row = result.rows[0];
 
         res.json({
             success: true,
-            estado,
+            estado: row.estado,
+            direccionEntrega: row.direccion_entrega,
             repartidor: {
-                nombre: 'Carlos Méndez',
+                nombre: row.repartidor_nombre || 'Repartidor',
                 rating: '4.8',
-                lat: repartidorLat,
-                lng: repartidorLng,
+                lat: row.ubicacion_lat != null ? parseFloat(row.ubicacion_lat) : null,
+                lng: row.ubicacion_lng != null ? parseFloat(row.ubicacion_lng) : null,
             },
-            restaurante: RESTAURANTE_COORDS,
-            destino: DESTINO_COORDS,
+            restaurante: { lat: parseFloat(row.restaurante_lat), lng: parseFloat(row.restaurante_lng) },
+            distanciaMetros: row.distancia_metros,
+            duracionSegundos: row.duracion_segundos,
+            etaCalculadoEn: row.eta_calculado_en,
         });
 
     } catch (error) {

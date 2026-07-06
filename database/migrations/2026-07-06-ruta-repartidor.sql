@@ -11,3 +11,9 @@ ALTER TABLE pedidos
   ADD COLUMN IF NOT EXISTS distancia_metros    INT,
   ADD COLUMN IF NOT EXISTS duracion_segundos   INT,
   ADD COLUMN IF NOT EXISTS eta_calculado_en    TIMESTAMP;
+
+-- Task 5: getTracking necesita coordenadas reales del restaurante.
+-- No destructivo: solo ADD COLUMN IF NOT EXISTS (no-op si ya existen en la DB real).
+ALTER TABLE restaurantes
+  ADD COLUMN IF NOT EXISTS lat NUMERIC(10, 7),
+  ADD COLUMN IF NOT EXISTS lng NUMERIC(10, 7);
