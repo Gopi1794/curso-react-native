@@ -3,13 +3,14 @@ import {
     View, Text, StyleSheet, TouchableOpacity,
     Linking, ActivityIndicator, Platform, Alert, ScrollView,
 } from 'react-native';
-import MapView, { Marker, Circle } from 'react-native-maps';
+import MapView, { Marker, Circle, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import API from '../../services/api';
+import { distanceToPolylineMeters } from '../../utils/routeGeometry';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 
@@ -67,6 +68,11 @@ export default function RepartidorMapaScreen() {
     const [loading, setLoading] = useState(true);
     const [geocoding, setGeocoding] = useState(false);
     const [topBlockHeight, setTopBlockHeight] = useState(0);
+    const [routePoints, setRoutePoints] = useState(null);       // [{latitude, longitude}, ...] para <Polyline>
+    const [routeInfo, setRouteInfo] = useState(null);           // { distanceMeters, durationSeconds }
+    const [etaTarget, setEtaTarget] = useState(null);           // Date — cuándo debería llegar, según la última ruta calculada
+    const recalculandoRef = useRef(false);
+    const routeRequestSeq = useRef(0);
 
     // ── Permiso y watch de ubicación ──────────────────────
     useEffect(() => {
@@ -85,7 +91,10 @@ export default function RepartidorMapaScreen() {
 
             sub = await Location.watchPositionAsync(
                 { accuracy: Location.Accuracy.High, distanceInterval: 10 },
-                pos => setLocation(pos.coords)
+                pos => {
+                    setLocation(pos.coords);
+                    API.repartidor.updateUbicacion(pos.coords.latitude, pos.coords.longitude).catch(() => {});
+                }
             );
         })();
         return () => sub?.remove();
@@ -137,6 +146,47 @@ export default function RepartidorMapaScreen() {
             longitudeDelta: 0.01,
         }, 500);
     }, [selected]);
+
+    // ── Pedir la ruta al backend (Google Directions) ──────
+    const fetchRoute = useCallback(async (pedido) => {
+        if (!pedido || !coords[pedido.id]) return;
+        const mySeq = ++routeRequestSeq.current;
+        recalculandoRef.current = true;
+        try {
+            const res = await API.repartidor.getRuta(pedido.id, coords[pedido.id]);
+            if (mySeq !== routeRequestSeq.current) return; // llegó una respuesta vieja, descartar
+            if (res.success) {
+                setRoutePoints(res.points.map(p => ({ latitude: p.lat, longitude: p.lng })));
+                setRouteInfo({ distanceMeters: res.distanceMeters, durationSeconds: res.durationSeconds });
+                setEtaTarget(new Date(Date.now() + res.durationSeconds * 1000));
+            }
+        } catch {
+            // No romper el flujo si Google falla — se mantienen pines y botones de Waze/Google Maps
+        } finally {
+            if (mySeq === routeRequestSeq.current) recalculandoRef.current = false;
+        }
+    }, [coords]);
+
+    // ── Pedir la ruta al seleccionar un pedido ────────────
+    useEffect(() => {
+        if (selected) fetchRoute(selected);
+        else { setRoutePoints(null); setRouteInfo(null); setEtaTarget(null); }
+    }, [selected, fetchRoute]);
+
+    // ── Detección de desvío y recálculo por ETA próxima a cero ──
+    useEffect(() => {
+        if (!location || !routePoints || !selected || recalculandoRef.current) return;
+
+        const puntoActual = { lat: location.latitude, lng: location.longitude };
+        const polylinePlano = routePoints.map(p => ({ lat: p.latitude, lng: p.longitude }));
+        const desvioMetros = distanceToPolylineMeters(puntoActual, polylinePlano);
+
+        const etaProximaACero = etaTarget && (etaTarget.getTime() - Date.now()) < 60000;
+
+        if (desvioMetros > 70 || etaProximaACero) {
+            fetchRoute(selected);
+        }
+    }, [location, routePoints, selected, etaTarget, fetchRoute]);
 
     // ── Centrar en mi posición ────────────────────────────
     const centerOnMe = () => {
@@ -235,6 +285,14 @@ export default function RepartidorMapaScreen() {
                         </View>
                     </Marker>
                 ))}
+
+                {routePoints && (
+                    <Polyline
+                        coordinates={routePoints}
+                        strokeColor="#FF8700"
+                        strokeWidth={4}
+                    />
+                )}
             </MapView>
 
             {/* ── Bloque superior: header + lista ── */}
@@ -325,6 +383,15 @@ export default function RepartidorMapaScreen() {
                             </View>
                         )}
                     </View>
+
+                    {routeInfo && (
+                        <View style={styles.cardRow}>
+                            <Ionicons name="speedometer-outline" size={15} color="#666" />
+                            <Text style={styles.cardTotal}>
+                                {(routeInfo.distanceMeters / 1000).toFixed(1)} km · {Math.round(routeInfo.durationSeconds / 60)} min
+                            </Text>
+                        </View>
+                    )}
 
                     {coords[selected.id] && (
                         <View style={styles.navButtons}>
