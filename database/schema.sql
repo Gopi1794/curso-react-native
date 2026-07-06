@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     fecha_creacion  TIMESTAMP       NOT NULL DEFAULT NOW(),
     fecha_actualizacion TIMESTAMP   DEFAULT NOW()
 );
+-- Columnas agregadas 2026-07-06 (ver database/migrations/2026-07-06-ruta-repartidor.sql):
+--   ubicacion_lat, ubicacion_lng, ubicacion_actualizada_en (última posición GPS reportada por el repartidor)
 
 -- ── CONSTRAINTS ──────────────────────────────────────────
 ALTER TABLE usuarios
@@ -243,6 +245,8 @@ CREATE TABLE IF NOT EXISTS pedidos (
     fecha_creacion      TIMESTAMP       NOT NULL DEFAULT NOW(),
     fecha_actualizacion TIMESTAMP       DEFAULT NOW()
 );
+-- Columnas agregadas 2026-07-06 (ver database/migrations/2026-07-06-ruta-repartidor.sql):
+--   distancia_metros, duracion_segundos, eta_calculado_en (última ruta calculada con Google Routes API)
 
 CREATE INDEX IF NOT EXISTS idx_pedidos_usuario    ON pedidos (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_pedidos_estado     ON pedidos (estado);
