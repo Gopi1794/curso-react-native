@@ -118,7 +118,7 @@ export default function AddAddressSheet({ visible, onClose, onSaved }) {
             });
             if (res.success) {
                 closeSheet();
-                onSaved?.();
+                onSaved?.(res.address);
             } else {
                 Alert.alert('Error', res.message || 'No se pudo guardar');
             }

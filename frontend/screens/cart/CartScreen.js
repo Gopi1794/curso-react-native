@@ -730,8 +730,9 @@ const CartScreen = ({ navigation }) => {
             <AddAddressSheet
                 visible={showAddSheet}
                 onClose={() => setShowAddSheet(false)}
-                onSaved={async () => {
+                onSaved={async (newAddress) => {
                     await loadAddresses();
+                    if (newAddress) setSelectedAddress(newAddress);
                     showSuccessMessage('Dirección guardada');
                 }}
             />

@@ -1,377 +1,236 @@
--- ============================================================
--- foodapp_db — Schema inicial
--- Motor: PostgreSQL 14+
--- Ejecutar en pgAdmin o con: psql -U postgres -d foodapp_db -f schema.sql
--- ============================================================
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
 
--- Extensión para gen_random_uuid() (disponible desde PG 13 sin extensión)
--- CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- ── TABLA: usuarios ──────────────────────────────────────
-CREATE TABLE IF NOT EXISTS usuarios (
-    id              BIGSERIAL       PRIMARY KEY,
-    uuid            UUID            NOT NULL DEFAULT gen_random_uuid(),
-    nombre          VARCHAR(100)    NOT NULL,
-    apellido        VARCHAR(100)    NOT NULL,
-    email           VARCHAR(255)    NOT NULL,
-    telefono        VARCHAR(20)     NOT NULL,
-    password_hash   VARCHAR(255)    NOT NULL,
-    rol             VARCHAR(20)     NOT NULL DEFAULT 'cliente'
-                        CHECK (rol IN ('cliente', 'admin', 'repartidor')),
-    estado          VARCHAR(20)     NOT NULL DEFAULT 'activo'
-                        CHECK (estado IN ('activo', 'inactivo', 'suspendido')),
-    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT NOW(),
-    fecha_actualizacion TIMESTAMP   DEFAULT NOW()
+CREATE TABLE public.usuarios (
+  id bigint NOT NULL DEFAULT nextval('usuarios_id_seq'::regclass),
+  uuid uuid NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+  nombre character varying NOT NULL,
+  apellido character varying NOT NULL,
+  email character varying NOT NULL UNIQUE,
+  telefono character varying NOT NULL,
+  password_hash character varying NOT NULL,
+  rol character varying NOT NULL DEFAULT 'cliente'::character varying CHECK (rol::text = ANY (ARRAY['cliente'::text, 'admin'::text, 'repartidor'::text, 'superadmin'::text])),
+  estado character varying NOT NULL DEFAULT 'activo'::character varying CHECK (estado::text = ANY (ARRAY['activo'::character varying, 'inactivo'::character varying, 'suspendido'::character varying]::text[])),
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  fecha_actualizacion timestamp without time zone DEFAULT now(),
+  avatar_url text,
+  email_verificado boolean NOT NULL DEFAULT false,
+  token_verificacion character varying,
+  token_verificacion_expira timestamp without time zone,
+  push_token text,
+  login_attempts integer NOT NULL DEFAULT 0,
+  locked_until timestamp without time zone,
+  last_logout_at timestamp without time zone,
+  restaurante_id bigint,
+  ubicacion_lat numeric(10,7),
+  ubicacion_lng numeric(10,7),
+  ubicacion_actualizada_en timestamp without time zone,
+  CONSTRAINT usuarios_pkey PRIMARY KEY (id),
+  CONSTRAINT usuarios_restaurante_id_fkey FOREIGN KEY (restaurante_id) REFERENCES public.restaurantes(id)
 );
--- Columnas agregadas 2026-07-06 (ver database/migrations/2026-07-06-ruta-repartidor.sql):
---   ubicacion_lat, ubicacion_lng, ubicacion_actualizada_en (última posición GPS reportada por el repartidor)
-
--- ── CONSTRAINTS ──────────────────────────────────────────
-ALTER TABLE usuarios
-    ADD CONSTRAINT usuarios_email_unique UNIQUE (email);
-
-ALTER TABLE usuarios
-    ADD CONSTRAINT usuarios_uuid_unique UNIQUE (uuid);
-
--- ── ÍNDICES ───────────────────────────────────────────────
--- Búsqueda frecuente por email (login)
-CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios (email);
-
--- Filtrado por rol y estado (paneles de admin)
-CREATE INDEX IF NOT EXISTS idx_usuarios_rol   ON usuarios (rol);
-CREATE INDEX IF NOT EXISTS idx_usuarios_estado ON usuarios (estado);
-
--- ── TRIGGER: actualizar fecha_actualizacion automáticamente ──
-CREATE OR REPLACE FUNCTION actualizar_fecha_actualizacion()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.fecha_actualizacion = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER trg_usuarios_fecha_actualizacion
-    BEFORE UPDATE ON usuarios
-    FOR EACH ROW
-    EXECUTE FUNCTION actualizar_fecha_actualizacion();
-
--- ── DATOS DE PRUEBA (opcional, comentar en producción) ────
--- INSERT INTO usuarios (nombre, apellido, email, telefono, password_hash, rol)
--- VALUES ('Admin', 'App', 'admin@foodapp.com', '12345678',
---         '$2b$10$...hash_generado_con_bcrypt...', 'admin');
-
--- ── VERIFICACIÓN ─────────────────────────────────────────
--- SELECT * FROM usuarios;
--- \d usuarios
-
--- ============================================================
--- MÓDULO: RESTAURANTS
--- ============================================================
-
--- ── TABLA: restaurantes ───────────────────────────────────
-CREATE TABLE IF NOT EXISTS restaurantes (
-    id              BIGSERIAL       PRIMARY KEY,
-    nombre          VARCHAR(150)    NOT NULL,
-    descripcion     TEXT,
-    direccion       VARCHAR(255),
-    telefono        VARCHAR(20),
-    horario         JSONB,          -- { "lunes": "09:00-22:00", "martes": "09:00-22:00", ... }
-    logo_url        VARCHAR(500),
-    estado          VARCHAR(20)     NOT NULL DEFAULT 'activo'
-                        CHECK (estado IN ('activo', 'inactivo')),
-    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT NOW()
+CREATE TABLE public.restaurantes (
+  id bigint NOT NULL DEFAULT nextval('restaurantes_id_seq'::regclass),
+  nombre character varying NOT NULL,
+  descripcion text,
+  direccion character varying,
+  telefono character varying,
+  horario jsonb,
+  logo_url character varying,
+  estado character varying NOT NULL DEFAULT 'activo'::character varying CHECK (estado::text = ANY (ARRAY['activo'::character varying, 'inactivo'::character varying]::text[])),
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  admin_id bigint,
+  lat numeric(10,7),
+  lng numeric(10,7),
+  CONSTRAINT restaurantes_pkey PRIMARY KEY (id),
+  CONSTRAINT restaurantes_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.usuarios(id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_restaurantes_estado ON restaurantes (estado);
-
--- ── TABLA: menu_items ─────────────────────────────────────
-CREATE TABLE IF NOT EXISTS menu_items (
-    id              BIGSERIAL       PRIMARY KEY,
-    restaurante_id  BIGINT          NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
-    nombre          VARCHAR(150)    NOT NULL,
-    precio          NUMERIC(10,2)   NOT NULL CHECK (precio >= 0),
-    categoria       VARCHAR(50)     NOT NULL,
-    descripcion     TEXT,
-    ingredientes    TEXT[],         -- DEPRECADO: migrado a tabla ingredientes + menu_item_ingredientes
-    imagen_key      VARCHAR(100),   -- Clave para el imageMap del frontend
-    disponible      BOOLEAN         NOT NULL DEFAULT TRUE,
-    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT NOW()
+CREATE TABLE public.menu_items (
+  id bigint NOT NULL DEFAULT nextval('menu_items_id_seq'::regclass),
+  restaurante_id bigint NOT NULL,
+  nombre character varying NOT NULL,
+  precio numeric NOT NULL CHECK (precio >= 0::numeric),
+  categoria character varying NOT NULL,
+  descripcion text,
+  ingredientes ARRAY,
+  imagen_key character varying,
+  disponible boolean NOT NULL DEFAULT true,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  calorias integer,
+  peso integer,
+  imagen_url character varying,
+  opciones jsonb,
+  CONSTRAINT menu_items_pkey PRIMARY KEY (id),
+  CONSTRAINT menu_items_restaurante_id_fkey FOREIGN KEY (restaurante_id) REFERENCES public.restaurantes(id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_menu_items_restaurante  ON menu_items (restaurante_id);
-CREATE INDEX IF NOT EXISTS idx_menu_items_categoria    ON menu_items (categoria);
-CREATE INDEX IF NOT EXISTS idx_menu_items_disponible   ON menu_items (disponible);
-
--- ── DATOS DE PRUEBA: restaurante base ─────────────────────
--- INSERT INTO restaurantes (nombre, descripcion, direccion, telefono, horario)
--- VALUES (
---     'FoodApp Restaurant',
---     'El mejor restaurante de la ciudad',
---     'Av. Principal 123, Ciudad',
---     '555-0000',
---     '{"lunes":"09:00-22:00","martes":"09:00-22:00","miercoles":"09:00-22:00",
---       "jueves":"09:00-22:00","viernes":"09:00-23:00","sabado":"10:00-23:00","domingo":"10:00-21:00"}'
--- );
-
--- ── VERIFICACIÓN ─────────────────────────────────────────
--- SELECT * FROM restaurantes;
--- SELECT * FROM menu_items WHERE restaurante_id = 1;
--- SELECT * FROM menu_items WHERE categoria = 'burgers';
-
--- ============================================================
--- MÓDULO: INGREDIENTES Y STOCK
--- ============================================================
-
--- ── TABLA: ingredientes (catálogo maestro) ───────────────────
-CREATE TABLE IF NOT EXISTS ingredientes (
-    id              BIGSERIAL       PRIMARY KEY,
-    nombre          VARCHAR(150)    NOT NULL,
-    categoria       VARCHAR(50)     NOT NULL DEFAULT 'otro'
-                        CHECK (categoria IN (
-                            'proteina', 'lacteo', 'verdura', 'fruta',
-                            'pan', 'salsa', 'condimento', 'grano',
-                            'pasta', 'bebida', 'dulce', 'otro'
-                        )),
-    unidad_medida   VARCHAR(20)     NOT NULL DEFAULT 'unidad'
-                        CHECK (unidad_medida IN ('gr', 'ml', 'unidad')),
-    imagen_url      VARCHAR(500),
-    activo          BOOLEAN         NOT NULL DEFAULT TRUE,
-    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT NOW()
+CREATE TABLE public.pedidos (
+  id bigint NOT NULL DEFAULT nextval('pedidos_id_seq'::regclass),
+  usuario_id bigint NOT NULL,
+  restaurante_id bigint NOT NULL,
+  estado character varying NOT NULL DEFAULT 'pendiente'::character varying CHECK (estado::text = ANY (ARRAY['pendiente'::character varying, 'confirmado'::character varying, 'en_preparacion'::character varying, 'en_camino'::character varying, 'entregado'::character varying, 'cancelado'::character varying]::text[])),
+  total numeric NOT NULL CHECK (total >= 0::numeric),
+  direccion_entrega character varying,
+  notas text,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  fecha_actualizacion timestamp without time zone DEFAULT now(),
+  fecha_en_camino timestamp without time zone,
+  repartidor_id bigint,
+  metodo_pago character varying DEFAULT 'mercadopago'::character varying,
+  monto_recibido numeric,
+  descuento numeric NOT NULL DEFAULT 0,
+  pago_confirmado_at timestamp with time zone,
+  distancia_metros integer,
+  duracion_segundos integer,
+  eta_calculado_en timestamp without time zone,
+  CONSTRAINT pedidos_pkey PRIMARY KEY (id),
+  CONSTRAINT pedidos_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT pedidos_restaurante_id_fkey FOREIGN KEY (restaurante_id) REFERENCES public.restaurantes(id),
+  CONSTRAINT pedidos_repartidor_id_fkey FOREIGN KEY (repartidor_id) REFERENCES public.usuarios(id)
 );
-
-ALTER TABLE ingredientes
-    ADD CONSTRAINT ingredientes_nombre_unique UNIQUE (nombre);
-
-CREATE INDEX IF NOT EXISTS idx_ingredientes_categoria ON ingredientes (categoria);
-CREATE INDEX IF NOT EXISTS idx_ingredientes_activo    ON ingredientes (activo);
-
--- ── TABLA: menu_item_ingredientes (relación plato ↔ ingrediente) ──
-CREATE TABLE IF NOT EXISTS menu_item_ingredientes (
-    id              BIGSERIAL       PRIMARY KEY,
-    menu_item_id    BIGINT          NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
-    ingrediente_id  BIGINT          NOT NULL REFERENCES ingredientes(id) ON DELETE CASCADE,
-    es_removible    BOOLEAN         NOT NULL DEFAULT TRUE,
-    cantidad_usada  NUMERIC(10,2)   NOT NULL DEFAULT 1
-                        CHECK (cantidad_usada > 0)
+CREATE TABLE public.pedido_items (
+  id bigint NOT NULL DEFAULT nextval('pedido_items_id_seq'::regclass),
+  pedido_id bigint NOT NULL,
+  menu_item_id bigint,
+  nombre_item character varying NOT NULL,
+  precio_unitario numeric NOT NULL CHECK (precio_unitario >= 0::numeric),
+  cantidad integer NOT NULL CHECK (cantidad > 0),
+  subtotal numeric DEFAULT (precio_unitario * (cantidad)::numeric),
+  ingredientes_removidos ARRAY DEFAULT '{}'::text[],
+  CONSTRAINT pedido_items_pkey PRIMARY KEY (id),
+  CONSTRAINT pedido_items_pedido_id_fkey FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id),
+  CONSTRAINT pedido_items_menu_item_id_fkey FOREIGN KEY (menu_item_id) REFERENCES public.menu_items(id)
 );
-
-ALTER TABLE menu_item_ingredientes
-    ADD CONSTRAINT menu_item_ingrediente_unique UNIQUE (menu_item_id, ingrediente_id);
-
-CREATE INDEX IF NOT EXISTS idx_mii_menu_item    ON menu_item_ingredientes (menu_item_id);
-CREATE INDEX IF NOT EXISTS idx_mii_ingrediente  ON menu_item_ingredientes (ingrediente_id);
-
--- ── TABLA: stock_ingredientes (stock por sucursal) ───────────
-CREATE TABLE IF NOT EXISTS stock_ingredientes (
-    id                      BIGSERIAL       PRIMARY KEY,
-    restaurante_id          BIGINT          NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
-    ingrediente_id          BIGINT          NOT NULL REFERENCES ingredientes(id) ON DELETE CASCADE,
-    cantidad                NUMERIC(12,2)   NOT NULL DEFAULT 0
-                                CHECK (cantidad >= 0),
-    umbral_minimo           NUMERIC(12,2)   NOT NULL DEFAULT 5
-                                CHECK (umbral_minimo >= 0),
-    ultima_actualizacion    TIMESTAMP       NOT NULL DEFAULT NOW()
+CREATE TABLE public.metodos_pago (
+  id bigint NOT NULL DEFAULT nextval('metodos_pago_id_seq'::regclass),
+  usuario_id bigint NOT NULL,
+  tipo character varying NOT NULL CHECK (tipo::text = ANY (ARRAY['tarjeta'::character varying, 'efectivo'::character varying, 'transferencia'::character varying]::text[])),
+  ultimos_4_digitos character,
+  marca character varying,
+  es_principal boolean NOT NULL DEFAULT false,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT metodos_pago_pkey PRIMARY KEY (id),
+  CONSTRAINT metodos_pago_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
 );
-
-ALTER TABLE stock_ingredientes
-    ADD CONSTRAINT stock_restaurante_ingrediente_unique UNIQUE (restaurante_id, ingrediente_id);
-
-CREATE INDEX IF NOT EXISTS idx_stock_restaurante  ON stock_ingredientes (restaurante_id);
-CREATE INDEX IF NOT EXISTS idx_stock_ingrediente  ON stock_ingredientes (ingrediente_id);
-CREATE INDEX IF NOT EXISTS idx_stock_cantidad     ON stock_ingredientes (cantidad);
-
-CREATE OR REPLACE TRIGGER trg_stock_fecha_actualizacion
-    BEFORE UPDATE ON stock_ingredientes
-    FOR EACH ROW
-    EXECUTE FUNCTION actualizar_fecha_actualizacion();
-
--- ── VISTA: disponibilidad de platos por sucursal ─────────────
-CREATE OR REPLACE VIEW vista_disponibilidad_platos AS
-SELECT
-    mi.id AS menu_item_id,
-    mi.nombre AS plato,
-    mi.restaurante_id,
-    r.nombre AS sucursal,
-    COUNT(mii.id) AS total_ingredientes,
-    COUNT(CASE WHEN COALESCE(si.cantidad, 0) > 0 THEN 1 END) AS ingredientes_con_stock,
-    CASE
-        WHEN COUNT(mii.id) = 0 THEN TRUE
-        WHEN COUNT(mii.id) = COUNT(CASE WHEN COALESCE(si.cantidad, 0) > 0 THEN 1 END) THEN TRUE
-        ELSE FALSE
-    END AS disponible
-FROM menu_items mi
-JOIN restaurantes r ON r.id = mi.restaurante_id
-LEFT JOIN menu_item_ingredientes mii ON mii.menu_item_id = mi.id
-LEFT JOIN stock_ingredientes si
-    ON si.ingrediente_id = mii.ingrediente_id
-    AND si.restaurante_id = mi.restaurante_id
-GROUP BY mi.id, mi.nombre, mi.restaurante_id, r.nombre;
-
--- ── FUNCIÓN: descontar stock al confirmar pedido ─────────────
-CREATE OR REPLACE FUNCTION descontar_stock(
-    p_restaurante_id BIGINT,
-    p_menu_item_id BIGINT,
-    p_cantidad INTEGER
-)
-RETURNS VOID AS $$
-BEGIN
-    UPDATE stock_ingredientes si
-    SET cantidad = cantidad - (mii.cantidad_usada * p_cantidad)
-    FROM menu_item_ingredientes mii
-    WHERE mii.menu_item_id = p_menu_item_id
-      AND si.ingrediente_id = mii.ingrediente_id
-      AND si.restaurante_id = p_restaurante_id;
-END;
-$$ LANGUAGE plpgsql;
-
--- ── VERIFICACIÓN ─────────────────────────────────────────
--- SELECT * FROM ingredientes ORDER BY categoria, nombre;
--- SELECT * FROM vista_disponibilidad_platos WHERE restaurante_id = 1;
-
--- ============================================================
--- MÓDULO: ORDERS
--- ============================================================
-
--- ── TABLA: pedidos ────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS pedidos (
-    id                  BIGSERIAL       PRIMARY KEY,
-    usuario_id          BIGINT          NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
-    restaurante_id      BIGINT          NOT NULL REFERENCES restaurantes(id) ON DELETE RESTRICT,
-    estado              VARCHAR(20)     NOT NULL DEFAULT 'pendiente'
-                            CHECK (estado IN ('pendiente','confirmado','en_preparacion','en_camino','entregado','cancelado')),
-    total               NUMERIC(10,2)   NOT NULL CHECK (total >= 0),
-    direccion_entrega   VARCHAR(255),
-    notas               TEXT,
-    fecha_creacion      TIMESTAMP       NOT NULL DEFAULT NOW(),
-    fecha_actualizacion TIMESTAMP       DEFAULT NOW()
+CREATE TABLE public.pagos (
+  id bigint NOT NULL DEFAULT nextval('pagos_id_seq'::regclass),
+  pedido_id bigint NOT NULL,
+  usuario_id bigint NOT NULL,
+  metodo_pago_id bigint,
+  monto numeric NOT NULL CHECK (monto > 0::numeric),
+  estado character varying NOT NULL DEFAULT 'pendiente'::character varying CHECK (estado::text = ANY (ARRAY['pendiente'::character varying, 'completado'::character varying, 'fallido'::character varying, 'reembolsado'::character varying]::text[])),
+  referencia character varying,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT pagos_pkey PRIMARY KEY (id),
+  CONSTRAINT pagos_pedido_id_fkey FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id),
+  CONSTRAINT pagos_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT pagos_metodo_pago_id_fkey FOREIGN KEY (metodo_pago_id) REFERENCES public.metodos_pago(id)
 );
--- Columnas agregadas 2026-07-06 (ver database/migrations/2026-07-06-ruta-repartidor.sql):
---   distancia_metros, duracion_segundos, eta_calculado_en (última ruta calculada con Google Routes API)
-
-CREATE INDEX IF NOT EXISTS idx_pedidos_usuario    ON pedidos (usuario_id);
-CREATE INDEX IF NOT EXISTS idx_pedidos_estado     ON pedidos (estado);
-CREATE INDEX IF NOT EXISTS idx_pedidos_fecha      ON pedidos (fecha_creacion DESC);
-
-CREATE OR REPLACE TRIGGER trg_pedidos_fecha_actualizacion
-    BEFORE UPDATE ON pedidos
-    FOR EACH ROW
-    EXECUTE FUNCTION actualizar_fecha_actualizacion();
-
--- ── TABLA: pedido_items ───────────────────────────────────
--- Guarda nombre y precio al momento del pedido para preservar
--- el historial aunque el menú cambie en el futuro.
-CREATE TABLE IF NOT EXISTS pedido_items (
-    id              BIGSERIAL       PRIMARY KEY,
-    pedido_id       BIGINT          NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE,
-    menu_item_id    BIGINT          REFERENCES menu_items(id) ON DELETE SET NULL,
-    nombre_item     VARCHAR(150)    NOT NULL,
-    precio_unitario NUMERIC(10,2)   NOT NULL CHECK (precio_unitario >= 0),
-    cantidad        INTEGER         NOT NULL CHECK (cantidad > 0),
-    subtotal        NUMERIC(10,2)   GENERATED ALWAYS AS (precio_unitario * cantidad) STORED,
-    ingredientes_removidos TEXT[]   DEFAULT '{}'
+CREATE TABLE public.cupones (
+  id bigint NOT NULL DEFAULT nextval('cupones_id_seq'::regclass),
+  oferta character varying NOT NULL,
+  titulo character varying NOT NULL,
+  imagen_key character varying,
+  imagen_real_key character varying,
+  valido_hasta date NOT NULL,
+  disclaimer text,
+  texto_reverso text,
+  codigo character varying NOT NULL UNIQUE,
+  color character varying NOT NULL DEFAULT '#FF6B6B'::character varying,
+  activo boolean NOT NULL DEFAULT true,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  imagen_url character varying,
+  discount_percent integer DEFAULT 10,
+  valido_desde date,
+  CONSTRAINT cupones_pkey PRIMARY KEY (id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_pedido_items_pedido ON pedido_items (pedido_id);
-
--- ── VERIFICACIÓN ─────────────────────────────────────────
--- SELECT p.*, u.nombre FROM pedidos p JOIN usuarios u ON p.usuario_id = u.id;
--- SELECT * FROM pedido_items WHERE pedido_id = 1;
-
--- ============================================================
--- MÓDULO: PAYMENTS
--- ============================================================
-
--- ── TABLA: metodos_pago ───────────────────────────────────
--- Nunca se guarda el número completo de tarjeta (PCI-DSS).
--- Solo los últimos 4 dígitos y la marca para mostrar al usuario.
-CREATE TABLE IF NOT EXISTS metodos_pago (
-    id                  BIGSERIAL       PRIMARY KEY,
-    usuario_id          BIGINT          NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    tipo                VARCHAR(20)     NOT NULL
-                            CHECK (tipo IN ('tarjeta', 'efectivo', 'transferencia')),
-    ultimos_4_digitos   CHAR(4),        -- solo para tarjetas
-    marca               VARCHAR(20),    -- visa, mastercard, amex, etc.
-    es_principal        BOOLEAN         NOT NULL DEFAULT FALSE,
-    fecha_creacion      TIMESTAMP       NOT NULL DEFAULT NOW()
+CREATE TABLE public.ingredientes (
+  id bigint NOT NULL DEFAULT nextval('ingredientes_id_seq'::regclass),
+  nombre character varying NOT NULL UNIQUE,
+  categoria character varying NOT NULL DEFAULT 'otro'::character varying CHECK (categoria::text = ANY (ARRAY['proteina'::character varying, 'lacteo'::character varying, 'verdura'::character varying, 'fruta'::character varying, 'pan'::character varying, 'salsa'::character varying, 'condimento'::character varying, 'grano'::character varying, 'pasta'::character varying, 'bebida'::character varying, 'dulce'::character varying, 'otro'::character varying]::text[])),
+  unidad_medida character varying NOT NULL DEFAULT 'unidad'::character varying CHECK (unidad_medida::text = ANY (ARRAY['gr'::character varying, 'ml'::character varying, 'unidad'::character varying]::text[])),
+  imagen_url character varying,
+  activo boolean NOT NULL DEFAULT true,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ingredientes_pkey PRIMARY KEY (id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_metodos_pago_usuario ON metodos_pago (usuario_id);
-
--- ── TABLA: pagos ──────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS pagos (
-    id                  BIGSERIAL       PRIMARY KEY,
-    pedido_id           BIGINT          NOT NULL REFERENCES pedidos(id) ON DELETE RESTRICT,
-    usuario_id          BIGINT          NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
-    metodo_pago_id      BIGINT          REFERENCES metodos_pago(id) ON DELETE SET NULL,
-    monto               NUMERIC(10,2)   NOT NULL CHECK (monto > 0),
-    estado              VARCHAR(20)     NOT NULL DEFAULT 'pendiente'
-                            CHECK (estado IN ('pendiente', 'completado', 'fallido', 'reembolsado')),
-    referencia          VARCHAR(100),   -- ID de transacción del gateway externo
-    fecha_creacion      TIMESTAMP       NOT NULL DEFAULT NOW()
+CREATE TABLE public.menu_item_ingredientes (
+  id bigint NOT NULL DEFAULT nextval('menu_item_ingredientes_id_seq'::regclass),
+  menu_item_id bigint NOT NULL,
+  ingrediente_id bigint NOT NULL,
+  es_removible boolean NOT NULL DEFAULT true,
+  cantidad_usada numeric NOT NULL DEFAULT 1 CHECK (cantidad_usada > 0::numeric),
+  CONSTRAINT menu_item_ingredientes_pkey PRIMARY KEY (id),
+  CONSTRAINT menu_item_ingredientes_menu_item_id_fkey FOREIGN KEY (menu_item_id) REFERENCES public.menu_items(id),
+  CONSTRAINT menu_item_ingredientes_ingrediente_id_fkey FOREIGN KEY (ingrediente_id) REFERENCES public.ingredientes(id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_pagos_usuario  ON pagos (usuario_id);
-CREATE INDEX IF NOT EXISTS idx_pagos_pedido   ON pagos (pedido_id);
-CREATE INDEX IF NOT EXISTS idx_pagos_estado   ON pagos (estado);
-
--- ── VERIFICACIÓN ─────────────────────────────────────────
--- SELECT * FROM metodos_pago WHERE usuario_id = 1;
--- SELECT pg.*, pd.estado AS estado_pedido FROM pagos pg JOIN pedidos pd ON pg.pedido_id = pd.id;
-
--- ============================================================
--- MÓDULO: CUPONES
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS cupones (
-    id              BIGSERIAL       PRIMARY KEY,
-    oferta          VARCHAR(20)     NOT NULL,           -- "30% OFF", "2X1"
-    titulo          VARCHAR(150)    NOT NULL,
-    imagen_key      VARCHAR(100),                       -- key para imageMap del frontend
-    imagen_real_key VARCHAR(100),                       -- key para imagen de detalle
-    valido_hasta    DATE            NOT NULL,
-    disclaimer      TEXT,                               -- condición corta visible
-    texto_reverso   TEXT,                               -- letra chica (reverso de la tarjeta)
-    codigo          VARCHAR(100)    NOT NULL UNIQUE,
-    color           VARCHAR(20)     NOT NULL DEFAULT '#FF6B6B',
-    activo          BOOLEAN         NOT NULL DEFAULT TRUE,
-    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT NOW()
+CREATE TABLE public.stock_ingredientes (
+  id bigint NOT NULL DEFAULT nextval('stock_ingredientes_id_seq'::regclass),
+  restaurante_id bigint NOT NULL,
+  ingrediente_id bigint NOT NULL,
+  cantidad numeric NOT NULL DEFAULT 0 CHECK (cantidad >= 0::numeric),
+  umbral_minimo numeric NOT NULL DEFAULT 5 CHECK (umbral_minimo >= 0::numeric),
+  ultima_actualizacion timestamp without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT stock_ingredientes_pkey PRIMARY KEY (id),
+  CONSTRAINT stock_ingredientes_restaurante_id_fkey FOREIGN KEY (restaurante_id) REFERENCES public.restaurantes(id),
+  CONSTRAINT stock_ingredientes_ingrediente_id_fkey FOREIGN KEY (ingrediente_id) REFERENCES public.ingredientes(id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_cupones_activo ON cupones (activo);
-CREATE INDEX IF NOT EXISTS idx_cupones_valido_hasta ON cupones (valido_hasta);
-
--- ============================================================
--- MÓDULO: COMENTARIOS
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS comentarios (
-    id              BIGSERIAL       PRIMARY KEY,
-    usuario_id      BIGINT          NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    menu_item_id    BIGINT          NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
-    rating          SMALLINT        NOT NULL CHECK (rating BETWEEN 1 AND 5),
-    comentario      TEXT            NOT NULL,
-    fecha_creacion  TIMESTAMP       NOT NULL DEFAULT NOW(),
-    fecha_actualizacion TIMESTAMP   DEFAULT NOW()
+CREATE TABLE public.comentarios (
+  id bigint NOT NULL DEFAULT nextval('comentarios_id_seq'::regclass),
+  usuario_id bigint NOT NULL,
+  menu_item_id bigint NOT NULL,
+  rating smallint NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comentario text NOT NULL,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  fecha_actualizacion timestamp without time zone DEFAULT now(),
+  ai_categoria text,
+  ai_sentimiento text,
+  ai_resumen text,
+  CONSTRAINT comentarios_pkey PRIMARY KEY (id),
+  CONSTRAINT comentarios_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT comentarios_menu_item_id_fkey FOREIGN KEY (menu_item_id) REFERENCES public.menu_items(id)
 );
-
-ALTER TABLE comentarios
-    ADD CONSTRAINT comentarios_usuario_menu_item_unique UNIQUE (usuario_id, menu_item_id);
-
-CREATE INDEX IF NOT EXISTS idx_comentarios_menu_item ON comentarios (menu_item_id);
-CREATE INDEX IF NOT EXISTS idx_comentarios_usuario   ON comentarios (usuario_id);
-CREATE INDEX IF NOT EXISTS idx_comentarios_rating    ON comentarios (rating);
-CREATE INDEX IF NOT EXISTS idx_comentarios_fecha     ON comentarios (fecha_creacion DESC);
-
-CREATE OR REPLACE TRIGGER trg_comentarios_fecha_actualizacion
-    BEFORE UPDATE ON comentarios
-    FOR EACH ROW
-    EXECUTE FUNCTION actualizar_fecha_actualizacion();
-
--- ── VISTA: rating promedio por plato ─────────────────────────
-CREATE OR REPLACE VIEW vista_rating_platos AS
-SELECT
-    menu_item_id,
-    COUNT(*)            AS total_resenas,
-    ROUND(AVG(rating), 1) AS rating_promedio
-FROM comentarios
-GROUP BY menu_item_id;
+CREATE TABLE public.direcciones_usuarios (
+  id bigint NOT NULL DEFAULT nextval('direcciones_usuarios_id_seq'::regclass),
+  usuario_id bigint NOT NULL,
+  etiqueta character varying NOT NULL DEFAULT 'Casa'::character varying,
+  direccion character varying NOT NULL,
+  ciudad character varying NOT NULL,
+  provincia character varying,
+  referencia text,
+  latitud numeric,
+  longitud numeric,
+  es_principal boolean NOT NULL DEFAULT false,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT direcciones_usuarios_pkey PRIMARY KEY (id),
+  CONSTRAINT direcciones_usuarios_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.preferencias_notificaciones (
+  id integer NOT NULL DEFAULT nextval('preferencias_notificaciones_id_seq'::regclass),
+  usuario_id integer NOT NULL UNIQUE,
+  pedidos boolean NOT NULL DEFAULT true,
+  promociones boolean NOT NULL DEFAULT false,
+  noticias boolean NOT NULL DEFAULT true,
+  recordatorios boolean NOT NULL DEFAULT false,
+  fecha_creacion timestamp without time zone DEFAULT now(),
+  CONSTRAINT preferencias_notificaciones_pkey PRIMARY KEY (id),
+  CONSTRAINT preferencias_notificaciones_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.favoritos (
+  usuario_id bigint NOT NULL,
+  menu_item_id bigint NOT NULL,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT favoritos_pkey PRIMARY KEY (usuario_id, menu_item_id),
+  CONSTRAINT favoritos_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT favoritos_menu_item_id_fkey FOREIGN KEY (menu_item_id) REFERENCES public.menu_items(id)
+);
+CREATE TABLE public.pedido_estados_historial (
+  id integer NOT NULL DEFAULT nextval('pedido_estados_historial_id_seq'::regclass),
+  pedido_id integer NOT NULL,
+  estado_anterior character varying,
+  estado_nuevo character varying NOT NULL,
+  triggered_by character varying NOT NULL CHECK (triggered_by::text = ANY (ARRAY['admin'::character varying, 'repartidor'::character varying, 'sistema'::character varying, 'cliente'::character varying]::text[])),
+  triggered_by_id integer,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT pedido_estados_historial_pkey PRIMARY KEY (id),
+  CONSTRAINT pedido_estados_historial_pedido_id_fkey FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id),
+  CONSTRAINT pedido_estados_historial_triggered_by_id_fkey FOREIGN KEY (triggered_by_id) REFERENCES public.usuarios(id)
+);
