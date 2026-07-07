@@ -11,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import API from '../../services/api';
 import { useRepartidorRoute } from '../../hooks/useRepartidorRoute';
+import NavigationOverlay from '../../components/repartidor/NavigationOverlay';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 
@@ -68,6 +69,7 @@ export default function RepartidorMapaScreen() {
     const [loading, setLoading] = useState(true);
     const [geocoding, setGeocoding] = useState(false);
     const [topBlockHeight, setTopBlockHeight] = useState(0);
+    const [navegando, setNavegando] = useState(false);
 
     // ── Permiso y watch de ubicación ──────────────────────
     useEffect(() => {
@@ -142,7 +144,7 @@ export default function RepartidorMapaScreen() {
         }, 500);
     }, [selected]);
 
-    const { routePoints, routeInfo } = useRepartidorRoute({ location, coords, selected });
+    const { routePoints, routeInfo, etaTarget, steps, stepActualIndex } = useRepartidorRoute({ location, coords, selected });
 
     // ── Centrar en mi posición ────────────────────────────
     const centerOnMe = () => {
@@ -349,6 +351,16 @@ export default function RepartidorMapaScreen() {
                         </View>
                     )}
 
+                    {routePoints && (
+                        <TouchableOpacity
+                            style={styles.irBtn}
+                            onPress={() => setNavegando(true)}
+                        >
+                            <Ionicons name="navigate-circle" size={20} color="#fff" />
+                            <Text style={styles.irBtnText}>Ir</Text>
+                        </TouchableOpacity>
+                    )}
+
                     {coords[selected.id] && (
                         <View style={styles.navButtons}>
                             <TouchableOpacity
@@ -369,6 +381,18 @@ export default function RepartidorMapaScreen() {
                     )}
                 </View>
             )}
+
+            <NavigationOverlay
+                visible={navegando}
+                pedido={selected}
+                location={location}
+                steps={steps}
+                stepActualIndex={stepActualIndex}
+                routeInfo={routeInfo}
+                etaTarget={etaTarget}
+                destino={selected && coords[selected.id] ? { lat: coords[selected.id].latitude, lng: coords[selected.id].longitude } : null}
+                onExit={() => setNavegando(false)}
+            />
         </View>
     );
 }
@@ -490,6 +514,12 @@ const styles = StyleSheet.create({
     wazeBtn: { backgroundColor: '#33CCFF' },
     gmapsBtn: { backgroundColor: '#4285F4' },
     navBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    irBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: 8, paddingVertical: 13, borderRadius: 14,
+        backgroundColor: '#FF8700', marginTop: 10,
+    },
+    irBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
     miniCard: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
