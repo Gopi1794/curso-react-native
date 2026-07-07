@@ -72,6 +72,11 @@ exports.getNotificaciones = async (req, res) => {
 
 exports.getResumenRepartidoresDia = async (req, res) => {
     try {
+        const restauranteId = await getAdminRestauranteId(req);
+        if (!restauranteId) {
+            return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
+        }
+
         const result = await db.query(
             `SELECT
                 u.id,
@@ -86,9 +91,10 @@ exports.getResumenRepartidoresDia = async (req, res) => {
                 ON p.repartidor_id = u.id
                AND p.estado = 'entregado'
                AND p.fecha_actualizacion::date = CURRENT_DATE
-             WHERE u.rol = 'repartidor' AND u.estado = 'activo'
+             WHERE u.rol = 'repartidor' AND u.estado = 'activo' AND u.restaurante_id = $1
              GROUP BY u.id, u.nombre, u.apellido, u.telefono
-             ORDER BY pedidos_entregados DESC, u.nombre`
+             ORDER BY pedidos_entregados DESC, u.nombre`,
+            [restauranteId]
         );
         res.json({ success: true, repartidores: result.rows });
     } catch (error) {
@@ -99,12 +105,17 @@ exports.getResumenRepartidoresDia = async (req, res) => {
 
 exports.getRepartidores = async (req, res) => {
     try {
+        const restauranteId = await getAdminRestauranteId(req);
+        if (!restauranteId) {
+            return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
+        }
+
         const result = await db.query(
             `SELECT id, nombre, apellido, telefono, estado
              FROM usuarios
-             WHERE rol = 'repartidor' AND estado = 'activo'
+             WHERE rol = 'repartidor' AND estado = 'activo' AND restaurante_id = $1
              ORDER BY nombre`,
-            []
+            [restauranteId]
         );
         res.json({ success: true, repartidores: result.rows });
     } catch (error) {
@@ -209,6 +220,19 @@ exports.asignarRepartidor = async (req, res) => {
 
     if (!repartidor_id) {
         return res.status(400).json({ success: false, message: 'repartidor_id requerido' });
+    }
+
+    const restauranteId = await getAdminRestauranteId(req);
+    if (!restauranteId) {
+        return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
+    }
+
+    const repartidorCheck = await db.query(
+        `SELECT id FROM usuarios WHERE id = $1 AND rol = 'repartidor' AND restaurante_id = $2`,
+        [repartidor_id, restauranteId]
+    );
+    if (repartidorCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Repartidor no encontrado o no pertenece a este restaurante' });
     }
 
     const client = await db.getClient();
