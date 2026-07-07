@@ -9,10 +9,11 @@ import {
     Animated,
     RefreshControl,
 } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 // Componentes reutilizables
 import { HeaderSection } from '../../components/HeaderSection';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
-import { CategoryFilter } from '../../components/CategoryFilter';
+import { CategoryExploreGrid } from '../../components/CategoryExploreGrid';
 import { ErrorState } from '../../components/common/ErrorState';
 import { PromoSection } from '../../components/PromoSection';
 import MenuItem from '../../components/MenuItem';
@@ -168,11 +169,12 @@ export const ScreenHome = ({ navigation }) => {
     const menuItemsFlatListRef = useRef(null);
     const searchDebounceRef = useRef(null);
     const scrollY = useRef(new Animated.Value(0)).current;
+    const menuListAnim = useRef(new Animated.Value(1)).current;
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
     const [searchFocused, setSearchFocused] = useState(false);
     const [recentSearches, setRecentSearches] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState("TODOS");
+    const [selectedCategory, setSelectedCategory] = useState("todos");
     const [activePromoIndex, setActivePromoIndex] = useState(1);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
     const [menuItems, setMenuItems] = useState([]);
@@ -242,21 +244,71 @@ export const ScreenHome = ({ navigation }) => {
         fetchMenu(true);
     }, [fetchMenu]);
 
-    const categories = [
-        { id: "todos",      label: "TODOS",      icon: "grid-outline" },
-        { id: "ensaladas",  label: "ENSALADAS",  icon: "leaf-outline" },
-        { id: "burgers",    label: "BURGERS",    icon: "fast-food-outline" },
-        { id: "emplatados", label: "EMPLATADOS", icon: "restaurant-outline" },
-        { id: "sandwichs",  label: "SANDWICHS",  icon: "nutrition-outline" },
-        { id: "promos",     label: "PROMOS",     icon: "pricetag-outline" },
-        { id: "pizzas",     label: "PIZZAS",     icon: "pizza-outline" },
-        { id: "pastas",     label: "PASTAS",     icon: "flame-outline" },
-        { id: "postres",    label: "POSTRES",    icon: "cafe-outline" },
-        { id: "helados",    label: "HELADOS",    icon: "snow-outline" },
-        { id: "bebidas",    label: "BEBIDAS",    icon: "beer-outline" },
+    const CATEGORY_MAP = {
+        cafe_merienda:      ['cafe_merienda'],
+        para_picar:         ['picadas', 'finger_food', 'papas_gourmet', 'empanadas'],
+        sandwiches_burgers: ['sandwiches', 'hamburguesas'],
+        platos:             ['milanesas', 'platos', 'pastas', 'promoDia'],
+        pizzas:             ['pizzas', 'tartas'],
+        ensaladas:          ['ensaladas'],
+        sin_tacc:           ['sin_tacc'],
+        dulces:             ['dulces', 'helados'],
+        bebidas:            ['bebidas'],
+    };
+
+    const CATEGORIAS_BUCKET_URL = 'https://bbavirgboqyvqhxvuarp.supabase.co/storage/v1/object/public/Categorias';
+
+    const EXPLORE_CATEGORIES = [
+        { id: 'cafe_merienda',      label: 'Cafe & Meriendas', image: `${CATEGORIAS_BUCKET_URL}/${encodeURIComponent('cafe&merienda.webp')}`, size: 'sm' },
+        { id: 'para_picar',         label: 'Para Picar',        image: `${CATEGORIAS_BUCKET_URL}/parapicar.webp`, size: 'sm', offsetY: 8 },
+        { id: 'sandwiches_burgers', label: 'Burgers & Sandwiches', image: `${CATEGORIAS_BUCKET_URL}/${encodeURIComponent('burgers&sandwich.webp')}`, offsetY: -16 },
+        { id: 'platos',             label: 'Platos',            image: `${CATEGORIAS_BUCKET_URL}/platos.webp` },
+        { id: 'pizzas',             label: 'Pizzas',             image: `${CATEGORIAS_BUCKET_URL}/pizzas.webp` },
+        { id: 'ensaladas',          label: 'Ensaladas',          image: `${CATEGORIAS_BUCKET_URL}/ensaldas.webp` },
+        { id: 'sin_tacc',           label: 'SIN TACC',           image: `${CATEGORIAS_BUCKET_URL}/sintacc.webp`, size: 'msm', offsetY: 8 },
+        { id: 'dulces',             label: 'Dulces',             image: `${CATEGORIAS_BUCKET_URL}/dulce.webp`, size: 'msm', offsetY: 8 },
+        { id: 'bebidas',            label: 'Bebidas',            image: `${CATEGORIAS_BUCKET_URL}/bebidas.webp` },
     ];
 
-    const promos = menuItems.filter(item => item.category === "promoDia");
+    const exploreCategories = useMemo(() => {
+        const hour = new Date().getHours();
+        let priorityId;
+        if (hour >= 7 && hour < 11)       priorityId = 'cafe_merienda';
+        else if (hour >= 11 && hour < 16) priorityId = 'platos';
+        else if (hour >= 16 && hour < 18) priorityId = 'para_picar';
+        else                               priorityId = 'pizzas';
+        const priority = EXPLORE_CATEGORIES.find(c => c.id === priorityId);
+        const rest      = EXPLORE_CATEGORIES.filter(c => c.id !== priorityId);
+        return [priority, ...rest].filter(Boolean);
+    }, []);
+
+    const PROMO_LUNES_BUCKET_URL = 'https://bbavirgboqyvqhxvuarp.supabase.co/storage/v1/object/public/bucketFoodApp/img-trevi/promodia';
+
+    const promos = [
+        {
+            id: 'promo-lunes-2',
+            name: 'Milanesa de ternera con fideos a la parmesana',
+            price: '$12000',
+            basePrice: 12000,
+            category: 'promoDia',
+            calories: 790,
+            weight: 450,
+            descriptionText: 'Milanesa de ternera con fideos a la parmesana.',
+            imageKey: `${PROMO_LUNES_BUCKET_URL}/promo_lunes_1.webp`,
+        },
+        {
+            id: 'promo-lunes-1',
+            name: 'Pata y muslo al horno',
+            price: '$12000',
+            basePrice: 12000,
+            category: 'promoDia',
+            calories: 680,
+            weight: 400,
+            descriptionText: 'Guarnición a elección: puré de papa, zapallo o mixto; papas españolas o fritas; ensalada de hasta 3 ingredientes (tomate, lechuga, rúcula, zanahoria, cebolla, huevo).',
+            imageKey: `${PROMO_LUNES_BUCKET_URL}/promo_lunes_2.webp`,
+            imageScale: 0.65,
+        },
+    ];
 
     const searchItems = useCallback((query, items) => {
         if (!query.trim()) return items;
@@ -274,10 +326,11 @@ export const ScreenHome = ({ navigation }) => {
 
     const filteredMenuItems = useMemo(() => {
         let filtered = menuItems;
-        if (selectedCategory !== "TODOS") {
-            filtered = filtered.filter(
-                item => item.category?.toLowerCase() === selectedCategory.toLowerCase()
-            );
+        if (selectedCategory !== 'todos') {
+            const dbCategories = CATEGORY_MAP[selectedCategory];
+            if (dbCategories) {
+                filtered = filtered.filter(item => dbCategories.includes(item.category));
+            }
         }
         if (debouncedQuery.trim()) {
             filtered = searchItems(debouncedQuery, filtered);
@@ -297,10 +350,18 @@ export const ScreenHome = ({ navigation }) => {
         setSelectedCategory(categoryLabel);
         setSearchQuery("");
         setDebouncedQuery("");
+        menuListAnim.setValue(0);
+        Animated.spring(menuListAnim, {
+            toValue: 1,
+            useNativeDriver: true,
+            damping: 16,
+            stiffness: 140,
+            mass: 0.9,
+        }).start();
         setTimeout(() => {
             menuItemsFlatListRef.current?.scrollToOffset({ offset: 0, animated: true });
         }, 100);
-    }, []);
+    }, [menuListAnim]);
 
     const handleClearSearch = useCallback(() => {
         setSearchQuery("");
@@ -369,6 +430,72 @@ export const ScreenHome = ({ navigation }) => {
         return null;
     }, [debouncedQuery, filteredMenuItems.length]);
 
+    const renderMenuSection = useCallback(() => {
+        if (loading) {
+            return (
+                <View style={styles.skeletonRow} accessibilityLabel="Cargando menú">
+                    {[1, 2, 3, 4, 5].map(i => <MenuItemSkeleton key={i} />)}
+                </View>
+            );
+        }
+        if (menuError) {
+            return (
+                <ErrorState
+                    message={menuError}
+                    onRetry={() => {
+                        setLoading(true);
+                        API.restaurants.getMenu(selectedRestaurant.id)
+                            .then(r => { if (r.success) setMenuItems(r.items.map(mapMenuItem)); else setMenuError('No se pudo cargar el menú'); })
+                            .catch(() => setMenuError('Error de conexión. Revisá tu internet.'))
+                            .finally(() => setLoading(false));
+                    }}
+                />
+            );
+        }
+        return (
+            <Animated.View
+                style={{
+                    opacity: menuListAnim,
+                    transform: [{
+                        translateY: menuListAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }),
+                    }],
+                }}
+            >
+                <View>
+                    <FlatList
+                        ref={menuItemsFlatListRef}
+                        data={filteredMenuItems}
+                        renderItem={renderMenuItem}
+                        keyExtractor={item => item.id.toString()}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.menuItemsContainer}
+                        contentContainerStyle={styles.menuItemsContent}
+                        ListEmptyComponent={renderEmptyResults}
+                        initialNumToRender={4}
+                        maxToRenderPerBatch={5}
+                        windowSize={5}
+                        extraData={selectedCategory}
+                    />
+                    <LinearGradient
+                        colors={['#FFFFFF', 'rgba(255,255,255,0)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.menuFadeLeft}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(255,255,255,0)', '#FFFFFF']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.menuFadeRight}
+                        pointerEvents="none"
+                    />
+                </View>
+            </Animated.View>
+        );
+    }, [loading, menuError, filteredMenuItems, renderMenuItem, renderEmptyResults, selectedCategory, menuListAnim, selectedRestaurant]);
+
     useEffect(() => {
         const checkWelcome = async () => {
             const show = await AsyncStorage.getItem('showWelcomePopup');
@@ -436,82 +563,50 @@ export const ScreenHome = ({ navigation }) => {
                     />
                 )}
 
+                {!debouncedQuery.trim() && (
+                    loading ? <PromoSkeleton /> : (
+                        <View style={{ marginTop: 16 }}>
+                        <PromoSection
+                            promos={promos}
+                            activePromoIndex={activePromoIndex}
+                            onPromoPress={handlePromoPress}
+                            onPromoIndicatorPress={handlePromoIndicatorPress}
+                            onPromoScroll={handlePromoScroll}
+                            promoFlatListRef={promoFlatListRef}
+                            onVerTodas={() => navigation.navigate('AllPromos', { promos })}
+                        />
+                        </View>
+                    )
+                )}
+
                 <View style={styles.topSection}>
-                    <CategoryFilter
-                        categories={categories}
+                    <CategoryExploreGrid
+                        categories={exploreCategories}
                         selectedCategory={selectedCategory}
                         onCategoryPress={handleCategoryPress}
+                        renderExpanded={!debouncedQuery.trim() ? renderMenuSection : undefined}
                     />
 
-                    {debouncedQuery.trim() ? (
-                        <View style={styles.searchResultsHeader} accessibilityRole="text">
-                            <Text style={styles.searchResultsText}>
-                                {filteredMenuItems.length} resultado{filteredMenuItems.length !== 1 ? 's' : ''} para "{debouncedQuery}"
-                            </Text>
-                        </View>
-                    ) : null}
-
-                    {loading ? (
-                        <View style={styles.skeletonRow} accessibilityLabel="Cargando menú">
-                            {[1, 2, 3, 4, 5].map(i => <MenuItemSkeleton key={i} />)}
-                        </View>
-                    ) : menuError ? (
-                        <ErrorState
-                            message={menuError}
-                            onRetry={() => {
-                                setLoading(true);
-                                API.restaurants.getMenu(selectedRestaurant.id)
-                                    .then(r => { if (r.success) setMenuItems(r.items.map(mapMenuItem)); else setMenuError('No se pudo cargar el menú'); })
-                                    .catch(() => setMenuError('Error de conexión. Revisá tu internet.'))
-                                    .finally(() => setLoading(false));
-                            }}
-                        />
-                    ) : (
-                        <FlatList
-                            ref={menuItemsFlatListRef}
-                            data={filteredMenuItems}
-                            renderItem={renderMenuItem}
-                            keyExtractor={item => item.id.toString()}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={styles.menuItemsContainer}
-                            contentContainerStyle={styles.menuItemsContent}
-                            ListEmptyComponent={renderEmptyResults}
-                            initialNumToRender={4}
-                            maxToRenderPerBatch={5}
-                            windowSize={5}
-                            extraData={selectedCategory}
-                        />
+                    {debouncedQuery.trim() && (
+                        <>
+                            <View style={styles.searchResultsHeader} accessibilityRole="text">
+                                <Text style={styles.searchResultsText}>
+                                    {filteredMenuItems.length} resultado{filteredMenuItems.length !== 1 ? 's' : ''} para "{debouncedQuery}"
+                                </Text>
+                            </View>
+                            {renderMenuSection()}
+                        </>
                     )}
                 </View>
 
-                {!debouncedQuery.trim() && (
-                    <>
-                        {!loading && selectedRestaurant && (
-                            <RecommendationsSection
-                                restauranteId={selectedRestaurant.id}
-                                onItemPress={(item) => {
-                                    const menuItem = menuItems.find(m => m.id === item.id);
-                                    if (menuItem) navigation.navigate('FoodDetail', { foodItem: menuItem });
-                                }}
-                            />
-                        )}
-
-                        {loading ? <PromoSkeleton /> : (
-                            <View style={{ marginTop: 16 }}>
-                            <PromoSection
-                                promos={promos}
-                                activePromoIndex={activePromoIndex}
-                                onPromoPress={handlePromoPress}
-                                onPromoIndicatorPress={handlePromoIndicatorPress}
-                                onPromoScroll={handlePromoScroll}
-                                promoFlatListRef={promoFlatListRef}
-                                onVerTodas={() => navigation.navigate('AllPromos', { promos })}
-                            />
-                            </View>
-                        )}
-
-                    </>
+                {!debouncedQuery.trim() && !loading && selectedRestaurant && (
+                    <RecommendationsSection
+                        restauranteId={selectedRestaurant.id}
+                        onItemPress={(item) => {
+                            const menuItem = menuItems.find(m => m.id === item.id);
+                            if (menuItem) navigation.navigate('FoodDetail', { foodItem: menuItem });
+                        }}
+                    />
                 )}
             </Animated.ScrollView>
 
@@ -550,6 +645,20 @@ const styles = StyleSheet.create({
     },
     menuItemsContent: {
         paddingHorizontal: 15,
+    },
+    menuFadeLeft: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 24,
+    },
+    menuFadeRight: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: 24,
     },
 
     searchResultsHeader: {

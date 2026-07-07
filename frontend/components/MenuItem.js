@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         fontWeight: 'bold',
         color: 'gray',
-        fontSize: 10,
+        fontSize: 12,
         textAlign: 'center',
         width: '100%',
         paddingHorizontal: 2.8,

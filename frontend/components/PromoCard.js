@@ -66,7 +66,6 @@ export const PromoCard = memo(({ promo, onPress, isActive, width }) => {
 
     const calories = promo.calories ?? localItem?.calories ?? null;
     const weight = promo.weight ?? localItem?.weight ?? null;
-    const originalPrice = promo.originalPrice ?? localItem?.originalPrice ?? null;
     const discountPct = localItem?.discountPercentage ?? promo.discountPercentage ?? null;
 
     const imgSrc = {
@@ -75,14 +74,15 @@ export const PromoCard = memo(({ promo, onPress, isActive, width }) => {
             : toUri(imageMap[imageKey]),
     };
 
+    const currentPrice = promo.basePrice ?? parseFloat((promo.price || '0').toString().replace('$', '')) ?? 0;
+    const originalPrice = promo.originalPrice ?? localItem?.originalPrice ?? (currentPrice + 2000);
+
     const priceStr = (promo.price || '$0').toString().replace('$', '');
-    const originalPriceStr = originalPrice
-        ? originalPrice.toString().replace('$', '')
-        : null;
+    const originalPriceStr = originalPrice.toString().replace('$', '');
 
     const nameWords = (promo.name || '').toUpperCase().split(' ');
-    const nameFontSize = nameWords.length >= 3 ? 12 : 18;
-    const nameLineHeight = nameWords.length >= 3 ? 16 : 23;
+    const nameFontSize = nameWords.length >= 3 ? 14 : 18;
+    const nameLineHeight = nameWords.length >= 3 ? 18 : 23;
 
     return (
         <Animated.View style={[
@@ -110,17 +110,14 @@ export const PromoCard = memo(({ promo, onPress, isActive, width }) => {
                     </View>
                 </View>
 
-                {/* ── Nombre: una palabra por renglón ── */}
+                {/* ── Nombre ── */}
                 <View style={styles.nameBlock}>
-                    {nameWords.map((word, i) => (
-                        <Text
-                            key={i}
-                            style={[styles.nameLine, { fontSize: nameFontSize, lineHeight: nameLineHeight }]}
-                            numberOfLines={1}
-                        >
-                            {word}
-                        </Text>
-                    ))}
+                    <Text
+                        style={[styles.nameLine, { fontSize: nameFontSize, lineHeight: nameLineHeight }]}
+                        numberOfLines={2}
+                    >
+                        {promo.name?.toUpperCase()}
+                    </Text>
                 </View>
 
                 {/* ── Precios ── */}
@@ -137,7 +134,13 @@ export const PromoCard = memo(({ promo, onPress, isActive, width }) => {
                 {/* ── Imagen: lado derecho desde arriba hasta el strip ── */}
                 <Image
                     source={imgSrc}
-                    style={styles.foodImage}
+                    style={[
+                        styles.foodImage,
+                        promo.imageScale ? {
+                            width: CARD_WIDTH * 0.58 * promo.imageScale,
+                            height: (IMAGE_AREA_H + 10) * promo.imageScale,
+                        } : null,
+                    ]}
                     resizeMode="cover"
                 />
 
@@ -263,6 +266,9 @@ const styles = StyleSheet.create({
 
     // ── Precio ──
     priceRow: {
+        position: 'absolute',
+        left: 0,
+        bottom: 6 + BOTTOM_STRIP_H + 8,
         paddingHorizontal: 14,
         zIndex: 10,
     },

@@ -1,14 +1,9 @@
 /**
- * Seed script — agrega el restaurante Trevi con su admin y menú completo.
+ * Seed script — restaurante Trevi, menú completo con precios reales.
+ * Uso: node database/seed_trevi.js
  *
- * Uso (desde la raiz del proyecto):
- *   node database/seed_trevi.js
- *
- * Este script es ADITIVO: no borra datos existentes.
- * Si el restaurante ya existe, aborta para evitar duplicados.
- *
- * Formato opciones: [{ label, price }]
- * Si un item no tiene opciones, precio se usa directamente.
+ * ADITIVO para restaurante/admin. REEMPLAZA items existentes (delete + insert).
+ * Formato opciones: [{ label, price }] — null = sin variantes, usa precio directamente.
  */
 
 require(`${__dirname}/../backend/node_modules/dotenv`).config({ path: `${__dirname}/../backend/.env` });
@@ -33,7 +28,7 @@ const pool = new Pool({
 const RESTAURANTE = {
     nombre:      'Trevi',
     descripcion: 'Café, cocina casera y pastas artesanales en un ambiente cálido y familiar.',
-    direccion:   'Av. Corrientes 1500, Buenos Aires',
+    direccion:   'Alejandro Korn, Buenos Aires',
     telefono:    '11-4444-5555',
     horario: JSON.stringify({
         lunes:     '08:00-22:00',
@@ -57,168 +52,211 @@ const ADMIN = {
     estado:   'activo',
 };
 
-// opciones(arr) — helper para construir el array de variantes
 const op = (arr) => JSON.stringify(arr);
+const cc = (a, b) => op([{ label: '240 CC', price: a }, { label: '360 CC', price: b }]);
 
 const MENU = [
 
-    // ── INFUSIONES ─────────────────────────────────────────
+    // ── CAFÉ & MERIENDA ────────────────────────────────────────────────────────
+    // Infusiones — todas con variantes 240cc / 360cc
+    { nombre: 'Café',                          precio: 4800,  categoria: 'cafe_merienda', descripcion: 'Espresso solo.',                                                     opciones: cc(4800, 5300) },
+    { nombre: 'Café cortado',                  precio: 4800,  categoria: 'cafe_merienda', descripcion: 'Espresso con un toque de leche.',                                    opciones: cc(4800, 5300) },
+    { nombre: 'Café lágrima',                  precio: 4800,  categoria: 'cafe_merienda', descripcion: 'Leche caliente con una lágrima de café.',                            opciones: cc(4800, 5300) },
+    { nombre: 'Café con leche',                precio: 4800,  categoria: 'cafe_merienda', descripcion: 'Mitad café, mitad leche caliente.',                                  opciones: cc(4800, 5300) },
+    { nombre: 'Latte',                         precio: 5000,  categoria: 'cafe_merienda', descripcion: 'Espresso con leche vaporizada y espuma suave.',                      opciones: cc(5000, 5500) },
+    { nombre: 'Leche',                         precio: 3500,  categoria: 'cafe_merienda', descripcion: 'Leche caliente.',                                                    opciones: cc(3500, 4000) },
+    { nombre: 'Chocolatada',                   precio: 4200,  categoria: 'cafe_merienda', descripcion: 'Leche con chocolate.',                                               opciones: cc(4200, 4700) },
+    { nombre: 'Submarino',                     precio: 5200,  categoria: 'cafe_merienda', descripcion: 'Leche caliente con barra de chocolate.',                             opciones: cc(5200, 5700) },
+    { nombre: 'Té',                            precio: 3200,  categoria: 'cafe_merienda', descripcion: 'Té a elección.',                                                     opciones: cc(3200, 3500) },
+    { nombre: 'Té con leche',                  precio: 3800,  categoria: 'cafe_merienda', descripcion: 'Té con leche caliente.',                                             opciones: cc(3800, 4100) },
+    { nombre: 'Café con chocolate, crema y canela', precio: 7000, categoria: 'cafe_merienda', descripcion: 'Café especial con chocolate, crema batida y canela.',            opciones: cc(7000, 7500) },
+    { nombre: 'Capuccino',                     precio: 6000,  categoria: 'cafe_merienda', descripcion: 'Espresso con espuma de leche. Opcional: canela o chocolate.',        opciones: cc(6000, 6500) },
+    { nombre: 'Latte saborizado',              precio: 5500,  categoria: 'cafe_merienda', descripcion: 'Latte con sabor a elección.',                                        opciones: cc(5500, 6000) },
+
+    // Adicionales de infusiones
+    { nombre: 'Adicional: Leche',              precio: 1000,  categoria: 'cafe_merienda', descripcion: 'Leche extra para tu infusión.',                                      opciones: null },
+    { nombre: 'Adicional: Leche deslactosada', precio: 1000,  categoria: 'cafe_merienda', descripcion: 'Leche deslactosada extra.',                                          opciones: null },
+    { nombre: 'Adicional: Crema',              precio: 1600,  categoria: 'cafe_merienda', descripcion: 'Crema batida extra.',                                                opciones: null },
+    { nombre: 'Adicional: Café frío',          precio: 600,   categoria: 'cafe_merienda', descripcion: 'Shot de café frío.',                                                 opciones: null },
+
+    // Acompañamientos
+    { nombre: 'Medialunas',                    precio: 1900,  categoria: 'cafe_merienda', descripcion: 'Medialunas de manteca.',                                             opciones: null },
+    { nombre: 'Medialunas con Jamón y Queso',  precio: 3000,  categoria: 'cafe_merienda', descripcion: 'Medialunas rellenas de jamón cocido y queso.',                       opciones: null },
+    { nombre: 'Croissant',                     precio: 4200,  categoria: 'cafe_merienda', descripcion: 'Croissant crocante.',                                                opciones: op([{ label: 'Sola', price: 4200 }, { label: 'Jamón y queso', price: 6000 }]) },
+    { nombre: 'Croissant dulce rellena',       precio: 6500,  categoria: 'cafe_merienda', descripcion: 'Rellena de pistacho o dulce de leche con azúcar impalpable.',        opciones: null },
+    { nombre: 'Canasta de tostadas',           precio: 4500,  categoria: 'cafe_merienda', descripcion: 'Pan blanco o integral con dos untables: mermelada, manteca, queso o dulce de leche.', opciones: null },
+    { nombre: 'Scon de Queso',                 precio: 5000,  categoria: 'cafe_merienda', descripcion: 'Scon salado de queso, recién horneado.',                             opciones: null },
+    { nombre: 'Budín Integral de Banana y Nueces', precio: 2700, categoria: 'cafe_merienda', descripcion: 'Porción de budín integral con banana y nueces.',                  opciones: null },
+    { nombre: 'Cookie',                        precio: 2500,  categoria: 'cafe_merienda', descripcion: 'Chips de chocolate, Oreo o Red Velvet.',                             opciones: null },
+    { nombre: 'Cookie de Pistacho',            precio: 3000,  categoria: 'cafe_merienda', descripcion: 'Cookie artesanal de pistacho.',                                      opciones: null },
+
+    // ── SANDWICHES ─────────────────────────────────────────────────────────────
+    { nombre: 'Tostado de Miga',               precio: 4000,  categoria: 'sandwiches', descripcion: 'Jamón y queso.',                                                        opciones: op([{ label: 'Medio', price: 4000 }, { label: 'Entero', price: 7000 }]) },
+    { nombre: 'Sandwich de Miga Sin TACC',     precio: 8000,  categoria: 'sandwiches', descripcion: 'Dos unidades sin gluten.',                                              opciones: null },
+    { nombre: 'Jamón Cocido y Queso',          precio: 6000,  categoria: 'sandwiches', descripcion: 'Pan a elección: árabe, molde integral o focaccia.',                     opciones: op([{ label: 'Simple', price: 6000 }, { label: 'Con Lechuga y Tomate', price: 6400 }, { label: 'Con Rúcula y Tomate', price: 6600 }]) },
+    { nombre: 'Jamón Crudo y Queso',           precio: 7000,  categoria: 'sandwiches', descripcion: 'Pan a elección: árabe, molde integral o focaccia.',                     opciones: op([{ label: 'Simple', price: 7000 }, { label: 'Con Lechuga y Tomate', price: 7400 }, { label: 'Con Rúcula y Tomate', price: 7600 }]) },
+    { nombre: 'Lomito y Cheddar',              precio: 7500,  categoria: 'sandwiches', descripcion: 'Pan a elección: árabe, molde integral o focaccia.',                     opciones: null },
+    { nombre: 'Chipa con Jamón y Queso',       precio: 7500,  categoria: 'sandwiches', descripcion: 'Chipa rellena de jamón y queso.',                                       opciones: null },
+    { nombre: 'Pollo Revolution',              precio: 20000, categoria: 'sandwiches', descripcion: 'Con papas fritas. Cheddar, jamón, panceta, cebolla caramelizada y huevo.', opciones: null },
+    { nombre: 'Lomo Trevi',                    precio: 23000, categoria: 'sandwiches', descripcion: 'Con papas fritas. Churrasquito de lomo vacuno, jamón cocido, huevo a la plancha, panceta, tomate, lechuga y morrón.', opciones: null },
+
+    // ── HAMBURGUESAS ───────────────────────────────────────────────────────────
+    { nombre: 'Hamburguesa Tradicional',       precio: 15200, categoria: 'hamburguesas', descripcion: 'Con papas fritas. Panceta, tomate y cheddar.',                        opciones: null },
+    { nombre: 'Hamburguesa Buenos Aires',      precio: 15200, categoria: 'hamburguesas', descripcion: 'Con papas fritas. Lechuga, tomate, jamón, queso, huevo y salsa Trevi.', opciones: null },
+    { nombre: 'Hamburguesa New York',          precio: 15200, categoria: 'hamburguesas', descripcion: 'Con papas fritas. Cheddar, panceta, huevo frito, jamón y salsa Trevi.', opciones: null },
+    { nombre: 'Hamburguesa Cuarto',            precio: 15200, categoria: 'hamburguesas', descripcion: 'Con papas fritas. Cheddar, ketchup, mostaza y cebolla.',              opciones: null },
+    { nombre: 'Hamburguesa París',             precio: 15200, categoria: 'hamburguesas', descripcion: 'Con papas fritas. Rúcula, roquefort y cebolla caramelizada.',          opciones: null },
+    { nombre: 'Hamburguesa Deluxe',            precio: 17500, categoria: 'hamburguesas', descripcion: 'Con papas fritas. Doble carne, cheddar, panceta y salsa Trevi.',       opciones: null },
+    { nombre: 'Hamburguesa de Lentejas',       precio: 13500, categoria: 'hamburguesas', descripcion: 'Con papas fritas. Rúcula, tomates y champiñones. Veggie.',             opciones: null },
+
+    // ── PICADAS ────────────────────────────────────────────────────────────────
+    { nombre: 'Picada Caliente',               precio: 34000, categoria: 'picadas', descripcion: 'Para 2 personas. Albóndigas, bocaditos de mozzarella, papas rústicas, nuggets de pollo, rabas, milanesitas, salchichas envueltas, tequeños y dos dips (cheddar y filetto).', opciones: null },
+    { nombre: 'Picada De Mar',                 precio: 40000, categoria: 'picadas', descripcion: 'Para 2 personas. Cornalitos, rabas, mejillones a la provenzal, merluza, aletas/tentáculos de calamar, langostinos, salsa tártara y un dip con salsa alioli.', opciones: null },
+    { nombre: 'Picada Mexicana',               precio: 38000, categoria: 'picadas', descripcion: 'Para 2 personas. Carne, pollo, 6 tortillas, papas bravas, seis dips (queso blanco y verdeo, criolla, salsa picante, guacamole, cheddar y jalapeños), cazuela de nachos con cheddar y gambas.', opciones: null },
+    { nombre: 'Tabla de Milanesa',             precio: 29500, categoria: 'picadas', descripcion: 'Para 2 personas. Degustación de milanesas: napolitana, cheddar y panceta, fugazzeta y jamón, muzzarella y roquefort. Con papas fritas.', opciones: op([{ label: 'De pollo', price: 29500 }, { label: 'De carne', price: 33000 }]) },
+
+    // ── FINGER FOOD ────────────────────────────────────────────────────────────
+    { nombre: 'Tortilla de papa y huevo',      precio: 10000, categoria: 'finger_food', descripcion: 'Tortilla española clásica.',                                           opciones: null },
+    { nombre: 'Tortilla de papa a la española',precio: 11000, categoria: 'finger_food', descripcion: 'Tradicional con longaniza, cebolla, morón y orégano.',                 opciones: null },
+    { nombre: 'Nuggets X12',                   precio: 13000, categoria: 'finger_food', descripcion: 'Con dip de cheddar.',                                                  opciones: null },
+    { nombre: 'Rabas',                         precio: 21000, categoria: 'finger_food', descripcion: 'Rabas fritas crocantes.',                                              opciones: null },
+    { nombre: 'Cuadrados de Muzzarella X3',    precio: 10000, categoria: 'finger_food', descripcion: 'Con dip de salsa filetto.',                                            opciones: null },
+    { nombre: 'Bocaditos de Verdura',          precio: 10000, categoria: 'finger_food', descripcion: '10 mini medallones de remolacha, zanahoria, espinaca, zapallo y acelga. Con dip de salsa tártara.', opciones: null },
+
+    // ── PAPAS GOURMET ──────────────────────────────────────────────────────────
+    { nombre: 'Papas fritas',                  precio: 8500,  categoria: 'papas_gourmet', descripcion: 'Papas fritas crocantes.',                                            opciones: null },
+    { nombre: 'Papas a la provenzal',          precio: 9500,  categoria: 'papas_gourmet', descripcion: 'Papas fritas con provenzal.',                                        opciones: null },
+    { nombre: 'Papas con cheddar y panceta',   precio: 12000, categoria: 'papas_gourmet', descripcion: 'Papas fritas bañadas en cheddar y panceta.',                         opciones: null },
+    { nombre: 'Papas Bety',                    precio: 15000, categoria: 'papas_gourmet', descripcion: 'Papas fritas con salsa de queso parmesano, mozzarella y provolone, cebolla de verdeo y panceta.', opciones: null },
+
+    // ── EMPANADAS ──────────────────────────────────────────────────────────────
+    { nombre: 'Empanadas',                     precio: 3500,  categoria: 'empanadas', descripcion: 'Al horno o fritas. Rellenos: carne, pollo o jamón y queso.',             opciones: op([{ label: 'Unidad', price: 3500 }, { label: '1/2 docena', price: 18500 }, { label: 'Docena', price: 35000 }]) },
+
+    // ── MENÚ DEL DÍA ───────────────────────────────────────────────────────────
+    // Lunes
+    { nombre: 'Milanesa de ternera con fideos a la parmesana', precio: 12000, categoria: 'promoDia', descripcion: 'Milanesa de ternera con fideos a la parmesana.', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    { nombre: 'Pata y muslo al horno',                  precio: 12000, categoria: 'promoDia', descripcion: 'Guarnición a elección: puré de papa, zapallo o mixto; papas españolas o fritas; ensalada de hasta 3 ingredientes (tomate, lechuga, rúcula, zanahoria, cebolla, huevo).', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    // Martes
+    { nombre: 'Wok de verduras con pollo, carne o mixto', precio: 12000, categoria: 'promoDia', descripcion: 'Wok de verduras salteadas con pollo, carne o mixto a elección.', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    { nombre: 'Chorizo a la pomarola',                  precio: 12000, categoria: 'promoDia', descripcion: 'Guarnición a elección: puré de papa, zapallo o mixto; papas españolas o fritas; ensalada de hasta 3 ingredientes (tomate, lechuga, rúcula, zanahoria, cebolla, huevo).', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    // Miércoles
+    { nombre: 'Filet de merluza a la romana',           precio: 12000, categoria: 'promoDia', descripcion: 'Guarnición a elección: puré de papa, zapallo o mixto; papas españolas o fritas; ensalada de hasta 3 ingredientes (tomate, lechuga, rúcula, zanahoria, cebolla, huevo).', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    { nombre: 'Estofado de pollo',                      precio: 12000, categoria: 'promoDia', descripcion: 'Estofado de pollo casero.', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    // Jueves
+    { nombre: 'Medallón de pollo rebozado a la pizza',  precio: 12000, categoria: 'promoDia', descripcion: 'Guarnición a elección: puré de papa, zapallo o mixto; papas españolas o fritas; ensalada de hasta 3 ingredientes (tomate, lechuga, rúcula, zanahoria, cebolla, huevo).', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    { nombre: 'Albóndigas al pomodoro con puré o arroz', precio: 12000, categoria: 'promoDia', descripcion: 'Albóndigas al pomodoro, con puré o arroz a elección.', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    // Viernes
+    { nombre: 'Bife de bondiola a la barbacoa',         precio: 12000, categoria: 'promoDia', descripcion: 'Guarnición a elección: puré de papa, zapallo o mixto; papas españolas o fritas; ensalada de hasta 3 ingredientes (tomate, lechuga, rúcula, zanahoria, cebolla, huevo).', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+    { nombre: 'Guiso de lentejas',                      precio: 12000, categoria: 'promoDia', descripcion: 'Guiso de lentejas casero.', opciones: op([{ label: 'Sin postre', price: 12000 }, { label: 'Con postre', price: 15000 }]) },
+
+    // ── MILANESAS ─────────────────────────────────────────────────────────────
+    { nombre: 'Milanesa de nalga',                      precio: 18000, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                                    opciones: null },
+    { nombre: 'Milanesa de nalga napolitana',           precio: 19500, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                                    opciones: null },
+    { nombre: 'Milanesa de nalga fugazzeta',            precio: 19500, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                                    opciones: null },
+    { nombre: 'Milanesa de nalga cheddar y panceta',    precio: 20500, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                                    opciones: null },
+    { nombre: 'Milanesa de nalga c/ jamón, muzza y roquefort', precio: 20000, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                             opciones: null },
+    { nombre: 'Milanesa de pollo',                      precio: 16000, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                                    opciones: null },
+    { nombre: 'Milanesa de pollo napolitana',           precio: 17500, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                                    opciones: null },
+    { nombre: 'Milanesa de pollo fugazzeta',            precio: 17500, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                                    opciones: null },
+    { nombre: 'Milanesa de pollo cheddar y panceta',    precio: 18500, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                                    opciones: null },
+    { nombre: 'Milanesa de pollo c/ jamón, muzza y roquefort', precio: 18000, categoria: 'milanesas', descripcion: 'Con guarnición a elección.',                             opciones: null },
+
+    // ── PLATOS ─────────────────────────────────────────────────────────────────
+    { nombre: 'Merluza gratinada',             precio: 17000, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                  opciones: null },
+    { nombre: 'Churrasco de pollo',            precio: 15000, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                  opciones: null },
+    { nombre: 'Churrasco de pollo a la mostaza', precio: 17500, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                opciones: null },
+    { nombre: 'Churrasco de pollo al verdeo',  precio: 17500, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                  opciones: null },
+    { nombre: 'Churrasco de pollo al champión',precio: 17500, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                  opciones: null },
+    { nombre: 'Churrasco de lomo',             precio: 19000, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                  opciones: null },
+    { nombre: 'Churrasco de lomo a la mostaza',precio: 21500, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                  opciones: null },
+    { nombre: 'Churrasco de lomo al verdeo',   precio: 21500, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                  opciones: null },
+    { nombre: 'Churrasco de lomo al champignon',precio: 21500, categoria: 'platos', descripcion: 'Con papas fritas, puré o ensalada mixta.',                                 opciones: null },
+
+    // ── PASTAS ─────────────────────────────────────────────────────────────────
+    { nombre: 'Agnolotis de pollo al verdeo',  precio: 9500,  categoria: 'pastas', descripcion: 'Pasta rellena artesanal.',                                                  opciones: null },
+    { nombre: 'Sorrentinos de jamón y queso',  precio: 9500,  categoria: 'pastas', descripcion: 'Pasta rellena artesanal.',                                                  opciones: null },
+    { nombre: 'Sorrentinos de bondiola',       precio: 12000, categoria: 'pastas', descripcion: 'Pasta rellena artesanal.',                                                  opciones: null },
+    { nombre: 'Tallarines al huevo',           precio: 6000,  categoria: 'pastas', descripcion: 'Tallarines frescos artesanales.',                                           opciones: null },
+    { nombre: 'Ñoquis caseros de papa',        precio: 8500,  categoria: 'pastas', descripcion: 'Ñoquis artesanales de papa.',                                               opciones: null },
+    { nombre: 'Ravioles de ricota',            precio: 7000,  categoria: 'pastas', descripcion: 'Pasta rellena artesanal.',                                                  opciones: null },
+    { nombre: 'Raviolones de calabaza y queso',precio: 9500,  categoria: 'pastas', descripcion: 'Pasta rellena artesanal.',                                                  opciones: null },
+    { nombre: 'Raviolones de verdura, ricota y nuez', precio: 9500, categoria: 'pastas', descripcion: 'Pasta rellena artesanal.',                                            opciones: null },
+    // Salsas para pastas
+    { nombre: 'Salsa filetto, blanca, crema, rosa o mixta', precio: 3000, categoria: 'pastas', descripcion: 'Salsa para acompañar tus pastas.',                              opciones: null },
+    { nombre: 'Salsa 4 quesos',                precio: 4000,  categoria: 'pastas', descripcion: 'Salsa para acompañar tus pastas.',                                          opciones: null },
+    { nombre: 'Salsa bolognesa, estofado o parisienne', precio: 4500, categoria: 'pastas', descripcion: 'Salsa para acompañar tus pastas.',                                  opciones: null },
+
+    // ── PIZZAS ─────────────────────────────────────────────────────────────────
+    { nombre: 'Pizza Muzzarella',              precio: 16000, categoria: 'pizzas', descripcion: 'Base de tomate y muzzarella.',                                              opciones: null },
+    { nombre: 'Pizza Napolitana',              precio: 20000, categoria: 'pizzas', descripcion: 'Tomate, muzzarella y rodajas de tomate.',                                   opciones: null },
+    { nombre: 'Pizza Jamón y Morrón',          precio: 20000, categoria: 'pizzas', descripcion: 'Jamón cocido y morrón.',                                                    opciones: null },
+    { nombre: 'Pizza Jamón y Huevo',           precio: 20000, categoria: 'pizzas', descripcion: 'Jamón cocido y huevo.',                                                     opciones: null },
+    { nombre: 'Pizza Calabresa',               precio: 20000, categoria: 'pizzas', descripcion: 'Salame calabrese.',                                                         opciones: null },
+    { nombre: 'Pizza Provoleta',               precio: 20000, categoria: 'pizzas', descripcion: 'Provoleta gratinada.',                                                      opciones: null },
+    { nombre: 'Pizza Cebolla y Muzzarella',    precio: 16000, categoria: 'pizzas', descripcion: 'Cebolla y muzzarella.',                                                     opciones: null },
+    { nombre: 'Pizza Anchoas y Muzzarella',    precio: 20000, categoria: 'pizzas', descripcion: 'Anchoas y muzzarella.',                                                     opciones: null },
+    { nombre: 'Pizza Rúcula y Jamón Crudo',    precio: 23500, categoria: 'pizzas', descripcion: 'Rúcula fresca y jamón crudo.',                                              opciones: null },
+    { nombre: 'Pizza Panceta y Cheddar',       precio: 23500, categoria: 'pizzas', descripcion: 'Panceta y queso cheddar.',                                                  opciones: null },
+    { nombre: 'Pizza Cuatro Quesos',           precio: 23500, categoria: 'pizzas', descripcion: 'Cuatro quesos gratinados.',                                                 opciones: null },
+    { nombre: 'Pizza Palmitos, Jamón y Golf',  precio: 23500, categoria: 'pizzas', descripcion: 'Palmitos, jamón y salsa golf.',                                             opciones: null },
+    // Adicionales de pizza
+    { nombre: 'Adicional pizza: Jamón cocido / Huevo', precio: 2300, categoria: 'pizzas', descripcion: 'Adicional para tu pizza.',                                           opciones: null },
+    { nombre: 'Adicional pizza: Cheddar / Panceta',    precio: 3200, categoria: 'pizzas', descripcion: 'Adicional para tu pizza.',                                           opciones: null },
+    { nombre: 'Adicional pizza: Extra muzza',          precio: 2700, categoria: 'pizzas', descripcion: 'Muzzarella extra para tu pizza.',                                    opciones: null },
+
+    // ── TARTAS ────────────────────────────────────────────────────────────────
+    { nombre: 'Tarta Jamón y Queso',           precio: 8500,  categoria: 'tartas', descripcion: 'Tarta de jamón cocido y queso.',                                            opciones: null },
+    { nombre: 'Tarta Tricolor',                precio: 8500,  categoria: 'tartas', descripcion: 'Espinaca, zapallo y queso.',                                                opciones: null },
+    { nombre: 'Tarta de Pollo',                precio: 8500,  categoria: 'tartas', descripcion: 'Pollo en fondo de cebolla, morrón y salsa de tomate, cubierta con muzzarella gratinada.', opciones: null },
+
+    // ── ENSALADAS ─────────────────────────────────────────────────────────────
+    { nombre: 'Ensalada Trevi',                precio: 13000, categoria: 'ensaladas', descripcion: 'Arroz yamaní, rúcula, pollo desmenuzado, tomates cherry, queso azul y nueces con vinagreta de mostaza y miel.', opciones: null },
+    { nombre: 'Ensalada Caesar',               precio: 13000, categoria: 'ensaladas', descripcion: 'Pollo, crouttons, queso parmesano, lechuga y salsa caesar.',             opciones: null },
+    { nombre: 'Arma tu ensalada',              precio: 9000,  categoria: 'ensaladas', descripcion: '4 ingredientes a elección: choclo, huevo, lechuga, rúcula, tomate, zanahoria, pollo, queso de máquina, jamón, arroz yamaní. Ingrediente adicional: $1.900.', opciones: null },
+
+    // ── SIN TACC ──────────────────────────────────────────────────────────────
+    { nombre: 'Pizza de Muzzarella Sin TACC',  precio: 16000, categoria: 'sin_tacc', descripcion: 'Pizza sin gluten con muzzarella.',                                        opciones: null },
+    { nombre: 'Empanadas x3 Sin TACC',         precio: 16000, categoria: 'sin_tacc', descripcion: 'Tres empanadas sin gluten. Rellenos: carne, pollo o jamón y queso.',     opciones: null },
+    { nombre: 'Ñoquis con filetto Sin TACC',   precio: 10000, categoria: 'sin_tacc', descripcion: 'Ñoquis sin gluten con salsa filetto.',                                    opciones: null },
+    { nombre: 'Chocotorta Sin TACC',           precio: 13000, categoria: 'sin_tacc', descripcion: 'Chocotorta sin gluten.',                                                  opciones: null },
+    { nombre: 'Cheesecake con frutos rojos Sin TACC', precio: 13500, categoria: 'sin_tacc', descripcion: 'Cheesecake sin gluten con frutos rojos.',                           opciones: null },
+    { nombre: 'Flan casero',                   precio: 4500,  categoria: 'sin_tacc', descripcion: 'Con dulce de leche y crema.',                                             opciones: null },
+    { nombre: 'Budín de pan',                  precio: 4500,  categoria: 'sin_tacc', descripcion: 'Con dulce de leche y crema.',                                             opciones: null },
+    { nombre: 'Duraznos con crema',            precio: 4000,  categoria: 'sin_tacc', descripcion: 'Duraznos al natural con crema batida.',                                   opciones: null },
+
+    // ── DULCES ────────────────────────────────────────────────────────────────
+    { nombre: 'Brownie',                       precio: 5500,  categoria: 'dulces', descripcion: 'Porción de brownie.',                                                       opciones: null },
+    { nombre: 'Boston Pie',                    precio: 6000,  categoria: 'dulces', descripcion: 'Torta Boston clásica.',                                                     opciones: null },
+    { nombre: 'New York Cheesecake',           precio: 8000,  categoria: 'dulces', descripcion: 'Cheesecake estilo New York.',                                               opciones: null },
+    { nombre: 'Chocotorta',                    precio: 8800,  categoria: 'dulces', descripcion: 'Chocotorta clásica.',                                                       opciones: null },
+    { nombre: 'Lemon Pie',                     precio: 7200,  categoria: 'dulces', descripcion: 'Tarta de limón con merengue.',                                              opciones: null },
+    { nombre: 'Tarta de Frutilla',             precio: 7200,  categoria: 'dulces', descripcion: 'Tarta de frutilla fresca.',                                                 opciones: null },
+    { nombre: 'Red Velvet',                    precio: 9000,  categoria: 'dulces', descripcion: 'Torta red velvet con frosting de queso crema.',                             opciones: null },
+    { nombre: 'Tiramisú',                      precio: 9000,  categoria: 'dulces', descripcion: 'Tiramisú clásico con mascarpone y café.',                                   opciones: null },
+    { nombre: 'Torta Matilda',                 precio: 9000,  categoria: 'dulces', descripcion: 'Torta de chocolate húmeda estilo Matilda.',                                 opciones: null },
+
+    // ── HELADOS ───────────────────────────────────────────────────────────────
     {
-        nombre: 'Café', precio: 1200, categoria: 'infusiones',
-        descripcion: 'Espresso solo.',
-        opciones: op([{ label: 'Chico', price: 1200 }, { label: 'Grande', price: 1600 }]),
+        nombre: 'Helado artesanal',            precio: 8500,  categoria: 'helados',
+        descripcion: 'Con cucurucho sin cargo. Sabores: Americana, Ananá al agua, Banana Split, Cereza, Chocolate, Chocolate amargo, Chocolate Bariloche, Chocolate blanco, Chocolate con almendras, Chocolate Dubái, Choco Toffi, Crema de cielo, Crema rusa, Dulce de leche, Dulce de leche con almendras, Dulce de leche con nueces, Dulce de leche con Rocklets, Dulce de leche granizado, Dulce de leche Trevi, Durazno al agua, Ferrero, Flan crocante, Frutilla a la crema, Frutilla al agua, Frutos del bosque, Granizado, Kinder Bueno, Lemon pie, Limón al agua, Maracuyá, Marroc, Mascarpone, Menta granizada, Oreo, Pistacho, Sambayón, Sambayón con almendras, Tiramisú, Tramontana, Vainilla.',
+        opciones: op([{ label: '1/4 KG', price: 8500 }, { label: '1/2 KG', price: 15000 }, { label: '1 KG', price: 26000 }]),
     },
-    {
-        nombre: 'Cortado', precio: 1300, categoria: 'infusiones',
-        descripcion: 'Espresso con un toque de leche.',
-        opciones: op([{ label: 'Chico', price: 1300 }, { label: 'Grande', price: 1700 }]),
-    },
-    {
-        nombre: 'Café con leche', precio: 1500, categoria: 'infusiones',
-        descripcion: 'Mitad café, mitad leche caliente.',
-        opciones: op([{ label: 'Chico', price: 1500 }, { label: 'Grande', price: 2000 }]),
-    },
-    {
-        nombre: 'Capuchino', precio: 2200, categoria: 'infusiones',
-        descripcion: 'Espresso con espuma de leche y cacao.',
-        opciones: null,
-    },
-    {
-        nombre: 'Té', precio: 1100, categoria: 'infusiones',
-        descripcion: 'Té a elección.',
-        opciones: op([{ label: 'Chico', price: 1100 }, { label: 'Grande', price: 1500 }]),
-    },
-    {
-        nombre: 'Submarino', precio: 1800, categoria: 'infusiones',
-        descripcion: 'Leche caliente con barra de chocolate.',
-        opciones: op([{ label: 'Chico', price: 1800 }, { label: 'Grande', price: 2400 }]),
-    },
+    // Adicionales helado
+    { nombre: 'Adicional: Cucurucho extra',    precio: 1100,  categoria: 'helados', descripcion: 'Cucurucho adicional.',                                                     opciones: null },
+    { nombre: 'Adicional: Nueces / Almendras', precio: 2600,  categoria: 'helados', descripcion: 'Topping de nueces o almendras.',                                           opciones: null },
+    { nombre: 'Adicional: Rocklets / Microgalletitas', precio: 2000, categoria: 'helados', descripcion: 'Topping de Rocklets o microgalletitas.',                             opciones: null },
 
-    // ── ACOMPAÑAMIENTO ─────────────────────────────────────
-    { nombre: 'Medialuna',          precio: 550,  categoria: 'acompanamiento', descripcion: 'Medialuna de manteca o grasa.', opciones: op([{ label: 'Manteca', price: 600 }, { label: 'Grasa', price: 500 }]) },
-    { nombre: 'Tostadas x2',        precio: 900,  categoria: 'acompanamiento', descripcion: 'Dos tostadas con manteca y mermelada.', opciones: null },
-    { nombre: 'Factura surtida x2', precio: 1200, categoria: 'acompanamiento', descripcion: 'Dos facturas surtidas de panadería.', opciones: null },
-    { nombre: 'Muffin de arándanos',precio: 1400, categoria: 'acompanamiento', descripcion: 'Muffin casero con arándanos frescos.', opciones: null },
-    { nombre: 'Scone de queso',     precio: 1300, categoria: 'acompanamiento', descripcion: 'Scone salado de queso.', opciones: null },
-
-    // ── SANDWICHES ─────────────────────────────────────────
-    { nombre: 'Sandwich de miga jamón y queso',  precio: 2800, categoria: 'sandwiches', descripcion: 'Miga triple con jamón cocido y queso cremoso.', opciones: null },
-    { nombre: 'Sandwich de miga queso y tomate', precio: 2600, categoria: 'sandwiches', descripcion: 'Miga triple con queso, tomate y lechuga.', opciones: null },
-    { nombre: 'Sandwich de miga pollo y palta',  precio: 3200, categoria: 'sandwiches', descripcion: 'Miga triple con pollo desmenuzado y palta.', opciones: null },
-    { nombre: 'Tostado jamón y queso',           precio: 3000, categoria: 'sandwiches', descripcion: 'Pan de molde tostado con jamón y queso derretido.', opciones: null },
-    { nombre: 'Tostado caprese',                 precio: 3200, categoria: 'sandwiches', descripcion: 'Pan tostado con tomate, mozzarella y albahaca.', opciones: null },
-    { nombre: 'Tostado pollo con mayonesa',      precio: 3500, categoria: 'sandwiches', descripcion: 'Pan tostado con pollo grillado y mayonesa casera.', opciones: null },
-    { nombre: 'Baguette de lomito',              precio: 4500, categoria: 'sandwiches', descripcion: 'Baguette con lomito, queso, tomate y lechuga.', opciones: null },
-    { nombre: 'Baguette de bondiola',            precio: 4200, categoria: 'sandwiches', descripcion: 'Baguette con bondiola braseada, cebolla caramelizada y mostaza.', opciones: null },
-
-    // ── MENÚ DEL DÍA ───────────────────────────────────���───
-    { nombre: 'Menú del día: Pasta + bebida', precio: 6500, categoria: 'promoDia', descripcion: 'Pasta del día a elección con bebida sin alcohol incluida.', opciones: null },
-    { nombre: 'Menú del día: Plato + postre', precio: 7200, categoria: 'promoDia', descripcion: 'Plato principal del día con postre de la casa incluido.', opciones: null },
-
-    // ── PICADAS ────────────────────────────────────────────
-    { nombre: 'Picada', precio: 5500, categoria: 'picadas', descripcion: 'Quesos, fiambres, aceitunas y pan.', opciones: op([{ label: 'Chica (1-2 personas)', price: 5500 }, { label: 'Grande (3-4 personas)', price: 9500 }]) },
-    { nombre: 'Tabla de quesos', precio: 7000, categoria: 'picadas', descripcion: 'Selección de 4 quesos artesanales con frutos secos y mermelada.', opciones: null },
-
-    // ── FINGER FOOD ────────────────────────────────────────
-    { nombre: 'Papas fritas',           precio: 2800, categoria: 'finger_food', descripcion: 'Papas fritas crujientes con ketchup.', opciones: op([{ label: 'Clásicas', price: 2800 }, { label: 'Rústicas al horno', price: 3200 }]) },
-    { nombre: 'Aros de cebolla',        precio: 3000, categoria: 'finger_food', descripcion: 'Aros de cebolla rebozados con dip de mostaza.', opciones: null },
-    { nombre: 'Nuggets de pollo x8',    precio: 3500, categoria: 'finger_food', descripcion: 'Nuggets caseros de pollo con salsa BBQ.', opciones: null },
-    { nombre: 'Empanadas de copetín x6',precio: 3800, categoria: 'finger_food', descripcion: 'Mini empanadas surtidas para compartir.', opciones: null },
-
-    // ── HAMBURGUESAS ───────────────────────────────────────
-    { nombre: 'Hamburguesa clásica',        precio: 5500, categoria: 'hamburguesas', descripcion: 'Pan brioche, medallón 180g, lechuga, tomate y mayonesa.', opciones: null },
-    { nombre: 'Hamburguesa con queso',      precio: 5900, categoria: 'hamburguesas', descripcion: 'Hamburguesa clásica con cheddar fundido.', opciones: null },
-    { nombre: 'Hamburguesa Trevi especial', precio: 7200, categoria: 'hamburguesas', descripcion: 'Doble medallón, cheddar, cebolla caramelizada, bacon y salsa Trevi.', opciones: null },
-    { nombre: 'Hamburguesa de pollo',       precio: 5800, categoria: 'hamburguesas', descripcion: 'Pan brioche, pechuga grillada, palta, lechuga y mayonesa.', opciones: null },
-
-    // ── PLATOS ─────────────────────────────────────────────
-    { nombre: 'Lomo al champiñón',      precio: 9500, categoria: 'platos', descripcion: 'Lomo en salsa de champiñones, papas al natural y ensalada.', opciones: null },
-    { nombre: 'Pollo a la provenzal',   precio: 7800, categoria: 'platos', descripcion: 'Pechuga a la provenzal con arroz blanco y ensalada.', opciones: null },
-    { nombre: 'Merluza a la romana',    precio: 8200, categoria: 'platos', descripcion: 'Filete de merluza rebozado con papas fritas y limón.', opciones: null },
-    { nombre: 'Revuelto Gramajo',       precio: 5500, categoria: 'platos', descripcion: 'Clásico porte��o: huevo, jamón, papas paja y arvejas.', opciones: null },
-
-    // ── MILANESAS ─────────────────────────────────────────
-    {
-        nombre: 'Milanesa napolitana', precio: 8000, categoria: 'milanesas',
-        descripcion: 'Milanesa con salsa de tomate, jamón y mozzarella gratinada.',
-        opciones: op([{ label: 'De carne', price: 8500 }, { label: 'De pollo', price: 8000 }]),
-    },
-    {
-        nombre: 'Milanesa con papas', precio: 7800, categoria: 'milanesas',
-        descripcion: 'Milanesa con papas fritas.',
-        opciones: op([{ label: 'De carne a caballo', price: 8000 }, { label: 'De pollo', price: 7800 }]),
-    },
-
-    // ── PIZZAS ─────────────────────────────────────────────
-    { nombre: 'Pizza mozzarella',     precio: 7500, categoria: 'pizzas', descripcion: 'Base de tomate y mozzarella fresca.', opciones: op([{ label: 'Entera', price: 7500 }, { label: 'Media', price: 4000 }]) },
-    { nombre: 'Pizza fugazzeta',      precio: 8000, categoria: 'pizzas', descripcion: 'Doble queso con cebolla caramelizada.', opciones: op([{ label: 'Entera', price: 8000 }, { label: 'Media', price: 4300 }]) },
-    { nombre: 'Pizza napolitana',     precio: 8500, categoria: 'pizzas', descripcion: 'Tomate, mozzarella, tomates cherry y albahaca.', opciones: op([{ label: 'Entera', price: 8500 }, { label: 'Media', price: 4500 }]) },
-    { nombre: 'Pizza jamón y morrones',precio: 8500, categoria: 'pizzas', descripcion: 'Base de tomate, mozzarella, jamón y morrones.', opciones: op([{ label: 'Entera', price: 8500 }, { label: 'Media', price: 4500 }]) },
-    { nombre: 'Pizza 4 quesos',       precio: 9000, categoria: 'pizzas', descripcion: 'Mozzarella, provolone, roquefort y parmesano.', opciones: op([{ label: 'Entera', price: 9000 }, { label: 'Media', price: 4800 }]) },
-
-    // ── TARTAS ────────────────────────────────────────────
-    { nombre: 'Tarta de verdura',      precio: 3200, categoria: 'tartas', descripcion: 'Espinaca, acelga y queso.', opciones: op([{ label: 'Porción', price: 3200 }, { label: 'Entera (8 porciones)', price: 9500 }]) },
-    { nombre: 'Tarta de jamón y queso',precio: 3200, categoria: 'tartas', descripcion: 'Jamón cocido y queso cremoso.', opciones: op([{ label: 'Porción', price: 3200 }, { label: 'Entera (8 porciones)', price: 9500 }]) },
-    { nombre: 'Tarta de choclo',       precio: 3200, categoria: 'tartas', descripcion: 'Choclo con queso y huevo.', opciones: null },
-
-    // ── ENSALADAS ─────────────────────────────────────────
-    { nombre: 'Ensalada verde',   precio: 3500, categoria: 'ensaladas', descripcion: 'Lechuga, rúcula, pepino y aderezo de limón.', opciones: null },
-    { nombre: 'Ensalada caprese', precio: 4500, categoria: 'ensaladas', descripcion: 'Tomate, mozzarella fresca, albahaca y aceite de oliva.', opciones: null },
-    { nombre: 'Ensalada César',   precio: 5000, categoria: 'ensaladas', descripcion: 'Lechuga romana, crutones, parmesano y aderezo César.', opciones: null },
-    { nombre: 'Ensalada Trevi',   precio: 5500, categoria: 'ensaladas', descripcion: 'Mix de verdes, pollo grillado, palta, cherry y mostaza miel.', opciones: null },
-
-    // ── EMPANADAS ─────────────────────────────────────────
-    {
-        nombre: 'Empanada de carne', precio: 1200, categoria: 'empanadas',
-        descripcion: 'Carne cortada a cuchillo, jugosa.',
-        opciones: op([{ label: '1 unidad', price: 1200 }, { label: 'Media docena (x6)', price: 6800 }, { label: 'Docena (x12)', price: 12500 }]),
-    },
-    {
-        nombre: 'Empanada de pollo', precio: 1200, categoria: 'empanadas',
-        descripcion: 'Pollo con pimentón y cebolla.',
-        opciones: op([{ label: '1 unidad', price: 1200 }, { label: 'Media docena (x6)', price: 6800 }, { label: 'Docena (x12)', price: 12500 }]),
-    },
-    {
-        nombre: 'Empanada de jamón y queso', precio: 1100, categoria: 'empanadas',
-        descripcion: 'Jamón cocido y queso fundido.',
-        opciones: op([{ label: '1 unidad', price: 1100 }, { label: 'Media docena (x6)', price: 6200 }, { label: 'Docena (x12)', price: 11500 }]),
-    },
-    {
-        nombre: 'Empanada de humita', precio: 1000, categoria: 'empanadas',
-        descripcion: 'Choclo cremoso, clásica del norte.',
-        opciones: op([{ label: '1 unidad', price: 1000 }, { label: 'Media docena (x6)', price: 5500 }, { label: 'Docena (x12)', price: 10500 }]),
-    },
-
-    // ── PASTAS ────────────────────────────────────────────
-    { nombre: 'Tallarines',        precio: 5500, categoria: 'pastas', descripcion: 'Tallarines frescos artesanales.', opciones: op([{ label: 'Al tuco', price: 5500 }, { label: 'A la boloñesa', price: 6500 }]) },
-    { nombre: 'Ñoquis',            precio: 5800, categoria: 'pastas', descripcion: 'Ñoquis de papa artesanales.', opciones: op([{ label: 'Al tuco', price: 5800 }, { label: 'A los cuatro quesos', price: 7000 }]) },
-    { nombre: 'Sorrentinos',       precio: 7500, categoria: 'pastas', descripcion: 'Sorrentinos rellenos con salsa a elección.', opciones: op([{ label: 'Jamón y queso', price: 7500 }, { label: 'Verdura y ricota', price: 7000 }]) },
-    { nombre: 'Ravioles de verdura',precio: 6800, categoria: 'pastas', descripcion: 'Ravioles de espinaca y ricota con salsa fileto.', opciones: null },
-    { nombre: 'Lasagna de carne',  precio: 7200, categoria: 'pastas', descripcion: 'Lasagna al horno con carne, bechamel y mozzarella.', opciones: null },
-
-    // ── DULCES ────────────────────────────────────────────
-    { nombre: 'Torta de chocolate',         precio: 3000, categoria: 'dulces', descripcion: 'Porción de torta húmeda con ganache.', opciones: null },
-    { nombre: 'Cheesecake de frutos rojos', precio: 3200, categoria: 'dulces', descripcion: 'Porción con coulis de frutillas.', opciones: null },
-    { nombre: 'Brownie con helado',         precio: 3500, categoria: 'dulces', descripcion: 'Brownie caliente con bocha de helado de vainilla.', opciones: null },
-    { nombre: 'Tiramisú',                   precio: 3800, categoria: 'dulces', descripcion: 'Clásico con mascarpone y café espresso.', opciones: null },
-    { nombre: 'Medialunas con dulce de leche', precio: 1800, categoria: 'dulces', descripcion: 'Dos medialunas de manteca con dulce de leche artesanal.', opciones: null },
-    { nombre: 'Flan con crema',             precio: 2500, categoria: 'dulces', descripcion: 'Flan casero con crema batida y dulce de leche.', opciones: null },
-
-    // ── HELADOS ───────────────────────────────────────────
-    {
-        nombre: 'Helado', precio: 1800, categoria: 'helados',
-        descripcion: 'Helado artesanal. Sabores: chocolate, vainilla, frutilla o dulce de leche.',
-        opciones: op([{ label: '100g', price: 1800 }, { label: '250g', price: 3800 }, { label: '500g', price: 7000 }]),
-    },
-
-    // ── BEBIDAS ────────────────────────────────────────────
-    { nombre: 'Agua mineral',      precio: 1000, categoria: 'bebidas', descripcion: 'Con o sin gas.', opciones: op([{ label: '500ml', price: 1000 }, { label: '1.5L', price: 1800 }]) },
-    { nombre: 'Coca-Cola',         precio: 1500, categoria: 'bebidas', descripcion: 'Coca-Cola original.', opciones: op([{ label: '354ml (lata)', price: 1500 }, { label: '1.5L', price: 2800 }]) },
-    { nombre: 'Jugo de naranja',   precio: 2200, categoria: 'bebidas', descripcion: 'Natural exprimido al momento.', opciones: null },
-    { nombre: 'Limonada',          precio: 2000, categoria: 'bebidas', descripcion: 'Limonada casera con menta y azúcar.', opciones: null },
-    { nombre: 'Cerveza Quilmes',   precio: 2200, categoria: 'bebidas', descripcion: 'Botella 340ml.', opciones: null },
-    { nombre: 'Cerveza Stella Artois', precio: 2800, categoria: 'bebidas', descripcion: 'Botella 340ml.', opciones: null },
-    { nombre: 'Copa de vino',      precio: 3000, categoria: 'bebidas', descripcion: 'Copa de vino de la casa.', opciones: op([{ label: 'Tinto (Malbec)', price: 3000 }, { label: 'Blanco (Torrontés)', price: 3000 }]) },
+    // ── BEBIDAS ────────────────────────────────────────────────────────────────
+    { nombre: 'Agua mineral / con gas',        precio: 3500,  categoria: 'bebidas', descripcion: '500ml.',                                                                    opciones: null },
+    { nombre: 'Agua saborizada',               precio: 4000,  categoria: 'bebidas', descripcion: '500ml. Aquarius.',                                                         opciones: null },
+    { nombre: 'Gaseosa',                       precio: 7000,  categoria: 'bebidas', descripcion: '1,5 litros. Línea Coca-Cola.',                                             opciones: null },
+    { nombre: 'Milkshake',                     precio: 8500,  categoria: 'bebidas', descripcion: 'Milkshake cremoso.',                                                       opciones: null },
+    { nombre: 'Exprimido',                     precio: 3500,  categoria: 'bebidas', descripcion: 'Jugo de naranja exprimido.',                                               opciones: op([{ label: 'Pequeño', price: 3500 }, { label: 'Grande', price: 5500 }]) },
+    { nombre: 'Licuado',                       precio: 5500,  categoria: 'bebidas', descripcion: 'Licuado de frutas.',                                                       opciones: op([{ label: 'Con agua', price: 5500 }, { label: 'Con leche', price: 6000 }]) },
+    { nombre: 'Licuado con exprimido de naranja', precio: 6000, categoria: 'bebidas', descripcion: 'Licuado con exprimido de naranja natural.',                              opciones: null },
+    { nombre: 'Limonada',                      precio: 3500,  categoria: 'bebidas', descripcion: 'Limonada natural. Vaso.',                                                  opciones: null },
+    { nombre: 'Limonada con menta y jengibre', precio: 3800,  categoria: 'bebidas', descripcion: 'Limonada con menta y jengibre. Vaso.',                                     opciones: null },
+    { nombre: 'Limonada con frutos rojos',     precio: 4500,  categoria: 'bebidas', descripcion: 'Limonada con frutos rojos. Vaso.',                                         opciones: null },
 ];
 
 async function seed() {
@@ -229,44 +267,44 @@ async function seed() {
 
         await client.query('BEGIN');
 
+        // ── Restaurante ─────────────────────────────────────────────────────
         let restauranteId;
-        const existe = await client.query(
-            'SELECT id FROM restaurantes WHERE nombre = $1',
-            [RESTAURANTE.nombre]
-        );
+        const existe = await client.query('SELECT id FROM restaurantes WHERE nombre = $1', [RESTAURANTE.nombre]);
         if (existe.rows.length > 0) {
             restauranteId = existe.rows[0].id;
-            console.log(`  Restaurante ya existe: id=${restauranteId} — solo se insertarán los items.`);
+            console.log(`  Restaurante ya existe: id=${restauranteId}`);
         } else {
-            // 1. Insertar restaurante
-            console.log('Insertando restaurante Trevi...');
             const resResult = await client.query(
                 `INSERT INTO restaurantes (nombre, descripcion, direccion, telefono, horario, estado, admin_id)
                  VALUES ($1, $2, $3, $4, $5, $6, (SELECT id FROM usuarios WHERE email = $7))
                  RETURNING id`,
-                [RESTAURANTE.nombre, RESTAURANTE.descripcion, RESTAURANTE.direccion, RESTAURANTE.telefono, RESTAURANTE.horario, RESTAURANTE.estado, ADMIN.email]
+                [RESTAURANTE.nombre, RESTAURANTE.descripcion, RESTAURANTE.direccion,
+                 RESTAURANTE.telefono, RESTAURANTE.horario, RESTAURANTE.estado, ADMIN.email]
             );
             restauranteId = resResult.rows[0].id;
             console.log(`  Restaurante creado: id=${restauranteId}`);
         }
 
-        // 2. Insertar admin
-        console.log('\nInsertando admin de Trevi...');
+        // ── Admin ────────────────────────────────────────────────────────────
         const adminExiste = await client.query('SELECT id FROM usuarios WHERE email = $1', [ADMIN.email]);
         if (adminExiste.rows.length > 0) {
-            console.warn(`  AVISO: Ya existe un usuario con email ${ADMIN.email}. Saltando.`);
+            console.log(`  Admin ya existe: ${ADMIN.email}`);
         } else {
             const passwordHash = await bcrypt.hash(ADMIN.password, 12);
             await client.query(
                 `INSERT INTO usuarios (nombre, apellido, email, telefono, password_hash, rol, estado, restaurante_id)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-                [ADMIN.nombre, ADMIN.apellido, ADMIN.email, ADMIN.telefono, passwordHash, ADMIN.rol, ADMIN.estado, restauranteId]
+                [ADMIN.nombre, ADMIN.apellido, ADMIN.email, ADMIN.telefono,
+                 passwordHash, ADMIN.rol, ADMIN.estado, restauranteId]
             );
             console.log(`  Admin creado: ${ADMIN.email} / ${ADMIN.password}`);
         }
 
-        // 3. Insertar menú
-        console.log('\nInsertando menú...');
+        // ── Menú — eliminar items anteriores e insertar los nuevos ──────────
+        const deleted = await client.query('DELETE FROM menu_items WHERE restaurante_id = $1', [restauranteId]);
+        console.log(`\n  Items anteriores eliminados: ${deleted.rowCount}`);
+
+        console.log('  Insertando menú completo...');
         const categorias = {};
         let totalItems = 0;
 
