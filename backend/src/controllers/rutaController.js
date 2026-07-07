@@ -43,6 +43,7 @@ exports.calcularRuta = async (req, res) => {
             points: ruta.points,
             distanceMeters: ruta.distanceMeters,
             durationSeconds: ruta.durationSeconds,
+            steps: ruta.steps,
         });
     } catch (error) {
         console.error('Error en calcularRuta:', error);
