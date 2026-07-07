@@ -235,6 +235,14 @@ exports.asignarRepartidor = async (req, res) => {
         return res.status(404).json({ success: false, message: 'Repartidor no encontrado o no pertenece a este restaurante' });
     }
 
+    const pedidoCheck = await db.query(
+        `SELECT id FROM pedidos WHERE id = $1 AND restaurante_id = $2`,
+        [id, restauranteId]
+    );
+    if (pedidoCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Pedido no encontrado o no pertenece a este restaurante' });
+    }
+
     const client = await db.getClient();
     try {
         await client.query('BEGIN');
