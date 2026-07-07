@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import API from '../../services/api';
-import { distanceToPolylineMeters } from '../../utils/routeGeometry';
+import { useRepartidorRoute } from '../../hooks/useRepartidorRoute';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 
@@ -68,11 +68,6 @@ export default function RepartidorMapaScreen() {
     const [loading, setLoading] = useState(true);
     const [geocoding, setGeocoding] = useState(false);
     const [topBlockHeight, setTopBlockHeight] = useState(0);
-    const [routePoints, setRoutePoints] = useState(null);       // [{latitude, longitude}, ...] para <Polyline>
-    const [routeInfo, setRouteInfo] = useState(null);           // { distanceMeters, durationSeconds }
-    const [etaTarget, setEtaTarget] = useState(null);           // Date — cuándo debería llegar, según la última ruta calculada
-    const recalculandoRef = useRef(false);
-    const routeRequestSeq = useRef(0);
 
     // ── Permiso y watch de ubicación ──────────────────────
     useEffect(() => {
@@ -147,46 +142,7 @@ export default function RepartidorMapaScreen() {
         }, 500);
     }, [selected]);
 
-    // ── Pedir la ruta al backend (Google Directions) ──────
-    const fetchRoute = useCallback(async (pedido) => {
-        if (!pedido || !coords[pedido.id]) return;
-        const mySeq = ++routeRequestSeq.current;
-        recalculandoRef.current = true;
-        try {
-            const res = await API.repartidor.getRuta(pedido.id, coords[pedido.id]);
-            if (mySeq !== routeRequestSeq.current) return; // llegó una respuesta vieja, descartar
-            if (res.success) {
-                setRoutePoints(res.points.map(p => ({ latitude: p.lat, longitude: p.lng })));
-                setRouteInfo({ distanceMeters: res.distanceMeters, durationSeconds: res.durationSeconds });
-                setEtaTarget(new Date(Date.now() + res.durationSeconds * 1000));
-            }
-        } catch {
-            // No romper el flujo si Google falla — se mantienen pines y botones de Waze/Google Maps
-        } finally {
-            if (mySeq === routeRequestSeq.current) recalculandoRef.current = false;
-        }
-    }, [coords]);
-
-    // ── Pedir la ruta al seleccionar un pedido ────────────
-    useEffect(() => {
-        if (selected) fetchRoute(selected);
-        else { setRoutePoints(null); setRouteInfo(null); setEtaTarget(null); }
-    }, [selected, fetchRoute]);
-
-    // ── Detección de desvío y recálculo por ETA próxima a cero ──
-    useEffect(() => {
-        if (!location || !routePoints || !selected || recalculandoRef.current) return;
-
-        const puntoActual = { lat: location.latitude, lng: location.longitude };
-        const polylinePlano = routePoints.map(p => ({ lat: p.latitude, lng: p.longitude }));
-        const desvioMetros = distanceToPolylineMeters(puntoActual, polylinePlano);
-
-        const etaProximaACero = etaTarget && (etaTarget.getTime() - Date.now()) < 60000 && selected.estado === 'en_camino';
-
-        if (desvioMetros > 70 || etaProximaACero) {
-            fetchRoute(selected);
-        }
-    }, [location, routePoints, selected, etaTarget, fetchRoute]);
+    const { routePoints, routeInfo } = useRepartidorRoute({ location, coords, selected });
 
     // ── Centrar en mi posición ────────────────────────────
     const centerOnMe = () => {
