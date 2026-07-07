@@ -29,6 +29,15 @@ function decodePolyline(encoded) {
 
 const ROUTES_API_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
 
+function parseSteps(rawSteps) {
+    if (!Array.isArray(rawSteps)) return [];
+    return rawSteps.map(step => ({
+        instruccion: step.navigationInstruction?.instructions || '',
+        distanciaMetros: step.distanceMeters || 0,
+        points: step.polyline?.encodedPolyline ? decodePolyline(step.polyline.encodedPolyline) : [],
+    }));
+}
+
 async function computeRoute({ origen, destino }) {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
@@ -40,7 +49,7 @@ async function computeRoute({ origen, destino }) {
         headers: {
             'Content-Type': 'application/json',
             'X-Goog-Api-Key': apiKey,
-            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline',
+            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps.navigationInstruction,routes.legs.steps.distanceMeters,routes.legs.steps.polyline.encodedPolyline',
         },
         body: JSON.stringify({
             origin: { location: { latLng: { latitude: origen.lat, longitude: origen.lng } } },
@@ -57,11 +66,13 @@ async function computeRoute({ origen, destino }) {
 
     const route = data.routes[0];
     const durationSeconds = parseInt(route.duration.replace('s', ''), 10);
+    const rawSteps = route.legs?.[0]?.steps || [];
 
     return {
         points: decodePolyline(route.polyline.encodedPolyline),
         distanceMeters: route.distanceMeters,
         durationSeconds,
+        steps: parseSteps(rawSteps),
     };
 }
 
