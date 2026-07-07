@@ -65,11 +65,17 @@ exports.createRepartidor = async (req, res) => {
             return res.status(409).json({ success: false, message: 'Ya existe un usuario con ese email' });
         }
 
+        const adminRow = await db.query('SELECT restaurante_id FROM usuarios WHERE id = $1', [req.user.userId]);
+        const restauranteId = adminRow.rows[0]?.restaurante_id || null;
+        if (!restauranteId) {
+            return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
+        }
+
         const hash = await bcrypt.hash(password, 12);
         const result = await db.query(
-            `INSERT INTO usuarios (nombre, apellido, email, telefono, password_hash, rol, email_verificado)
-             VALUES ($1, $2, $3, $4, $5, 'repartidor', true) RETURNING id, nombre, apellido, email, telefono, rol`,
-            [nombre, apellido || '', email, telefono || '000000000', hash]
+            `INSERT INTO usuarios (nombre, apellido, email, telefono, password_hash, rol, email_verificado, restaurante_id)
+             VALUES ($1, $2, $3, $4, $5, 'repartidor', true, $6) RETURNING id, nombre, apellido, email, telefono, rol, restaurante_id`,
+            [nombre, apellido || '', email, telefono || '000000000', hash, restauranteId]
         );
 
         res.json({ success: true, data: result.rows[0] });
