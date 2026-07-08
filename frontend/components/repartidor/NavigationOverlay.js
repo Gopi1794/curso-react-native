@@ -1,7 +1,7 @@
 // frontend/components/repartidor/NavigationOverlay.js
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +19,7 @@ export default function NavigationOverlay({
     routeInfo,
     etaTarget,
     destino,
+    routePoints,
     onExit,
 }) {
     const insets = useSafeAreaInsets();
@@ -100,6 +101,13 @@ export default function NavigationOverlay({
             >
                 {destino && (
                     <Marker coordinate={{ latitude: destino.lat, longitude: destino.lng }} />
+                )}
+                {routePoints && (
+                    <Polyline
+                        coordinates={routePoints}
+                        strokeColor="#FF8700"
+                        strokeWidth={4}
+                    />
                 )}
             </MapView>
 

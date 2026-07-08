@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
     Linking, ActivityIndicator, Platform, Alert, ScrollView,
@@ -146,6 +146,11 @@ export default function RepartidorMapaScreen() {
 
     const { routePoints, routeInfo, etaTarget, steps, stepActualIndex } = useRepartidorRoute({ location, coords, selected });
 
+    const destinoNav = useMemo(() => {
+        if (!selected || !coords[selected.id]) return null;
+        return { lat: coords[selected.id].latitude, lng: coords[selected.id].longitude };
+    }, [selected, coords[selected?.id]?.latitude, coords[selected?.id]?.longitude]);
+
     // ── Centrar en mi posición ────────────────────────────
     const centerOnMe = () => {
         if (!location || !mapRef.current) return;
@@ -196,62 +201,64 @@ export default function RepartidorMapaScreen() {
     return (
         <View style={styles.root}>
             {/* ── Mapa ── */}
-            <MapView
-                ref={mapRef}
-                style={styles.map}
-                initialRegion={initialRegion}
-                showsUserLocation={false}
-                showsMyLocationButton={false}
-                showsCompass={false}
-            >
-                {/* Pin del repartidor */}
-                {location && (
-                    <>
-                        <Circle
-                            center={{ latitude: location.latitude, longitude: location.longitude }}
-                            radius={80}
-                            fillColor="rgba(0,122,255,0.12)"
-                            strokeColor="rgba(0,122,255,0.3)"
-                            strokeWidth={1}
-                        />
+            {!navegando && (
+                <MapView
+                    ref={mapRef}
+                    style={styles.map}
+                    initialRegion={initialRegion}
+                    showsUserLocation={false}
+                    showsMyLocationButton={false}
+                    showsCompass={false}
+                >
+                    {/* Pin del repartidor */}
+                    {location && (
+                        <>
+                            <Circle
+                                center={{ latitude: location.latitude, longitude: location.longitude }}
+                                radius={80}
+                                fillColor="rgba(0,122,255,0.12)"
+                                strokeColor="rgba(0,122,255,0.3)"
+                                strokeWidth={1}
+                            />
+                            <Marker
+                                coordinate={{ latitude: location.latitude, longitude: location.longitude }}
+                                anchor={{ x: 0.5, y: 0.5 }}
+                                flat
+                            >
+                                <View style={styles.myDot} />
+                            </Marker>
+                        </>
+                    )}
+
+                    {/* Pins de pedidos */}
+                    {pedidosConCoords.map(p => (
                         <Marker
-                            coordinate={{ latitude: location.latitude, longitude: location.longitude }}
-                            anchor={{ x: 0.5, y: 0.5 }}
-                            flat
+                            key={p.id}
+                            coordinate={coords[p.id]}
+                            onPress={() => setSelected(p)}
+                            anchor={{ x: 0.5, y: 1 }}
                         >
-                            <View style={styles.myDot} />
-                        </Marker>
-                    </>
-                )}
-
-                {/* Pins de pedidos */}
-                {pedidosConCoords.map(p => (
-                    <Marker
-                        key={p.id}
-                        coordinate={coords[p.id]}
-                        onPress={() => setSelected(p)}
-                        anchor={{ x: 0.5, y: 1 }}
-                    >
-                        <View style={[
-                            styles.pinWrapper,
-                            selected?.id === p.id && styles.pinWrapperSelected,
-                        ]}>
-                            <View style={[styles.pin, { backgroundColor: ESTADO_COLOR[p.estado] ?? '#888' }]}>
-                                <Text style={styles.pinText}>#{p.id}</Text>
+                            <View style={[
+                                styles.pinWrapper,
+                                selected?.id === p.id && styles.pinWrapperSelected,
+                            ]}>
+                                <View style={[styles.pin, { backgroundColor: ESTADO_COLOR[p.estado] ?? '#888' }]}>
+                                    <Text style={styles.pinText}>#{p.id}</Text>
+                                </View>
+                                <View style={[styles.pinArrow, { borderTopColor: ESTADO_COLOR[p.estado] ?? '#888' }]} />
                             </View>
-                            <View style={[styles.pinArrow, { borderTopColor: ESTADO_COLOR[p.estado] ?? '#888' }]} />
-                        </View>
-                    </Marker>
-                ))}
+                        </Marker>
+                    ))}
 
-                {routePoints && (
-                    <Polyline
-                        coordinates={routePoints}
-                        strokeColor="#FF8700"
-                        strokeWidth={4}
-                    />
-                )}
-            </MapView>
+                    {routePoints && (
+                        <Polyline
+                            coordinates={routePoints}
+                            strokeColor="#FF8700"
+                            strokeWidth={4}
+                        />
+                    )}
+                </MapView>
+            )}
 
             {/* ── Bloque superior: header + lista ── */}
             <View
@@ -390,7 +397,8 @@ export default function RepartidorMapaScreen() {
                 stepActualIndex={stepActualIndex}
                 routeInfo={routeInfo}
                 etaTarget={etaTarget}
-                destino={selected && coords[selected.id] ? { lat: coords[selected.id].latitude, lng: coords[selected.id].longitude } : null}
+                destino={destinoNav}
+                routePoints={routePoints}
                 onExit={() => setNavegando(false)}
             />
         </View>
