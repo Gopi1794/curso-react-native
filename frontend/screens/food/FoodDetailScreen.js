@@ -101,10 +101,6 @@ const FoodDetailScreen = ({ route }) => {
     const [loadingComments, setLoadingComments] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [carouselImages, setCarouselImages] = useState([]);
-    const [selectedIngredients, setSelectedIngredients] = useState(
-        () => new Set(foodItem.ingredientText || [])
-    );
-
     // Mapa de ingredientes removibles (desde ingredientes_detalle del backend)
     const removibleMap = React.useMemo(() => {
         const map = {};
@@ -113,6 +109,27 @@ const FoodDetailScreen = ({ route }) => {
         });
         return map;
     }, [foodItem.ingredientesDetalle]);
+
+    // Mapa de ingredientes sin stock (desde ingredientes_detalle del backend)
+    const stockMap = React.useMemo(() => {
+        const map = {};
+        (foodItem.ingredientesDetalle || []).forEach(ing => {
+            map[ing.nombre] = ing.sin_stock === true;
+        });
+        return map;
+    }, [foodItem.ingredientesDetalle]);
+
+    // Ingredientes removibles que están sin stock (para el aviso y el bloqueo)
+    const ingredientesSinStock = React.useMemo(() => {
+        return (foodItem.ingredientesDetalle || [])
+            .filter(ing => ing.es_removible && ing.sin_stock === true)
+            .map(ing => ing.nombre);
+    }, [foodItem.ingredientesDetalle]);
+
+    const [selectedIngredients, setSelectedIngredients] = useState(() => {
+        const sinStockSet = new Set(ingredientesSinStock);
+        return new Set((foodItem.ingredientText || []).filter(i => !sinStockSet.has(i)));
+    });
     const [showIngredientSheet, setShowIngredientSheet] = useState(false);
     const [reduceMotion, setReduceMotion] = useState(false);
     const insets = useSafeAreaInsets();
@@ -566,6 +583,14 @@ const FoodDetailScreen = ({ route }) => {
                         </Text>
                     </View>
 
+                    {ingredientesSinStock.length > 0 && (
+                        <View style={styles.stockWarningBanner}>
+                            <Text style={styles.stockWarningText}>
+                                Sin stock: {ingredientesSinStock.join(', ')}
+                            </Text>
+                        </View>
+                    )}
+
                     {/* Rating y Estadísticas */}
                     <View style={styles.ratingSection}>
                         <View style={styles.ratingContainer}>
@@ -791,8 +816,9 @@ const FoodDetailScreen = ({ route }) => {
                         {(foodItem.ingredientText || []).map((ingredient, index) => {
                             const isOn = selectedIngredients.has(ingredient);
                             const canRemove = removibleMap[ingredient] !== false;
+                            const sinStock = stockMap[ingredient] === true;
                             return (
-                                <View key={index} style={[styles.sheetRow, !canRemove && { opacity: 0.5 }]}>
+                                <View key={index} style={[styles.sheetRow, (!canRemove || sinStock) && { opacity: 0.5 }]}>
                                     <View style={styles.sheetRowLeft}>
                                         <View style={[styles.sheetDot, !isOn && styles.sheetDotOff]} />
                                         <View>
@@ -804,12 +830,17 @@ const FoodDetailScreen = ({ route }) => {
                                                     Base del plato
                                                 </Text>
                                             )}
+                                            {canRemove && sinStock && (
+                                                <Text style={styles.sinStockSubtext}>
+                                                    Ahora no se cuenta con este ingrediente
+                                                </Text>
+                                            )}
                                         </View>
                                     </View>
                                     <Switch
                                         value={isOn}
                                         onValueChange={() => handleToggleIngredient(ingredient)}
-                                        disabled={!canRemove}
+                                        disabled={!canRemove || sinStock}
                                         trackColor={{ false: '#e0e0e0', true: '#FFD0A0' }}
                                         thumbColor={isOn ? '#FF8000' : '#bbb'}
                                         ios_backgroundColor="#e0e0e0"
@@ -978,6 +1009,25 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#FF8000',
         fontFamily: 'Poppins-Bold',
+    },
+    stockWarningBanner: {
+        backgroundColor: '#FFEBEE',
+        borderRadius: 25,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        alignSelf: 'flex-start',
+        marginBottom: 16,
+    },
+    stockWarningText: {
+        color: '#D32F2F',
+        fontSize: 12,
+        fontFamily: 'Poppins-SemiBold',
+    },
+    sinStockSubtext: {
+        fontSize: 11,
+        color: '#D32F2F',
+        marginTop: 1,
+        fontFamily: 'Poppins-Regular',
     },
     ratingSection: {
         marginBottom: 24,
