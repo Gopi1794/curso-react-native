@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# ── Credenciales (NUNCA commitear) ────────────────────────
+serviceAccountKey.json
+*serviceAccountKey*.json
+
 # ── Dependencias ──────────────────────────────────────────
 node_modules/
 **/node_modules/
