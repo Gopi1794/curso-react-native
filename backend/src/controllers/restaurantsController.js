@@ -147,12 +147,16 @@ exports.getMenu = async (req, res) => {
 
         if (itemIds.length > 0) {
             const ingResult = await db.query(
-                `SELECT mii.menu_item_id, i.nombre, mii.es_removible
+                `SELECT mii.menu_item_id, i.nombre, mii.es_removible,
+                        COALESCE(si.cantidad, 0) <= 0 AS sin_stock
                  FROM menu_item_ingredientes mii
                  JOIN ingredientes i ON i.id = mii.ingrediente_id
+                 LEFT JOIN stock_ingredientes si
+                    ON si.ingrediente_id = mii.ingrediente_id
+                   AND si.restaurante_id = $2
                  WHERE mii.menu_item_id = ANY($1)
                  ORDER BY i.nombre ASC`,
-                [itemIds]
+                [itemIds, id]
             );
 
             for (const row of ingResult.rows) {
@@ -161,7 +165,8 @@ exports.getMenu = async (req, res) => {
                 }
                 ingredientesMap[row.menu_item_id].push({
                     nombre: row.nombre,
-                    es_removible: row.es_removible
+                    es_removible: row.es_removible,
+                    sin_stock: row.sin_stock
                 });
             }
         }
@@ -234,12 +239,16 @@ exports.getMenuItem = async (req, res) => {
 
         // Traer ingredientes con detalle
         const ingResult = await db.query(
-            `SELECT i.nombre, mii.es_removible
+            `SELECT i.nombre, mii.es_removible,
+                    COALESCE(si.cantidad, 0) <= 0 AS sin_stock
              FROM menu_item_ingredientes mii
              JOIN ingredientes i ON i.id = mii.ingrediente_id
+             LEFT JOIN stock_ingredientes si
+                ON si.ingrediente_id = mii.ingrediente_id
+               AND si.restaurante_id = $2
              WHERE mii.menu_item_id = $1
              ORDER BY i.nombre ASC`,
-            [itemId]
+            [itemId, id]
         );
 
         const item = {
