@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const cache = require('../utils/cache');
+const crypto = require('crypto');
 
 const MENU_TTL = 5 * 60 * 1000; // 5 minutos
 
@@ -319,6 +320,114 @@ exports.getRuleta = async (req, res) => {
 
     } catch (error) {
         console.error('Error en getRuleta:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// ── GIRAR RULETA (público, el servidor decide el ganador) ────
+// POST /api/restaurants/:id/ruleta/girar
+const CODIGO_ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O ni 1/I, evita ambiguedad visual
+
+function generarCodigoCupon() {
+    const bytes = crypto.randomBytes(8);
+    let codigo = '';
+    for (let i = 0; i < 8; i++) {
+        codigo += CODIGO_ALFABETO[bytes[i] % CODIGO_ALFABETO.length];
+    }
+    return codigo;
+}
+
+exports.girarRuleta = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de restaurante inválido'
+            });
+        }
+
+        const restResult = await db.query(
+            'SELECT ruleta_activa FROM restaurantes WHERE id = $1',
+            [id]
+        );
+
+        if (restResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Restaurante no encontrado'
+            });
+        }
+
+        if (!restResult.rows[0].ruleta_activa) {
+            return res.status(400).json({
+                success: false,
+                message: 'La ruleta no está activa para este restaurante'
+            });
+        }
+
+        const premiosResult = await db.query(
+            'SELECT posicion, label, icon, tipo, valor FROM ruleta_premios WHERE restaurante_id = $1',
+            [id]
+        );
+
+        const premiosPorPosicion = {};
+        for (const row of premiosResult.rows) {
+            premiosPorPosicion[row.posicion] = row;
+        }
+
+        const posicionGanadora = Math.floor(Math.random() * 8);
+        const premioRaw = premiosPorPosicion[posicionGanadora] || null;
+
+        if (!premioRaw || !premioRaw.label) {
+            return res.json({
+                success: true,
+                posicionGanadora,
+                premio: null,
+                codigo: null
+            });
+        }
+
+        if (!premioRaw.tipo) {
+            return res.json({
+                success: true,
+                posicionGanadora,
+                premio: { label: premioRaw.label, icon: premioRaw.icon, tipo: null },
+                codigo: null
+            });
+        }
+
+        let codigo;
+        let intentos = 0;
+        while (true) {
+            codigo = generarCodigoCupon();
+            const existe = await db.query('SELECT id FROM ruleta_cupones WHERE codigo = $1', [codigo]);
+            if (existe.rows.length === 0) break;
+            intentos++;
+            if (intentos > 10) {
+                throw new Error('No se pudo generar un código de cupón único');
+            }
+        }
+
+        await db.query(
+            `INSERT INTO ruleta_cupones (codigo, restaurante_id, tipo, valor)
+             VALUES ($1, $2, $3, $4)`,
+            [codigo, id, premioRaw.tipo, premioRaw.valor]
+        );
+
+        res.json({
+            success: true,
+            posicionGanadora,
+            premio: { label: premioRaw.label, icon: premioRaw.icon, tipo: premioRaw.tipo },
+            codigo
+        });
+
+    } catch (error) {
+        console.error('Error en girarRuleta:', error);
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'
