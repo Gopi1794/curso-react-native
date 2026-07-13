@@ -219,7 +219,7 @@ export default function SpinWheel({
                     <View style={styles.modalCard}>
                         {premioGanado && !esGajoVacio(premioGanado) && (
                             <>
-                                <Ionicons name={premioGanado.icon} size={48} color="#FF8800" />
+                                <Ionicons name={premioGanado.icon || 'gift-outline'} size={48} color="#FF8800" />
                                 <Text style={styles.modalTitle}>¡Ganaste {premioGanado.label}!</Text>
                             </>
                         )}
@@ -396,7 +396,7 @@ function Label({ index, premio, rotation }) {
 
     return (
         <Animated.View style={[styles.labelWrap, style]}>
-            <Ionicons name={premio.icon} size={18} color="#fff" />
+            <Ionicons name={premio.icon || 'gift-outline'} size={18} color="#fff" />
             <Text style={styles.labelText}>{premio.label}</Text>
         </Animated.View>
     );
