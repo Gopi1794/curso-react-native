@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { sendPushNotification } = require('../services/notificationService');
+const { evaluarCupon, SHIPPING_FEE } = require('../utils/ruletaCuponHelper');
 
 // ── CREATE ORDER ──────────────────────────────────────────
 // POST /api/orders
@@ -53,7 +54,7 @@ exports.createOrder = async (req, res) => {
         // 3. Consultar precios reales desde la DB (nunca confiar en el cliente)
         const menuItemIds = items.map(i => i.menu_item_id);
         const menuResult = await client.query(
-            `SELECT id, nombre, precio, disponible
+            `SELECT id, nombre, precio, categoria, disponible
              FROM menu_items
              WHERE id = ANY($1) AND restaurante_id = $2`,
             [menuItemIds, restaurante_id]
@@ -102,18 +103,43 @@ exports.createOrder = async (req, res) => {
             };
         });
 
-        // 5. Aplicar cupón si viene (validación server-side)
+        // 5. Agregar costo de envío al total antes de aplicar descuentos
+        total = parseFloat((total + SHIPPING_FEE).toFixed(2));
+
+        // 6. Aplicar cupón si viene (validación server-side)
         let descuento = 0;
+        let ruletaCuponId = null;
         if (cupon_codigo?.trim()) {
-            const cuponResult = await client.query(
+            const cuponViejo = await client.query(
                 `SELECT discount_percent FROM cupones
                  WHERE UPPER(codigo) = UPPER($1) AND activo = TRUE AND valido_hasta >= CURRENT_DATE`,
                 [cupon_codigo.trim()]
             );
-            if (cuponResult.rows[0]) {
-                const pct = cuponResult.rows[0].discount_percent;
-                descuento  = parseFloat((total * pct / 100).toFixed(2));
-                total      = parseFloat((total - descuento).toFixed(2));
+            if (cuponViejo.rows[0]) {
+                const pct = cuponViejo.rows[0].discount_percent;
+                descuento = parseFloat((total * pct / 100).toFixed(2));
+                total     = parseFloat((total - descuento).toFixed(2));
+            } else {
+                const cuponRuleta = await client.query(
+                    `SELECT id, tipo, valor FROM ruleta_cupones
+                     WHERE UPPER(codigo) = UPPER($1) AND restaurante_id = $2 AND usado = FALSE`,
+                    [cupon_codigo.trim(), restaurante_id]
+                );
+                if (cuponRuleta.rows[0]) {
+                    const cupon = cuponRuleta.rows[0];
+                    const subtotalSinEnvio = parseFloat((total - SHIPPING_FEE).toFixed(2));
+                    const menuItemsInfo = new Map();
+                    for (const [menuId, m] of Object.entries(priceMap)) {
+                        menuItemsInfo.set(String(menuId), { precio: parseFloat(m.precio), categoria: m.categoria });
+                    }
+                    const cartItemsParaEval = items.map(i => ({ menu_item_id: i.menu_item_id, cantidad: i.cantidad }));
+                    const evaluacion = evaluarCupon(cupon.tipo, parseFloat(cupon.valor) || 0, subtotalSinEnvio, cartItemsParaEval, menuItemsInfo);
+                    if (evaluacion.valido) {
+                        descuento = evaluacion.montoDescuento;
+                        total     = parseFloat((total - descuento).toFixed(2));
+                        ruletaCuponId = cupon.id;
+                    }
+                }
             }
         }
 
@@ -141,6 +167,22 @@ exports.createOrder = async (req, res) => {
                 'SELECT descontar_stock($1, $2, $3)',
                 [restaurante_id, item.menu_item_id, item.cantidad]
             );
+        }
+
+        // 8. Marcar el cupón de ruleta como usado — el WHERE usado = FALSE
+        // previene que dos pedidos concurrentes usen el mismo código.
+        if (ruletaCuponId) {
+            const marcado = await client.query(
+                'UPDATE ruleta_cupones SET usado = TRUE, pedido_id_uso = $1 WHERE id = $2 AND usado = FALSE',
+                [pedido.id, ruletaCuponId]
+            );
+            if (marcado.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return res.status(409).json({
+                    success: false,
+                    message: 'Este cupón ya fue usado por otro pedido'
+                });
+            }
         }
 
         await client.query('COMMIT');

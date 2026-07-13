@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { evaluarCupon } = require('../utils/ruletaCuponHelper');
 
 // ── GET ALL CUPONES ────────────────────────────────────────
 // GET /api/cupones
@@ -30,16 +31,17 @@ exports.getAll = async (req, res) => {
 
 // ── VALIDATE BY CODE ──────────────────────────────────────
 // POST /api/cupones/validate
-// Body: { codigo }
+// Body: { codigo, restaurante_id, items }
 exports.validateByCode = async (req, res) => {
     try {
-        const { codigo } = req.body;
+        const { codigo, restaurante_id, items } = req.body;
 
         if (!codigo || typeof codigo !== 'string' || codigo.trim().length === 0) {
             return res.status(400).json({ success: false, message: 'Código requerido' });
         }
 
-        const result = await db.query(
+        // 1. Buscar primero en cupones (comportamiento original, sin cambios)
+        const cuponViejo = await db.query(
             `SELECT id, titulo, oferta, codigo
              FROM cupones
              WHERE UPPER(codigo) = UPPER($1)
@@ -48,24 +50,66 @@ exports.validateByCode = async (req, res) => {
             [codigo.trim()]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Cupón inválido o vencido' });
+        if (cuponViejo.rows.length > 0) {
+            const cupon = cuponViejo.rows[0];
+            const match = cupon.oferta?.match(/(\d+)/);
+            const discount_percent = match ? parseInt(match[1]) : 10;
+            return res.json({
+                success: true,
+                cupon: { id: cupon.id, titulo: cupon.titulo, oferta: cupon.oferta, discount_percent },
+            });
         }
 
-        const cupon = result.rows[0];
+        // 2. Buscar en ruleta_cupones
+        const cuponRuleta = await db.query(
+            `SELECT id, tipo, valor, restaurante_id
+             FROM ruleta_cupones
+             WHERE UPPER(codigo) = UPPER($1) AND usado = FALSE`,
+            [codigo.trim()]
+        );
 
-        // El campo "oferta" contiene el texto del descuento, ej: "10%"
-        // Extraemos el número para que el frontend pueda calcular
-        const match = cupon.oferta?.match(/(\d+)/);
-        const discount_percent = match ? parseInt(match[1]) : 10;
+        if (cuponRuleta.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Cupón inválido, vencido o ya usado' });
+        }
+
+        const cupon = cuponRuleta.rows[0];
+
+        if (!restaurante_id || parseInt(restaurante_id) !== parseInt(cupon.restaurante_id)) {
+            return res.status(404).json({ success: false, message: 'Cupón inválido para este restaurante' });
+        }
+
+        const cartItems = Array.isArray(items) ? items : [];
+        const itemIds = cartItems.map(i => i.menu_item_id);
+        let menuItemsInfo = new Map();
+        let subtotal = 0;
+
+        if (itemIds.length > 0) {
+            const menuResult = await db.query(
+                'SELECT id, precio, categoria FROM menu_items WHERE id = ANY($1) AND restaurante_id = $2',
+                [itemIds, restaurante_id]
+            );
+            for (const row of menuResult.rows) {
+                menuItemsInfo.set(String(row.id), { precio: parseFloat(row.precio), categoria: row.categoria });
+            }
+            for (const item of cartItems) {
+                const info = menuItemsInfo.get(String(item.menu_item_id));
+                if (info) subtotal += info.precio * item.cantidad;
+            }
+        }
+
+        const evaluacion = evaluarCupon(cupon.tipo, parseFloat(cupon.valor) || 0, subtotal, cartItems, menuItemsInfo);
+
+        if (!evaluacion.valido) {
+            return res.status(400).json({ success: false, message: evaluacion.mensaje });
+        }
 
         res.json({
             success: true,
             cupon: {
-                id: cupon.id,
-                titulo: cupon.titulo,
-                oferta: cupon.oferta,
-                discount_percent,
+                tipo: cupon.tipo,
+                valor: cupon.valor,
+                monto_descuento: evaluacion.montoDescuento,
+                esRuleta: true,
             },
         });
 
