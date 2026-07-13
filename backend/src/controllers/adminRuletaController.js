@@ -14,18 +14,18 @@ exports.getInfo = async (req, res) => {
         }
 
         const premiosResult = await db.query(
-            'SELECT posicion, label, icon FROM ruleta_premios WHERE restaurante_id = $1',
+            'SELECT posicion, label, icon, tipo, valor FROM ruleta_premios WHERE restaurante_id = $1',
             [restauranteId]
         );
 
         const premiosPorPosicion = {};
         for (const row of premiosResult.rows) {
-            premiosPorPosicion[row.posicion] = { posicion: row.posicion, label: row.label, icon: row.icon };
+            premiosPorPosicion[row.posicion] = { posicion: row.posicion, label: row.label, icon: row.icon, tipo: row.tipo, valor: row.valor };
         }
 
         const premios = [];
         for (let i = 0; i < 8; i++) {
-            premios.push(premiosPorPosicion[i] || { posicion: i, label: null, icon: null });
+            premios.push(premiosPorPosicion[i] || { posicion: i, label: null, icon: null, tipo: null, valor: null });
         }
 
         res.json({ success: true, activa: restResult.rows[0].ruleta_activa, premios });
@@ -63,27 +63,27 @@ exports.updateInfo = async (req, res) => {
 
         for (const p of premios) {
             await client.query(
-                `INSERT INTO ruleta_premios (restaurante_id, posicion, label, icon)
-                 VALUES ($1, $2, $3, $4)
+                `INSERT INTO ruleta_premios (restaurante_id, posicion, label, icon, tipo, valor)
+                 VALUES ($1, $2, $3, $4, $5, $6)
                  ON CONFLICT (restaurante_id, posicion)
-                 DO UPDATE SET label = EXCLUDED.label, icon = EXCLUDED.icon`,
-                [restauranteId, p.posicion, p.label || null, p.icon || null]
+                 DO UPDATE SET label = EXCLUDED.label, icon = EXCLUDED.icon, tipo = EXCLUDED.tipo, valor = EXCLUDED.valor`,
+                [restauranteId, p.posicion, p.label || null, p.icon || null, p.tipo || null, p.valor || null]
             );
         }
 
         await client.query('COMMIT');
 
         const premiosResult = await db.query(
-            'SELECT posicion, label, icon FROM ruleta_premios WHERE restaurante_id = $1',
+            'SELECT posicion, label, icon, tipo, valor FROM ruleta_premios WHERE restaurante_id = $1',
             [restauranteId]
         );
         const premiosPorPosicion = {};
         for (const row of premiosResult.rows) {
-            premiosPorPosicion[row.posicion] = { posicion: row.posicion, label: row.label, icon: row.icon };
+            premiosPorPosicion[row.posicion] = { posicion: row.posicion, label: row.label, icon: row.icon, tipo: row.tipo, valor: row.valor };
         }
         const premiosFinal = [];
         for (let i = 0; i < 8; i++) {
-            premiosFinal.push(premiosPorPosicion[i] || { posicion: i, label: null, icon: null });
+            premiosFinal.push(premiosPorPosicion[i] || { posicion: i, label: null, icon: null, tipo: null, valor: null });
         }
 
         res.json({ success: true, data: { activa, premios: premiosFinal } });

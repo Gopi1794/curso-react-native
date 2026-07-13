@@ -16,7 +16,17 @@ const ICONOS_DISPONIBLES = [
     'star-outline', 'fast-food-outline', 'cafe-outline', 'heart-outline',
 ];
 
-const emptySlots = () => Array.from({ length: 8 }, (_, i) => ({ posicion: i, label: '', icon: null }));
+const TIPOS_PREMIO = [
+    { value: null,            label: 'Solo visual' },
+    { value: 'porcentaje',    label: '% de descuento' },
+    { value: 'envio_gratis',  label: 'Envío gratis' },
+    { value: 'plato_gratis',  label: 'Plato gratis' },
+    { value: 'postre_gratis', label: 'Postre gratis' },
+    { value: '2x1_bebidas',   label: '2x1 bebidas' },
+    { value: '2x1_pizzas',    label: '2x1 pizzas' },
+];
+
+const emptySlots = () => Array.from({ length: 8 }, (_, i) => ({ posicion: i, label: '', icon: null, tipo: null, valor: '' }));
 
 export default function AdminRuletaScreen({ navigation }) {
     const insets = useSafeAreaInsets();
@@ -33,7 +43,7 @@ export default function AdminRuletaScreen({ navigation }) {
             const res = await API.admin.ruleta.getInfo(restaurante.id);
             if (res.success) {
                 setActiva(res.activa);
-                setPremios(res.premios.map(p => ({ posicion: p.posicion, label: p.label || '', icon: p.icon || null })));
+                setPremios(res.premios.map(p => ({ posicion: p.posicion, label: p.label || '', icon: p.icon || null, tipo: p.tipo || null, valor: p.valor != null ? String(p.valor) : '' })));
             }
         } catch {
             showErrorMessage('Error', 'No se pudo cargar la configuración de la ruleta');
@@ -49,7 +59,7 @@ export default function AdminRuletaScreen({ navigation }) {
     };
 
     const clearSlot = (posicion) => {
-        updateSlot(posicion, { label: '', icon: null });
+        updateSlot(posicion, { label: '', icon: null, tipo: null, valor: '' });
     };
 
     const handleGuardar = async () => {
@@ -61,11 +71,13 @@ export default function AdminRuletaScreen({ navigation }) {
                     posicion: p.posicion,
                     label: p.label.trim() || null,
                     icon: p.label.trim() ? p.icon : null,
+                    tipo: p.label.trim() ? p.tipo : null,
+                    valor: p.tipo === 'porcentaje' ? (parseFloat(p.valor) || 0) : null,
                 })),
             });
             if (res.success) {
                 showSuccessMessage('Guardado', 'La configuración de la ruleta se actualizó');
-                setPremios(res.data.premios.map(p => ({ posicion: p.posicion, label: p.label || '', icon: p.icon || null })));
+                setPremios(res.data.premios.map(p => ({ posicion: p.posicion, label: p.label || '', icon: p.icon || null, tipo: p.tipo || null, valor: p.valor != null ? String(p.valor) : '' })));
             } else {
                 showErrorMessage('Error', res.message || 'No se pudo guardar');
             }
@@ -114,6 +126,28 @@ export default function AdminRuletaScreen({ navigation }) {
                                 </TouchableOpacity>
                             ))}
                         </View>
+                        <Text style={styles.tipoLabel}>Tipo de premio</Text>
+                        <View style={styles.tipoGrid}>
+                            {TIPOS_PREMIO.map((t) => (
+                                <TouchableOpacity
+                                    key={t.label}
+                                    style={[styles.tipoChip, premio.tipo === t.value && styles.tipoChipSelected]}
+                                    onPress={() => updateSlot(premio.posicion, { tipo: t.value })}
+                                >
+                                    <Text style={[styles.tipoChipText, premio.tipo === t.value && styles.tipoChipTextSelected]}>{t.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        {premio.tipo === 'porcentaje' && (
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Porcentaje (ej. 15)"
+                                value={premio.valor}
+                                onChangeText={(text) => updateSlot(premio.posicion, { valor: text.replace(/[^0-9]/g, '') })}
+                                keyboardType="numeric"
+                                maxLength={3}
+                            />
+                        )}
                         <TouchableOpacity style={styles.clearBtn} onPress={() => clearSlot(premio.posicion)}>
                             <Text style={styles.clearBtnText}>Vaciar</Text>
                         </TouchableOpacity>
@@ -150,6 +184,15 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     iconOptionSelected: { backgroundColor: '#FF8700' },
+    tipoLabel: { fontSize: 12, color: '#888', marginBottom: 6, fontWeight: '600' },
+    tipoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+    tipoChip: {
+        paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16,
+        backgroundColor: '#F0F0F0',
+    },
+    tipoChipSelected: { backgroundColor: '#FF8700' },
+    tipoChipText: { fontSize: 12, color: '#666', fontWeight: '600' },
+    tipoChipTextSelected: { color: '#fff' },
     clearBtn: { alignSelf: 'flex-start' },
     clearBtnText: { color: '#E53935', fontSize: 13, fontWeight: '600' },
     saveBtn: {
