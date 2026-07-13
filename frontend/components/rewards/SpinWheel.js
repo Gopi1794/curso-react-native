@@ -23,7 +23,10 @@ const { width: screenWidth } = Dimensions.get('window');
 const WHEEL_SIZE = Math.min(screenWidth - 60, 340);
 const RADIUS = WHEEL_SIZE / 2;
 const LABEL_RADIUS = RADIUS * 0.62;
-const toRad = (deg) => (deg * Math.PI) / 180;
+const toRad = (deg) => {
+    'worklet';
+    return (deg * Math.PI) / 180;
+};
 
 export const PREMIOS_DEFAULT = [
     { id: 'off20', label: '20% OFF', icon: 'pricetag-outline' },
