@@ -615,6 +615,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.96)',
         justifyContent: 'center',
+        paddingHorizontal: 20,
     },
     scrollContainer: {
         flex: 1,
