@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     },
     spinWheelBackdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.75)',
         justifyContent: 'center',
     },
     scrollContainer: {
