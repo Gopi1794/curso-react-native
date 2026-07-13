@@ -10,6 +10,7 @@ const ingCtrl      = require('../controllers/ingredientesController');
 const recetasCtrl  = require('../controllers/adminRecetasController');
 const pedidosCtrl  = require('../controllers/adminPedidosController');
 const restCtrl     = require('../controllers/adminRestauranteController');
+const ruletaCtrl   = require('../controllers/adminRuletaController');
 const statsCtrl    = require('../controllers/adminStatsController');
 const reviewsCtrl  = require('../controllers/adminReviewsInsightsController');
 
@@ -40,6 +41,10 @@ router.get('/reviews/insights', reviewsCtrl.getInsights);
 router.get('/restaurante/:restauranteId',  requireAdminOwnership, restCtrl.getInfo);
 router.put('/restaurante/:restauranteId',  requireAdminOwnership, restCtrl.updateInfo);
 router.post('/repartidores',               restCtrl.createRepartidor);
+
+// ── Ruleta ────────────────────────────────────────────────
+router.get('/ruleta/:restauranteId', requireAdminOwnership, ruletaCtrl.getInfo);
+router.put('/ruleta/:restauranteId', requireAdminOwnership, ruletaCtrl.updateInfo);
 
 // ── Upload ────────────────────────────────────────────────
 router.post('/upload', upload.single('image'), uploadCtrl.uploadImage);

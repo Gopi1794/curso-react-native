@@ -270,3 +270,58 @@ exports.getMenuItem = async (req, res) => {
         });
     }
 };
+
+// ── GET RULETA (público) ──────────────────────────────────
+// GET /api/restaurants/:id/ruleta
+exports.getRuleta = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de restaurante inválido'
+            });
+        }
+
+        const restResult = await db.query(
+            'SELECT ruleta_activa FROM restaurantes WHERE id = $1',
+            [id]
+        );
+
+        if (restResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Restaurante no encontrado'
+            });
+        }
+
+        const premiosResult = await db.query(
+            'SELECT posicion, label, icon FROM ruleta_premios WHERE restaurante_id = $1',
+            [id]
+        );
+
+        const premiosPorPosicion = {};
+        for (const row of premiosResult.rows) {
+            premiosPorPosicion[row.posicion] = { posicion: row.posicion, label: row.label, icon: row.icon };
+        }
+
+        const premios = [];
+        for (let i = 0; i < 8; i++) {
+            premios.push(premiosPorPosicion[i] || { posicion: i, label: null, icon: null });
+        }
+
+        res.json({
+            success: true,
+            activa: restResult.rows[0].ruleta_activa,
+            premios
+        });
+
+    } catch (error) {
+        console.error('Error en getRuleta:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
