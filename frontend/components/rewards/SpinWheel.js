@@ -1,13 +1,14 @@
 // frontend/components/rewards/SpinWheel.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Modal } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withSequence,
     withTiming,
+    withRepeat,
     Easing,
     runOnJS,
 } from 'react-native-reanimated';
@@ -44,9 +45,25 @@ export default function SpinWheel({
     const [modalVisible, setModalVisible] = useState(false);
     const rotation = useSharedValue(0);
     const girandoRef = useRef(false);
+    const pulse = useSharedValue(1);
+
+    useEffect(() => {
+        pulse.value = withRepeat(
+            withSequence(
+                withTiming(1.03, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
+                withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.sin) })
+            ),
+            -1,
+            false
+        );
+    }, []);
 
     const animatedWheelStyle = useAnimatedStyle(() => ({
         transform: [{ rotate: `${rotation.value}deg` }],
+    }));
+
+    const pulseStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: pulse.value }],
     }));
 
     const mostrarResultado = (premio) => {
@@ -107,8 +124,17 @@ export default function SpinWheel({
                                     strokeWidth={1}
                                 />
                             ))}
-                            <Circle cx={RADIUS} cy={RADIUS} r={RADIUS * 0.16} fill="#FF8800" stroke="#fff" strokeWidth={2} />
                         </Svg>
+                    </Animated.View>
+                    <Animated.View
+                        pointerEvents="none"
+                        style={[
+                            styles.centerHub,
+                            { left: RADIUS - RADIUS * 0.16, top: RADIUS - RADIUS * 0.16, width: RADIUS * 0.32, height: RADIUS * 0.32, borderRadius: RADIUS * 0.16 },
+                            pulseStyle,
+                        ]}
+                    >
+                        <Ionicons name="star" size={RADIUS * 0.16} color="#fff" />
                     </Animated.View>
                     {premios.slice(0, SEGMENT_COUNT).map((premio, i) => {
                         const pos = labelPosition(i, RADIUS, RADIUS, LABEL_RADIUS);
@@ -216,4 +242,62 @@ const styles = StyleSheet.create({
         paddingVertical: 10, paddingHorizontal: 32,
     },
     modalCloseBtnText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins-Bold' },
+    centerHub: {
+        position: 'absolute', backgroundColor: '#FF8800',
+        borderWidth: 2, borderColor: '#fff',
+        alignItems: 'center', justifyContent: 'center',
+    },
+    background: { flex: 1, backgroundColor: '#1A1A2E' },
+    confettiPiece: {
+        position: 'absolute', width: 10, height: 16, borderRadius: 3,
+    },
 });
+
+const CONFETTI_PIECES = [
+    { top: '8%', left: '10%', rotate: '20deg', color: '#FF8800' },
+    { top: '15%', left: '85%', rotate: '-15deg', color: '#FFB74D' },
+    { top: '35%', left: '5%', rotate: '40deg', color: '#FF5500' },
+    { top: '55%', left: '90%', rotate: '-30deg', color: '#FF8800' },
+    { top: '75%', left: '8%', rotate: '10deg', color: '#FFB74D' },
+    { top: '85%', left: '88%', rotate: '-20deg', color: '#FF5500' },
+];
+
+function ConfettiPiece({ top, left, rotate, color }) {
+    const drift = useSharedValue(0);
+
+    useEffect(() => {
+        drift.value = withRepeat(
+            withSequence(
+                withTiming(1, { duration: 4000 + Math.random() * 1500, easing: Easing.inOut(Easing.sin) }),
+                withTiming(0, { duration: 4000 + Math.random() * 1500, easing: Easing.inOut(Easing.sin) })
+            ),
+            -1,
+            false
+        );
+    }, []);
+
+    const style = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: drift.value * -10 },
+            { rotate },
+        ],
+    }));
+
+    return (
+        <Animated.View
+            pointerEvents="none"
+            style={[styles.confettiPiece, { top, left, backgroundColor: color }, style]}
+        />
+    );
+}
+
+export function SpinWheelBackground({ children }) {
+    return (
+        <View style={styles.background}>
+            {CONFETTI_PIECES.map((p, i) => (
+                <ConfettiPiece key={i} {...p} />
+            ))}
+            {children}
+        </View>
+    );
+}
