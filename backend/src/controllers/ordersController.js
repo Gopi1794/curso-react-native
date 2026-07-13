@@ -104,6 +104,7 @@ exports.createOrder = async (req, res) => {
         });
 
         // 5. Agregar costo de envío al total antes de aplicar descuentos
+        const subtotalSinEnvioOriginal = total;
         total = parseFloat((total + SHIPPING_FEE).toFixed(2));
 
         // 6. Aplicar cupón si viene (validación server-side)
@@ -116,8 +117,10 @@ exports.createOrder = async (req, res) => {
                 [cupon_codigo.trim()]
             );
             if (cuponViejo.rows[0]) {
+                // Cupón legacy: el carrito lo previsualiza sobre el subtotal SIN envío
+                // (CartScreen.js no cambió su cálculo para este tipo) — mantener la misma base acá.
                 const pct = cuponViejo.rows[0].discount_percent;
-                descuento = parseFloat((total * pct / 100).toFixed(2));
+                descuento = parseFloat((subtotalSinEnvioOriginal * pct / 100).toFixed(2));
                 total     = parseFloat((total - descuento).toFixed(2));
             } else {
                 const cuponRuleta = await client.query(
