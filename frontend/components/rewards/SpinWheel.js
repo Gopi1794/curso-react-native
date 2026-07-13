@@ -43,6 +43,8 @@ const toRad = (deg) => {
     return (deg * Math.PI) / 180;
 };
 
+const esGajoVacio = (premio) => !premio?.label;
+
 export const PREMIOS_DEFAULT = [
     { id: 'off20', label: '20% OFF', icon: 'pricetag-outline' },
     { id: 'envio', label: 'Envío gratis', icon: 'bicycle-outline' },
@@ -90,7 +92,9 @@ export default function SpinWheel({
         setModalVisible(true);
         setGirando(false);
         girandoRef.current = false;
-        onPremioGanado?.(premio);
+        if (!esGajoVacio(premio)) {
+            onPremioGanado?.(premio);
+        }
     };
 
     const resetGirando = () => {
@@ -143,8 +147,6 @@ export default function SpinWheel({
                         style={styles.giftBoxImage}
                         resizeMode="contain"
                     />
-                    <Ionicons name="sparkles" size={14} color="#FFD700" style={styles.giftSparkleTop} />
-                    <Ionicons name="sparkles" size={10} color="#FF8800" style={styles.giftSparkleBottom} />
                 </View>
             </View>
 
@@ -152,41 +154,43 @@ export default function SpinWheel({
                 <View style={styles.pointer} />
                 <View style={styles.wheelStack}>
                     <View style={styles.wheelPerspective}>
-                    <Animated.View style={animatedWheelStyle}>
-                        <Svg width={WHEEL_SIZE} height={WHEEL_SIZE}>
-                            {premios.slice(0, SEGMENT_COUNT).map((premio, i) => (
-                                <Path
-                                    key={premio.id}
-                                    d={segmentPath(i, RADIUS, RADIUS, RADIUS)}
-                                    fill={i % 2 === 0 ? '#FF8800' : '#1A1A2E'}
-                                    stroke="#FFB74D"
-                                    strokeWidth={1}
-                                />
+                        <Animated.View style={animatedWheelStyle}>
+                            <Svg width={WHEEL_SIZE} height={WHEEL_SIZE}>
+                                {premios.slice(0, SEGMENT_COUNT).map((premio, i) => (
+                                    <Path
+                                        key={premio.id ?? premio.posicion ?? i}
+                                        d={segmentPath(i, RADIUS, RADIUS, RADIUS)}
+                                        fill={esGajoVacio(premio) ? '#4A4A55' : (i % 2 === 0 ? '#FF8800' : '#1A1A2E')}
+                                        stroke="#FFB74D"
+                                        strokeWidth={1}
+                                    />
+                                ))}
+                            </Svg>
+                        </Animated.View>
+                        <Svg width={RING_SIZE} height={RING_SIZE} style={styles.ringFrame} pointerEvents="none">
+                            <Circle
+                                cx={RING_RADIUS} cy={RING_RADIUS} r={RING_RADIUS - 6}
+                                stroke="#FFD700" strokeWidth={8} fill="none"
+                            />
+                            {RING_BULBS.map((bulb, i) => (
+                                <RingBulb key={i} x={bulb.x} y={bulb.y} />
                             ))}
                         </Svg>
-                    </Animated.View>
-                    <Svg width={RING_SIZE} height={RING_SIZE} style={styles.ringFrame} pointerEvents="none">
-                        <Circle
-                            cx={RING_RADIUS} cy={RING_RADIUS} r={RING_RADIUS - 6}
-                            stroke="#FFD700" strokeWidth={8} fill="none"
-                        />
-                        {RING_BULBS.map((bulb, i) => (
-                            <RingBulb key={i} x={bulb.x} y={bulb.y} />
+                        <Animated.View
+                            pointerEvents="none"
+                            style={[
+                                styles.centerHub,
+                                { left: RADIUS - RADIUS * 0.16, top: RADIUS - RADIUS * 0.16, width: RADIUS * 0.32, height: RADIUS * 0.32, borderRadius: RADIUS * 0.16 },
+                                pulseStyle,
+                            ]}
+                        >
+                            <Ionicons name="star" size={RADIUS * 0.16} color="#FF8800" />
+                        </Animated.View>
+                        {premios.slice(0, SEGMENT_COUNT).map((premio, i) => (
+                            !esGajoVacio(premio) && (
+                                <Label key={premio.id ?? premio.posicion ?? i} index={i} premio={premio} rotation={rotation} />
+                            )
                         ))}
-                    </Svg>
-                    <Animated.View
-                        pointerEvents="none"
-                        style={[
-                            styles.centerHub,
-                            { left: RADIUS - RADIUS * 0.16, top: RADIUS - RADIUS * 0.16, width: RADIUS * 0.32, height: RADIUS * 0.32, borderRadius: RADIUS * 0.16 },
-                            pulseStyle,
-                        ]}
-                    >
-                        <Ionicons name="star" size={RADIUS * 0.16} color="#FF8800" />
-                    </Animated.View>
-                    {premios.slice(0, SEGMENT_COUNT).map((premio, i) => (
-                        <Label key={premio.id} index={i} premio={premio} rotation={rotation} />
-                    ))}
                     </View>
                 </View>
             </View>
@@ -213,10 +217,16 @@ export default function SpinWheel({
             <Modal visible={modalVisible} transparent animationType="fade">
                 <View style={styles.modalBackdrop}>
                     <View style={styles.modalCard}>
-                        {premioGanado && (
+                        {premioGanado && !esGajoVacio(premioGanado) && (
                             <>
                                 <Ionicons name={premioGanado.icon} size={48} color="#FF8800" />
                                 <Text style={styles.modalTitle}>¡Ganaste {premioGanado.label}!</Text>
+                            </>
+                        )}
+                        {premioGanado && esGajoVacio(premioGanado) && (
+                            <>
+                                <Ionicons name="sad-outline" size={48} color="#9A9AA5" />
+                                <Text style={styles.modalTitle}>¡Sin premio esta vez!</Text>
                             </>
                         )}
                         <TouchableOpacity
@@ -235,16 +245,14 @@ export default function SpinWheel({
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center', paddingHorizontal: 20, paddingTop: 32, paddingBottom: 24,
-        backgroundColor: '#FFF8ED', borderRadius: 32,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25, shadowRadius: 24, elevation: 10,
+        backgroundColor: '#fff8ed00', borderRadius: 32,
     },
     headerRow: {
         flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
         alignSelf: 'stretch',
     },
     headerText: { flex: 1, paddingRight: 12 },
-    titulo: { color: '#1A1A2E', fontSize: 26, fontFamily: 'Poppins-Bold', textAlign: 'left' },
+    titulo: { color: '#ffffff', fontSize: 26, fontFamily: 'Poppins-Bold', textAlign: 'left' },
     tituloAcento: { color: '#FF8800' },
     subtitulo: { color: '#7A7A85', fontSize: 14, textAlign: 'left', marginTop: 10, fontFamily: 'Poppins-Regular' },
     badge: {
@@ -259,10 +267,10 @@ const styles = StyleSheet.create({
         width: 170, height: 170, alignItems: 'center', justifyContent: 'center', marginTop: -20, marginRight: -20,
     },
     giftBoxImage: {
+        top: 40,
         width: '100%', height: '100%',
     },
-    giftSparkleTop: { position: 'absolute', top: '18%', left: '8%' },
-    giftSparkleBottom: { position: 'absolute', bottom: '24%', right: '10%' },
+
     wheelOuter: { alignItems: 'center', marginTop: 32 },
     pointer: {
         width: 0, height: 0, zIndex: 10,

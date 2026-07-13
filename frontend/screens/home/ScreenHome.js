@@ -10,7 +10,21 @@ import {
     RefreshControl,
     Modal,
     TouchableOpacity,
+    LayoutAnimation,
+    Platform,
+    UIManager,
 } from "react-native";
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+const ACCORDION_LAYOUT_ANIM = {
+    duration: 500,
+    create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+    update: { type: LayoutAnimation.Types.easeInEaseOut },
+    delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+};
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 // Componentes reutilizables
@@ -181,7 +195,8 @@ export const ScreenHome = ({ navigation }) => {
     const [selectedCategory, setSelectedCategory] = useState("todos");
     const [activePromoIndex, setActivePromoIndex] = useState(1);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-    const [showSpinWheel, setShowSpinWheel] = useState(true);
+    const [showSpinWheel, setShowSpinWheel] = useState(false);
+    const [ruletaPremios, setRuletaPremios] = useState([]);
     const [menuItems, setMenuItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [menuError, setMenuError] = useState(null);
@@ -208,6 +223,23 @@ export const ScreenHome = ({ navigation }) => {
     }, [selectedRestaurant]);
 
     useEffect(() => { fetchMenu(); }, [fetchMenu]);
+
+    const fetchRuleta = useCallback(async () => {
+        if (!selectedRestaurant) return;
+        try {
+            const response = await API.restaurants.getRuleta(selectedRestaurant.id);
+            if (response.success && response.activa) {
+                setRuletaPremios(response.premios);
+                setShowSpinWheel(true);
+            } else {
+                setShowSpinWheel(false);
+            }
+        } catch (err) {
+            setShowSpinWheel(false);
+        }
+    }, [selectedRestaurant]);
+
+    useEffect(() => { fetchRuleta(); }, [fetchRuleta]);
 
     useEffect(() => {
         AsyncStorage.getItem('recentSearches')
@@ -329,17 +361,10 @@ export const ScreenHome = ({ navigation }) => {
     }, []);
 
     const handleCategoryPress = useCallback((categoryLabel) => {
+        LayoutAnimation.configureNext(ACCORDION_LAYOUT_ANIM);
         setSelectedCategory(categoryLabel);
         setSearchQuery("");
         setDebouncedQuery("");
-        menuListAnim.setValue(0);
-        Animated.spring(menuListAnim, {
-            toValue: 1,
-            useNativeDriver: true,
-            damping: 16,
-            stiffness: 140,
-            mass: 0.9,
-        }).start();
         setTimeout(() => {
             menuItemsFlatListRef.current?.scrollToOffset({ offset: 0, animated: true });
         }, 100);
@@ -614,7 +639,7 @@ export const ScreenHome = ({ navigation }) => {
                     >
                         <Ionicons name="close" size={22} color="#fff" />
                     </TouchableOpacity>
-                    <SpinWheel />
+                    <SpinWheel premios={ruletaPremios} />
                 </View>
             </Modal>
         </View>
@@ -628,14 +653,16 @@ const styles = StyleSheet.create({
     },
     spinWheelBackdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.91)',
         justifyContent: 'center',
         paddingHorizontal: 20,
     },
     spinWheelCloseBtn: {
-        position: 'absolute', top: 56, right: 24, zIndex: 20, elevation: 20,
+        position: 'absolute', top: 20, right: 20, zIndex: 20, elevation: 20,
         width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.25)',
+        backgroundColor: '#ff880000',
+        borderColor: '#FF8700',
+        borderWidth: 2,
         alignItems: 'center', justifyContent: 'center',
     },
     scrollContainer: {
