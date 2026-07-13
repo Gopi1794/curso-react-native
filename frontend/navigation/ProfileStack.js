@@ -13,6 +13,7 @@ import AdminIngredientsScreen from '../screens/admin/AdminIngredientsScreen';
 import AdminStockScreen from '../screens/admin/AdminStockScreen';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminCuponesScreen from '../screens/admin/AdminCuponesScreen';
+import AdminRuletaScreen from '../screens/admin/AdminRuletaScreen';
 import AdminPlatosScreen from '../screens/admin/AdminPlatosScreen';
 import AdminRecetasScreen from '../screens/admin/AdminRecetasScreen';
 import AdminPedidosScreen from '../screens/admin/AdminPedidosScreen';
@@ -42,6 +43,7 @@ export default function ProfileStack() {
             <Stack.Screen name="AdminIngredients" component={AdminIngredientsScreen} />
             <Stack.Screen name="AdminStock" component={AdminStockScreen} />
             <Stack.Screen name="AdminCupones" component={AdminCuponesScreen} />
+            <Stack.Screen name="AdminRuleta" component={AdminRuletaScreen} />
             <Stack.Screen name="AdminPlatos" component={AdminPlatosScreen} />
             <Stack.Screen name="AdminRecetas" component={AdminRecetasScreen} />
             <Stack.Screen name="AdminPedidos" component={AdminPedidosScreen} />

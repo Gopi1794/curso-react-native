@@ -40,6 +40,14 @@ const CARDS = [
         colors: ['#6A1B9A', '#9C27B0'],
     },
     {
+        key: 'ruleta',
+        screen: 'AdminRuleta',
+        title: 'Ruleta de premios',
+        subtitle: 'Activala y configurá los premios',
+        icon: 'sync-outline',
+        colors: ['#D84315', '#FF7043'],
+    },
+    {
         key: 'ingredientes',
         screen: 'AdminIngredients',
         title: 'Catálogo de ingredientes',

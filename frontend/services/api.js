@@ -153,6 +153,8 @@ const restaurants = {
 
     getMenuItem: (restaurantId, itemId) =>
         request(`/api/restaurants/${restaurantId}/menu/${itemId}`),
+
+    getRuleta: (id) => request(`/api/restaurants/${id}/ruleta`),
 };
 
 // ── ORDERS ────────────────────────────────────────────────
@@ -324,6 +326,10 @@ const admin = {
         getInfo: (restauranteId) => request(`/api/admin/restaurante/${restauranteId}`),
         updateInfo: (restauranteId, data) => request(`/api/admin/restaurante/${restauranteId}`, { method: 'PUT', body: JSON.stringify(data) }),
         createRepartidor: (data) => request('/api/admin/repartidores', { method: 'POST', body: JSON.stringify(data) }),
+    },
+    ruleta: {
+        getInfo: (restauranteId) => request(`/api/admin/ruleta/${restauranteId}`),
+        updateInfo: (restauranteId, data) => request(`/api/admin/ruleta/${restauranteId}`, { method: 'PUT', body: JSON.stringify(data) }),
     },
     platos: {
         getAll: (restauranteId) => request(`/api/admin/platos/${restauranteId}`),
