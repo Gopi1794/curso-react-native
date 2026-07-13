@@ -1,7 +1,7 @@
 // frontend/components/rewards/SpinWheel.js
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Modal } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
     useSharedValue,
@@ -23,6 +23,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const WHEEL_SIZE = Math.min(screenWidth - 60, 340);
 const RADIUS = WHEEL_SIZE / 2;
 const LABEL_RADIUS = RADIUS * 0.62;
+const GLOW_SIZE = WHEEL_SIZE * 1.5;
 const toRad = (deg) => {
     'worklet';
     return (deg * Math.PI) / 180;
@@ -50,12 +51,26 @@ export default function SpinWheel({
     const rotation = useSharedValue(0);
     const girandoRef = useRef(false);
     const pulse = useSharedValue(1);
+    const glow = useSharedValue(0.6);
 
     useEffect(() => {
         pulse.value = withRepeat(
             withSequence(
                 withTiming(1.03, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
                 withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.sin) })
+            ),
+            -1,
+            false
+        );
+        // Flicker irregular (no un pulso parejo) para que la luz de fondo "titile"
+        glow.value = withRepeat(
+            withSequence(
+                withTiming(0.9, { duration: 120, easing: Easing.inOut(Easing.quad) }),
+                withTiming(0.5, { duration: 180, easing: Easing.inOut(Easing.quad) }),
+                withTiming(1, { duration: 90, easing: Easing.inOut(Easing.quad) }),
+                withTiming(0.6, { duration: 220, easing: Easing.inOut(Easing.quad) }),
+                withTiming(0.85, { duration: 140, easing: Easing.inOut(Easing.quad) }),
+                withTiming(0.55, { duration: 200, easing: Easing.inOut(Easing.quad) })
             ),
             -1,
             false
@@ -68,6 +83,10 @@ export default function SpinWheel({
 
     const pulseStyle = useAnimatedStyle(() => ({
         transform: [{ scale: pulse.value }],
+    }));
+
+    const glowStyle = useAnimatedStyle(() => ({
+        opacity: glow.value,
     }));
 
     const mostrarResultado = (premio) => {
@@ -123,7 +142,19 @@ export default function SpinWheel({
 
             <View style={styles.wheelOuter}>
                 <View style={styles.pointer} />
-                <View style={styles.wheelPerspective}>
+                <View style={styles.wheelStack}>
+                    <Animated.View pointerEvents="none" style={[styles.glowWrap, glowStyle]}>
+                        <Svg width={GLOW_SIZE} height={GLOW_SIZE}>
+                            <Defs>
+                                <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
+                                    <Stop offset="0%" stopColor="#FFD700" stopOpacity="0.9" />
+                                    <Stop offset="100%" stopColor="#FFD700" stopOpacity="0" />
+                                </RadialGradient>
+                            </Defs>
+                            <Circle cx={GLOW_SIZE / 2} cy={GLOW_SIZE / 2} r={GLOW_SIZE / 2} fill="url(#glow)" />
+                        </Svg>
+                    </Animated.View>
+                    <View style={styles.wheelPerspective}>
                     <Animated.View style={animatedWheelStyle}>
                         <Svg width={WHEEL_SIZE} height={WHEEL_SIZE}>
                             {premios.slice(0, SEGMENT_COUNT).map((premio, i) => (
@@ -150,6 +181,7 @@ export default function SpinWheel({
                     {premios.slice(0, SEGMENT_COUNT).map((premio, i) => (
                         <Label key={premio.id} index={i} premio={premio} rotation={rotation} />
                     ))}
+                    </View>
                 </View>
             </View>
 
@@ -203,6 +235,15 @@ const styles = StyleSheet.create({
         borderLeftWidth: 14, borderRightWidth: 14, borderTopWidth: 20,
         borderLeftColor: 'transparent', borderRightColor: 'transparent',
         borderTopColor: '#FFB74D', marginBottom: -6,
+    },
+    wheelStack: {
+        width: WHEEL_SIZE, height: WHEEL_SIZE,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    glowWrap: {
+        position: 'absolute',
+        width: GLOW_SIZE, height: GLOW_SIZE,
+        left: (WHEEL_SIZE - GLOW_SIZE) / 2, top: (WHEEL_SIZE - GLOW_SIZE) / 2,
     },
     wheelPerspective: {
         transform: [{ perspective: 800 }, { rotateX: '8deg' }],

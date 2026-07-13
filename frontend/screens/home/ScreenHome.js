@@ -8,6 +8,7 @@ import {
     Text,
     Animated,
     RefreshControl,
+    Modal,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 // Componentes reutilizables
@@ -16,7 +17,7 @@ import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { CategoryExploreGrid } from '../../components/CategoryExploreGrid';
 import { ErrorState } from '../../components/common/ErrorState';
 import { PromoSection } from '../../components/PromoSection';
-import SpinWheel, { SpinWheelBackground } from '../../components/rewards/SpinWheel';
+import SpinWheel from '../../components/rewards/SpinWheel';
 import MenuItem from '../../components/MenuItem';
 import RecommendationsSection from '../../components/RecommendationsSection';
 import WelcomePopup from '../../components/WelcomePopup';
@@ -577,13 +578,6 @@ export const ScreenHome = ({ navigation }) => {
                     )}
                 </View>
 
-                {!debouncedQuery.trim() && (
-                    <View style={{ borderRadius: 24, overflow: 'hidden', marginHorizontal: 20, marginTop: 24 }}>
-                        <SpinWheelBackground>
-                            <SpinWheel />
-                        </SpinWheelBackground>
-                    </View>
-                )}
 
                 {!debouncedQuery.trim() && !loading && selectedRestaurant && (
                     <RecommendationsSection
@@ -602,6 +596,12 @@ export const ScreenHome = ({ navigation }) => {
                     setShowWelcomePopup={setShowWelcomePopup}
                 />
             )}
+
+            <Modal visible transparent animationType="fade">
+                <View style={styles.spinWheelBackdrop}>
+                    <SpinWheel />
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -610,6 +610,11 @@ const styles = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: '#FFFFFF',
+    },
+    spinWheelBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
     },
     scrollContainer: {
         flex: 1,
