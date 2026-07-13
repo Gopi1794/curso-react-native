@@ -155,6 +155,8 @@ const restaurants = {
         request(`/api/restaurants/${restaurantId}/menu/${itemId}`),
 
     getRuleta: (id) => request(`/api/restaurants/${id}/ruleta`),
+
+    girarRuleta: (id) => request(`/api/restaurants/${id}/ruleta/girar`, { method: 'POST' }),
 };
 
 // ── ORDERS ────────────────────────────────────────────────
@@ -237,9 +239,9 @@ const favorites = {
 const cupones = {
     getAll: () => request('/api/cupones'),
     getById: (id) => request(`/api/cupones/${id}`),
-    validate: (codigo) => request('/api/cupones/validate', {
+    validate: (codigo, restauranteId, items) => request('/api/cupones/validate', {
         method: 'POST',
-        body: JSON.stringify({ codigo }),
+        body: JSON.stringify({ codigo, restaurante_id: restauranteId, items }),
     }),
 };
 

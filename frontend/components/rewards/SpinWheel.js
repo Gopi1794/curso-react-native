@@ -4,6 +4,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Modal, Image } fr
 import Svg, { Path, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Clipboard from 'expo-clipboard';
+import API from '../../services/api';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -59,11 +61,14 @@ export const PREMIOS_DEFAULT = [
 export default function SpinWheel({
     premios = PREMIOS_DEFAULT,
     girosDisponibles = 3,
+    restauranteId,
     onPremioGanado,
 }) {
     const [girando, setGirando] = useState(false);
     const [premioGanado, setPremioGanado] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const [codigoGanado, setCodigoGanado] = useState(null);
+    const [copiado, setCopiado] = useState(false);
     const rotation = useSharedValue(0);
     const girandoRef = useRef(false);
     const pulse = useSharedValue(1);
@@ -106,26 +111,43 @@ export default function SpinWheel({
         if (girandoRef.current) return;
         girandoRef.current = true;
         setGirando(true);
+        setCodigoGanado(null);
+        setCopiado(false);
 
-        const items = premios.slice(0, SEGMENT_COUNT);
-        const winnerIndex = Math.floor(Math.random() * items.length);
-        const winner = items[winnerIndex];
-        const finalTarget = targetRotationForIndex(winnerIndex, rotation.value, 4);
-
-        rotation.value = withSequence(
-            withTiming(finalTarget - 15, {
-                duration: 2800,
-                easing: Easing.out(Easing.cubic),
-            }),
-            withTiming(finalTarget + 10, { duration: 220, easing: Easing.linear }),
-            withTiming(finalTarget, { duration: 180, easing: Easing.out(Easing.quad) }, (finished) => {
-                if (finished) {
-                    runOnJS(mostrarResultado)(winner);
-                } else {
-                    runOnJS(resetGirando)();
+        API.restaurants.girarRuleta(restauranteId)
+            .then((res) => {
+                if (!res.success) {
+                    girandoRef.current = false;
+                    setGirando(false);
+                    return;
                 }
+
+                const finalTarget = targetRotationForIndex(res.posicionGanadora, rotation.value, 4);
+                const winner = res.premio
+                    ? { ...res.premio, posicion: res.posicionGanadora }
+                    : { label: null, icon: null, posicion: res.posicionGanadora };
+                const codigo = res.codigo;
+
+                rotation.value = withSequence(
+                    withTiming(finalTarget - 15, {
+                        duration: 2800,
+                        easing: Easing.out(Easing.cubic),
+                    }),
+                    withTiming(finalTarget + 10, { duration: 220, easing: Easing.linear }),
+                    withTiming(finalTarget, { duration: 180, easing: Easing.out(Easing.quad) }, (finished) => {
+                        if (finished) {
+                            runOnJS(setCodigoGanado)(codigo);
+                            runOnJS(mostrarResultado)(winner);
+                        } else {
+                            runOnJS(resetGirando)();
+                        }
+                    })
+                );
             })
-        );
+            .catch(() => {
+                girandoRef.current = false;
+                setGirando(false);
+            });
     };
 
     return (
@@ -221,6 +243,18 @@ export default function SpinWheel({
                             <>
                                 <Ionicons name={premioGanado.icon || 'gift-outline'} size={48} color="#FF8800" />
                                 <Text style={styles.modalTitle}>¡Ganaste {premioGanado.label}!</Text>
+                                {codigoGanado && (
+                                    <TouchableOpacity
+                                        style={styles.codigoBox}
+                                        onPress={async () => {
+                                            await Clipboard.setStringAsync(codigoGanado);
+                                            setCopiado(true);
+                                        }}
+                                    >
+                                        <Text style={styles.codigoText}>{codigoGanado}</Text>
+                                        <Ionicons name={copiado ? 'checkmark' : 'copy-outline'} size={18} color="#FF8800" />
+                                    </TouchableOpacity>
+                                )}
                             </>
                         )}
                         {premioGanado && esGajoVacio(premioGanado) && (
@@ -323,6 +357,12 @@ const styles = StyleSheet.create({
         color: '#fff', fontSize: 20, fontFamily: 'Poppins-Bold',
         textAlign: 'center', marginTop: 12, marginBottom: 20,
     },
+    codigoBox: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: '#FFF3E0', borderRadius: 12,
+        paddingHorizontal: 16, paddingVertical: 10, marginBottom: 20,
+    },
+    codigoText: { fontSize: 18, fontFamily: 'Poppins-Bold', color: '#1A1A2E', letterSpacing: 1 },
     modalCloseBtn: {
         backgroundColor: '#FF8800', borderRadius: 20,
         paddingVertical: 10, paddingHorizontal: 32,

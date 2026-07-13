@@ -44,6 +44,7 @@ const CartScreen = ({ navigation }) => {
     const [couponCode, setCouponCode] = useState('');
     const [couponApplied, setCouponApplied] = useState(false);
     const [couponDiscount, setCouponDiscount] = useState(10);
+    const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
     const [validatingCoupon, setValidatingCoupon] = useState(false);
     const [dialogVisible, setDialogVisible] = useState(false);
     const [dialogConfig, setDialogConfig] = useState({ title: '', message: '', onConfirm: null });
@@ -106,7 +107,7 @@ const CartScreen = ({ navigation }) => {
     };
 
     const calculateDiscount = () => {
-        return couponApplied ? calculateSubtotal() * (couponDiscount / 100) : 0;
+        return couponApplied ? couponDiscountAmount : 0;
     };
 
     const calculateTotal = () => {
@@ -117,11 +118,18 @@ const CartScreen = ({ navigation }) => {
         if (!couponCode.trim()) return;
         setValidatingCoupon(true);
         try {
-            const res = await API.cupones.validate(couponCode.trim());
+            const items = cartItems.map(item => ({ menu_item_id: item.id, cantidad: item.quantity }));
+            const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items);
             if (res.success) {
-                setCouponDiscount(res.cupon.discount_percent);
+                if (res.cupon.esRuleta) {
+                    setCouponDiscountAmount(res.cupon.monto_descuento);
+                    setCouponDiscount(0);
+                } else {
+                    setCouponDiscountAmount(calculateSubtotal() * (res.cupon.discount_percent / 100));
+                    setCouponDiscount(res.cupon.discount_percent);
+                }
                 setCouponApplied(true);
-                showSuccessMessage('Cupon aplicado', `${res.cupon.discount_percent}% de descuento en tu pedido`);
+                showSuccessMessage('Cupon aplicado', res.cupon.esRuleta ? `$${res.cupon.monto_descuento.toFixed(2)} de descuento en tu pedido` : `${res.cupon.discount_percent}% de descuento en tu pedido`);
             } else {
                 showErrorMessage('Cupon invalido', res.message || 'Verifica el codigo e intenta de nuevo');
             }

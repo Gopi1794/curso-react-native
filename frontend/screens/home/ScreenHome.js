@@ -639,7 +639,7 @@ export const ScreenHome = ({ navigation }) => {
                     >
                         <Ionicons name="close" size={22} color="#fff" />
                     </TouchableOpacity>
-                    <SpinWheel premios={ruletaPremios} />
+                    <SpinWheel premios={ruletaPremios} restauranteId={selectedRestaurant?.id} />
                 </View>
             </Modal>
         </View>
