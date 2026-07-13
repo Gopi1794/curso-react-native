@@ -42,6 +42,10 @@ export default function FloatingTabBar({ state, navigation, tabConfig }) {
         });
     }, [state.index]);
 
+    if (state.routes[state.index].params?.hideTabBar) {
+        return null;
+    }
+
     return (
         <View style={[styles.tabBar, { width: TAB_BAR_WIDTH, marginHorizontal: (screenWidth - TAB_BAR_WIDTH) / 2, bottom: 16 + bottomInset }]}>
             <Animated.View

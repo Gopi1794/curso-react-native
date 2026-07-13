@@ -7,7 +7,7 @@ import MapView, { Marker, Circle, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import API from '../../services/api';
 import { useRepartidorRoute } from '../../hooks/useRepartidorRoute';
@@ -59,6 +59,7 @@ const ESTADO_LABEL = {
 
 export default function RepartidorMapaScreen() {
     const insets = useSafeAreaInsets();
+    const navigation = useNavigation();
     const mapRef = useRef(null);
 
     const [location, setLocation] = useState(null);
@@ -70,6 +71,11 @@ export default function RepartidorMapaScreen() {
     const [geocoding, setGeocoding] = useState(false);
     const [topBlockHeight, setTopBlockHeight] = useState(0);
     const [navegando, setNavegando] = useState(false);
+
+    // ── Ocultar el navbar flotante mientras se navega ─────
+    useEffect(() => {
+        navigation.setParams({ hideTabBar: navegando });
+    }, [navegando]);
 
     // ── Permiso y watch de ubicación ──────────────────────
     useEffect(() => {

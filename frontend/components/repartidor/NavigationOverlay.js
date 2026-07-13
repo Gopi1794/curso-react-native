@@ -25,9 +25,9 @@ export default function NavigationOverlay({
     const insets = useSafeAreaInsets();
     const mapRef = useRef(null);
     const lastAnnouncedIndexRef = useRef(-1);
-    const [heading, setHeading] = useState(0);
+    const [magHeading, setMagHeading] = useState(0);
 
-    // ── Seguir el heading del dispositivo (si está disponible) ──
+    // ── Brújula como respaldo (solo se usa si no hay rumbo GPS confiable) ──
     useEffect(() => {
         if (!visible) return;
         let sub;
@@ -35,7 +35,7 @@ export default function NavigationOverlay({
             try {
                 sub = await Location.watchHeadingAsync(h => {
                     const value = h.trueHeading >= 0 ? h.trueHeading : h.magHeading;
-                    if (value >= 0) setHeading(value);
+                    if (value >= 0) setMagHeading(value);
                 });
             } catch {
                 // Sin heading confiable (emulador, sin sensor, etc.) — la cámara no rota, no rompe nada
@@ -43,6 +43,14 @@ export default function NavigationOverlay({
         })();
         return () => sub?.remove();
     }, [visible]);
+
+    // ── En movimiento, el rumbo GPS (dirección real de desplazamiento) es más
+    // confiable que la brújula magnética, que se distorsiona con el soporte del
+    // vehículo. Solo se cae a la brújula cuando el repartidor está detenido.
+    const enMovimiento = (location?.speed ?? 0) > 1;
+    const heading = (enMovimiento && location?.heading != null && location.heading >= 0)
+        ? location.heading
+        : magHeading;
 
     // ── Mover la cámara con la posición y el heading ──
     useEffect(() => {
@@ -97,10 +105,22 @@ export default function NavigationOverlay({
                     latitudeDelta: 0.01,
                     longitudeDelta: 0.01,
                 } : undefined}
-                showsUserLocation
             >
                 {destino && (
                     <Marker coordinate={{ latitude: destino.lat, longitude: destino.lng }} />
+                )}
+                {location && (
+                    <Marker
+                        coordinate={{ latitude: location.latitude, longitude: location.longitude }}
+                        anchor={{ x: 0.5, y: 0.5 }}
+                        flat
+                        rotation={heading}
+                    >
+                        <View style={styles.headingArrowWrap}>
+                            <View style={styles.headingArrowTriangle} />
+                            <View style={styles.headingArrowCircle} />
+                        </View>
+                    </Marker>
                 )}
                 {routePoints && (
                     <Polyline
@@ -142,7 +162,7 @@ const styles = StyleSheet.create({
         position: 'absolute', top: 0, left: 0, right: 0,
         backgroundColor: 'rgba(26,26,26,0.92)',
         flexDirection: 'row', alignItems: 'center', gap: 12,
-        paddingHorizontal: 20, paddingBottom: 16,
+        paddingLeft: 20, paddingRight: 64, paddingBottom: 16,
     },
     instructionText: { color: '#fff', fontSize: 17, fontWeight: '700', flex: 1 },
     exitBtn: {
@@ -158,4 +178,21 @@ const styles = StyleSheet.create({
     },
     bottomText: { color: '#fff', fontSize: 22, fontWeight: '800' },
     bottomSubtext: { color: '#ccc', fontSize: 13, marginTop: 2 },
+    headingArrowWrap: {
+        width: 40, height: 40,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    headingArrowCircle: {
+        width: 26, height: 26, borderRadius: 13,
+        backgroundColor: '#4285F4',
+        borderWidth: 2, borderColor: '#fff',
+    },
+    headingArrowTriangle: {
+        position: 'absolute',
+        top: 2, left: '50%', marginLeft: -8,
+        width: 0, height: 0,
+        borderLeftWidth: 8, borderRightWidth: 8, borderBottomWidth: 12,
+        borderLeftColor: 'transparent', borderRightColor: 'transparent',
+        borderBottomColor: '#4285F4',
+    },
 });
