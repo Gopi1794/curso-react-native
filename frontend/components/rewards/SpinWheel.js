@@ -1,5 +1,5 @@
 // frontend/components/rewards/SpinWheel.js
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Modal } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,6 +43,7 @@ export default function SpinWheel({
     const [premioGanado, setPremioGanado] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const rotation = useSharedValue(0);
+    const girandoRef = useRef(false);
 
     const animatedWheelStyle = useAnimatedStyle(() => ({
         transform: [{ rotate: `${rotation.value}deg` }],
@@ -52,11 +53,13 @@ export default function SpinWheel({
         setPremioGanado(premio);
         setModalVisible(true);
         setGirando(false);
+        girandoRef.current = false;
         onPremioGanado?.(premio);
     };
 
     const handleGirar = () => {
-        if (girando) return;
+        if (girandoRef.current) return;
+        girandoRef.current = true;
         setGirando(true);
 
         const items = premios.slice(0, SEGMENT_COUNT);
