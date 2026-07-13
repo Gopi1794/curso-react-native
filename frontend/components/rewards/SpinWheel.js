@@ -15,7 +15,7 @@ import Animated, {
 import {
     SEGMENT_COUNT,
     segmentPath,
-    labelPosition,
+    segmentMidAngle,
     targetRotationForIndex,
 } from './wheelMath';
 
@@ -23,6 +23,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const WHEEL_SIZE = Math.min(screenWidth - 60, 340);
 const RADIUS = WHEEL_SIZE / 2;
 const LABEL_RADIUS = RADIUS * 0.62;
+const toRad = (deg) => (deg * Math.PI) / 180;
 
 export const PREMIOS_DEFAULT = [
     { id: 'off20', label: '20% OFF', icon: 'pricetag-outline' },
@@ -74,6 +75,11 @@ export default function SpinWheel({
         onPremioGanado?.(premio);
     };
 
+    const resetGirando = () => {
+        setGirando(false);
+        girandoRef.current = false;
+    };
+
     const handleGirar = () => {
         if (girandoRef.current) return;
         girandoRef.current = true;
@@ -93,6 +99,8 @@ export default function SpinWheel({
             withTiming(finalTarget, { duration: 180, easing: Easing.out(Easing.quad) }, (finished) => {
                 if (finished) {
                     runOnJS(mostrarResultado)(winner);
+                } else {
+                    runOnJS(resetGirando)();
                 }
             })
         );
@@ -136,18 +144,9 @@ export default function SpinWheel({
                     >
                         <Ionicons name="star" size={RADIUS * 0.16} color="#fff" />
                     </Animated.View>
-                    {premios.slice(0, SEGMENT_COUNT).map((premio, i) => {
-                        const pos = labelPosition(i, RADIUS, RADIUS, LABEL_RADIUS);
-                        return (
-                            <View
-                                key={premio.id}
-                                style={[styles.labelWrap, { left: pos.x - 34, top: pos.y - 24 }]}
-                            >
-                                <Ionicons name={premio.icon} size={18} color="#fff" />
-                                <Text style={styles.labelText}>{premio.label}</Text>
-                            </View>
-                        );
-                    })}
+                    {premios.slice(0, SEGMENT_COUNT).map((premio, i) => (
+                        <Label key={premio.id} index={i} premio={premio} rotation={rotation} />
+                    ))}
                 </View>
             </View>
 
@@ -261,6 +260,27 @@ const CONFETTI_PIECES = [
     { top: '75%', left: '8%', rotate: '10deg', color: '#FFB74D' },
     { top: '85%', left: '88%', rotate: '-20deg', color: '#FF5500' },
 ];
+
+function Label({ index, premio, rotation }) {
+    const mid = segmentMidAngle(index);
+
+    const style = useAnimatedStyle(() => {
+        const angle = mid + rotation.value;
+        const x = RADIUS + LABEL_RADIUS * Math.cos(toRad(angle));
+        const y = RADIUS + LABEL_RADIUS * Math.sin(toRad(angle));
+        return {
+            left: x - 34,
+            top: y - 24,
+        };
+    });
+
+    return (
+        <Animated.View style={[styles.labelWrap, style]}>
+            <Ionicons name={premio.icon} size={18} color="#fff" />
+            <Text style={styles.labelText}>{premio.label}</Text>
+        </Animated.View>
+    );
+}
 
 function ConfettiPiece({ top, left, rotate, color }) {
     const drift = useSharedValue(0);
