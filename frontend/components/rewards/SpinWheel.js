@@ -182,7 +182,7 @@ export default function SpinWheel({
                             pulseStyle,
                         ]}
                     >
-                        <Ionicons name="star" size={RADIUS * 0.16} color="#fff" />
+                        <Ionicons name="star" size={RADIUS * 0.16} color="#FF8800" />
                     </Animated.View>
                     {premios.slice(0, SEGMENT_COUNT).map((premio, i) => (
                         <Label key={premio.id} index={i} premio={premio} rotation={rotation} />
@@ -261,8 +261,8 @@ const styles = StyleSheet.create({
     giftBoxImage: {
         width: '100%', height: '100%',
     },
-    giftSparkleTop: { position: 'absolute', top: -4, left: -6 },
-    giftSparkleBottom: { position: 'absolute', bottom: 0, right: -6 },
+    giftSparkleTop: { position: 'absolute', top: '18%', left: '8%' },
+    giftSparkleBottom: { position: 'absolute', bottom: '24%', right: '10%' },
     wheelOuter: { alignItems: 'center', marginTop: 32 },
     pointer: {
         width: 0, height: 0, zIndex: 10,
@@ -321,9 +321,11 @@ const styles = StyleSheet.create({
     },
     modalCloseBtnText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins-Bold' },
     centerHub: {
-        position: 'absolute', backgroundColor: '#FF8800',
+        position: 'absolute', backgroundColor: '#fff',
         borderWidth: 2, borderColor: '#fff',
         alignItems: 'center', justifyContent: 'center',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3, shadowRadius: 6, elevation: 8,
     },
     background: { flex: 1, backgroundColor: '#1A1A2E' },
     confettiPiece: {

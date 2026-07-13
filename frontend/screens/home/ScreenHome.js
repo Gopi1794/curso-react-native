@@ -9,8 +9,10 @@ import {
     Animated,
     RefreshControl,
     Modal,
+    TouchableOpacity,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 // Componentes reutilizables
 import { HeaderSection } from '../../components/HeaderSection';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
@@ -179,6 +181,7 @@ export const ScreenHome = ({ navigation }) => {
     const [selectedCategory, setSelectedCategory] = useState("todos");
     const [activePromoIndex, setActivePromoIndex] = useState(1);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+    const [showSpinWheel, setShowSpinWheel] = useState(true);
     const [menuItems, setMenuItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [menuError, setMenuError] = useState(null);
@@ -597,8 +600,20 @@ export const ScreenHome = ({ navigation }) => {
                 />
             )}
 
-            <Modal visible transparent animationType="fade">
+            <Modal
+                visible={showSpinWheel}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowSpinWheel(false)}
+            >
                 <View style={styles.spinWheelBackdrop}>
+                    <TouchableOpacity
+                        style={styles.spinWheelCloseBtn}
+                        onPress={() => setShowSpinWheel(false)}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="close" size={22} color="#fff" />
+                    </TouchableOpacity>
                     <SpinWheel />
                 </View>
             </Modal>
@@ -613,9 +628,15 @@ const styles = StyleSheet.create({
     },
     spinWheelBackdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.96)',
+        backgroundColor: 'rgba(0,0,0,0.8)',
         justifyContent: 'center',
         paddingHorizontal: 20,
+    },
+    spinWheelCloseBtn: {
+        position: 'absolute', top: 56, right: 24, zIndex: 10,
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center', justifyContent: 'center',
     },
     scrollContainer: {
         flex: 1,
