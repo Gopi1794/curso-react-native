@@ -212,7 +212,7 @@ export const ScreenHome = ({ navigation }) => {
     useEffect(() => {
         AsyncStorage.getItem('recentSearches')
             .then(raw => { if (raw) setRecentSearches(JSON.parse(raw)); })
-            .catch(() => {});
+            .catch(() => { });
     }, []);
 
     const saveSearch = useCallback(async (term) => {
@@ -220,7 +220,7 @@ export const ScreenHome = ({ navigation }) => {
         if (!trimmed) return;
         setRecentSearches(prev => {
             const updated = [trimmed, ...prev.filter(s => s !== trimmed)].slice(0, 6);
-            AsyncStorage.setItem('recentSearches', JSON.stringify(updated)).catch(() => {});
+            AsyncStorage.setItem('recentSearches', JSON.stringify(updated)).catch(() => { });
             return updated;
         });
     }, []);
@@ -228,14 +228,14 @@ export const ScreenHome = ({ navigation }) => {
     const handleRemoveRecentSearch = useCallback((term) => {
         setRecentSearches(prev => {
             const updated = prev.filter(s => s !== term);
-            AsyncStorage.setItem('recentSearches', JSON.stringify(updated)).catch(() => {});
+            AsyncStorage.setItem('recentSearches', JSON.stringify(updated)).catch(() => { });
             return updated;
         });
     }, []);
 
     const handleClearAllRecentSearches = useCallback(() => {
         setRecentSearches([]);
-        AsyncStorage.removeItem('recentSearches').catch(() => {});
+        AsyncStorage.removeItem('recentSearches').catch(() => { });
     }, []);
 
     const handleSelectRecentSearch = useCallback((term) => {
@@ -250,40 +250,40 @@ export const ScreenHome = ({ navigation }) => {
     }, [fetchMenu]);
 
     const CATEGORY_MAP = {
-        cafe_merienda:      ['cafe_merienda'],
-        para_picar:         ['picadas', 'finger_food', 'papas_gourmet', 'empanadas'],
+        cafe_merienda: ['cafe_merienda'],
+        para_picar: ['picadas', 'finger_food', 'papas_gourmet', 'empanadas'],
         sandwiches_burgers: ['sandwiches', 'hamburguesas'],
-        platos:             ['milanesas', 'platos', 'pastas', 'promoDia'],
-        pizzas:             ['pizzas', 'tartas'],
-        ensaladas:          ['ensaladas'],
-        sin_tacc:           ['sin_tacc'],
-        dulces:             ['dulces', 'helados'],
-        bebidas:            ['bebidas'],
+        platos: ['milanesas', 'platos', 'pastas', 'promoDia'],
+        pizzas: ['pizzas', 'tartas'],
+        ensaladas: ['ensaladas'],
+        sin_tacc: ['sin_tacc'],
+        dulces: ['dulces', 'helados'],
+        bebidas: ['bebidas'],
     };
 
     const CATEGORIAS_BUCKET_URL = 'https://bbavirgboqyvqhxvuarp.supabase.co/storage/v1/object/public/Categorias';
 
     const EXPLORE_CATEGORIES = [
-        { id: 'cafe_merienda',      label: 'Cafe & Meriendas', image: `${CATEGORIAS_BUCKET_URL}/${encodeURIComponent('cafe&merienda.webp')}`, size: 'sm' },
-        { id: 'para_picar',         label: 'Para Picar',        image: `${CATEGORIAS_BUCKET_URL}/parapicar.webp`, size: 'sm', offsetY: 8 },
+        { id: 'cafe_merienda', label: 'Cafe & Meriendas', image: `${CATEGORIAS_BUCKET_URL}/${encodeURIComponent('cafe&merienda.webp')}`, size: 'sm' },
+        { id: 'para_picar', label: 'Para Picar', image: `${CATEGORIAS_BUCKET_URL}/parapicar.webp`, size: 'sm', offsetY: 8 },
         { id: 'sandwiches_burgers', label: 'Burgers & Sandwiches', image: `${CATEGORIAS_BUCKET_URL}/${encodeURIComponent('burgers&sandwich.webp')}`, offsetY: -16 },
-        { id: 'platos',             label: 'Platos',            image: `${CATEGORIAS_BUCKET_URL}/platos.webp` },
-        { id: 'pizzas',             label: 'Pizzas',             image: `${CATEGORIAS_BUCKET_URL}/pizzas.webp` },
-        { id: 'ensaladas',          label: 'Ensaladas',          image: `${CATEGORIAS_BUCKET_URL}/ensaldas.webp` },
-        { id: 'sin_tacc',           label: 'SIN TACC',           image: `${CATEGORIAS_BUCKET_URL}/sintacc.webp`, size: 'msm', offsetY: 8 },
-        { id: 'dulces',             label: 'Dulces',             image: `${CATEGORIAS_BUCKET_URL}/dulce.webp`, size: 'msm', offsetY: 8 },
-        { id: 'bebidas',            label: 'Bebidas',            image: `${CATEGORIAS_BUCKET_URL}/bebidas.webp` },
+        { id: 'platos', label: 'Platos', image: `${CATEGORIAS_BUCKET_URL}/platos.webp` },
+        { id: 'pizzas', label: 'Pizzas', image: `${CATEGORIAS_BUCKET_URL}/pizzas.webp` },
+        { id: 'ensaladas', label: 'Ensaladas', image: `${CATEGORIAS_BUCKET_URL}/ensaldas.webp` },
+        { id: 'sin_tacc', label: 'SIN TACC', image: `${CATEGORIAS_BUCKET_URL}/sintacc.webp`, size: 'msm', offsetY: 8 },
+        { id: 'dulces', label: 'Dulces', image: `${CATEGORIAS_BUCKET_URL}/dulce.webp`, size: 'msm', offsetY: 8 },
+        { id: 'bebidas', label: 'Bebidas', image: `${CATEGORIAS_BUCKET_URL}/bebidas.webp` },
     ];
 
     const exploreCategories = useMemo(() => {
         const hour = new Date().getHours();
         let priorityId;
-        if (hour >= 7 && hour < 11)       priorityId = 'cafe_merienda';
+        if (hour >= 7 && hour < 11) priorityId = 'cafe_merienda';
         else if (hour >= 11 && hour < 16) priorityId = 'platos';
         else if (hour >= 16 && hour < 18) priorityId = 'para_picar';
-        else                               priorityId = 'pizzas';
+        else priorityId = 'pizzas';
         const priority = EXPLORE_CATEGORIES.find(c => c.id === priorityId);
-        const rest      = EXPLORE_CATEGORIES.filter(c => c.id !== priorityId);
+        const rest = EXPLORE_CATEGORIES.filter(c => c.id !== priorityId);
         return [priority, ...rest].filter(Boolean);
     }, []);
 
@@ -548,15 +548,15 @@ export const ScreenHome = ({ navigation }) => {
                 {!debouncedQuery.trim() && (
                     loading ? <PromoSkeleton /> : (
                         <View style={{ marginTop: 16 }}>
-                        <PromoSection
-                            promos={promos}
-                            activePromoIndex={activePromoIndex}
-                            onPromoPress={handlePromoPress}
-                            onPromoIndicatorPress={handlePromoIndicatorPress}
-                            onPromoScroll={handlePromoScroll}
-                            promoFlatListRef={promoFlatListRef}
-                            onVerTodas={() => navigation.navigate('AllPromos', { promos })}
-                        />
+                            <PromoSection
+                                promos={promos}
+                                activePromoIndex={activePromoIndex}
+                                onPromoPress={handlePromoPress}
+                                onPromoIndicatorPress={handlePromoIndicatorPress}
+                                onPromoScroll={handlePromoScroll}
+                                promoFlatListRef={promoFlatListRef}
+                                onVerTodas={() => navigation.navigate('AllPromos', { promos })}
+                            />
                         </View>
                     )
                 )}
@@ -633,9 +633,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     spinWheelCloseBtn: {
-        position: 'absolute', top: 56, right: 24, zIndex: 10,
+        position: 'absolute', top: 56, right: 24, zIndex: 20, elevation: 20,
         width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.25)',
         alignItems: 'center', justifyContent: 'center',
     },
     scrollContainer: {
