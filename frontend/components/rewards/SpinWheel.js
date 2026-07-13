@@ -23,7 +23,8 @@ const { width: screenWidth } = Dimensions.get('window');
 const WHEEL_SIZE = Math.min(screenWidth - 60, 340);
 const RADIUS = WHEEL_SIZE / 2;
 const LABEL_RADIUS = RADIUS * 0.62;
-const GLOW_SIZE = WHEEL_SIZE * 1.5;
+const GLOW_SIZE = WHEEL_SIZE * 1.9;
+const GLOW_CORE_SIZE = WHEEL_SIZE * 1.05;
 const toRad = (deg) => {
     'worklet';
     return (deg * Math.PI) / 180;
@@ -146,14 +147,28 @@ export default function SpinWheel({
                     <Animated.View pointerEvents="none" style={[styles.glowWrap, glowStyle]}>
                         <Svg width={GLOW_SIZE} height={GLOW_SIZE}>
                             <Defs>
-                                <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
-                                    <Stop offset="0%" stopColor="#FFD700" stopOpacity="0.9" />
+                                <RadialGradient id="glowHalo" cx="50%" cy="50%" r="50%">
+                                    <Stop offset="0%" stopColor="#FFC400" stopOpacity="0.55" />
+                                    <Stop offset="45%" stopColor="#FF8800" stopOpacity="0.25" />
+                                    <Stop offset="100%" stopColor="#FF8800" stopOpacity="0" />
+                                </RadialGradient>
+                            </Defs>
+                            <Circle cx={GLOW_SIZE / 2} cy={GLOW_SIZE / 2} r={GLOW_SIZE / 2} fill="url(#glowHalo)" />
+                        </Svg>
+                        <Svg width={GLOW_CORE_SIZE} height={GLOW_CORE_SIZE} style={styles.glowCore}>
+                            <Defs>
+                                <RadialGradient id="glowCore" cx="50%" cy="50%" r="50%">
+                                    <Stop offset="0%" stopColor="#FFF3C4" stopOpacity="0.95" />
+                                    <Stop offset="35%" stopColor="#FFD700" stopOpacity="0.75" />
                                     <Stop offset="100%" stopColor="#FFD700" stopOpacity="0" />
                                 </RadialGradient>
                             </Defs>
-                            <Circle cx={GLOW_SIZE / 2} cy={GLOW_SIZE / 2} r={GLOW_SIZE / 2} fill="url(#glow)" />
+                            <Circle cx={GLOW_CORE_SIZE / 2} cy={GLOW_CORE_SIZE / 2} r={GLOW_CORE_SIZE / 2} fill="url(#glowCore)" />
                         </Svg>
                     </Animated.View>
+                    {SPARKLE_POSITIONS.map((pos, i) => (
+                        <Sparkle key={i} {...pos} />
+                    ))}
                     <View style={styles.wheelPerspective}>
                     <Animated.View style={animatedWheelStyle}>
                         <Svg width={WHEEL_SIZE} height={WHEEL_SIZE}>
@@ -245,6 +260,10 @@ const styles = StyleSheet.create({
         width: GLOW_SIZE, height: GLOW_SIZE,
         left: (WHEEL_SIZE - GLOW_SIZE) / 2, top: (WHEEL_SIZE - GLOW_SIZE) / 2,
     },
+    glowCore: {
+        position: 'absolute',
+        left: (GLOW_SIZE - GLOW_CORE_SIZE) / 2, top: (GLOW_SIZE - GLOW_CORE_SIZE) / 2,
+    },
     wheelPerspective: {
         transform: [{ perspective: 800 }, { rotateX: '8deg' }],
         shadowColor: '#000', shadowOffset: { width: 0, height: 14 },
@@ -304,6 +323,44 @@ const CONFETTI_PIECES = [
     { top: '75%', left: '8%', rotate: '10deg', color: '#FFB74D' },
     { top: '85%', left: '88%', rotate: '-20deg', color: '#FF5500' },
 ];
+
+const SPARKLE_POSITIONS = [
+    { left: RADIUS - GLOW_SIZE * 0.42, top: RADIUS - GLOW_SIZE * 0.4, size: 16 },
+    { left: RADIUS + GLOW_SIZE * 0.3, top: RADIUS - GLOW_SIZE * 0.44, size: 12 },
+    { left: RADIUS - GLOW_SIZE * 0.46, top: RADIUS + GLOW_SIZE * 0.18, size: 10 },
+    { left: RADIUS + GLOW_SIZE * 0.4, top: RADIUS + GLOW_SIZE * 0.22, size: 14 },
+    { left: RADIUS - GLOW_SIZE * 0.1, top: RADIUS - GLOW_SIZE * 0.47, size: 11 },
+];
+
+function Sparkle({ left, top, size }) {
+    const twinkle = useSharedValue(0.3);
+
+    useEffect(() => {
+        const delay = Math.random() * 600;
+        const id = setTimeout(() => {
+            twinkle.value = withRepeat(
+                withSequence(
+                    withTiming(1, { duration: 350 + Math.random() * 300, easing: Easing.inOut(Easing.quad) }),
+                    withTiming(0.2, { duration: 500 + Math.random() * 400, easing: Easing.inOut(Easing.quad) })
+                ),
+                -1,
+                false
+            );
+        }, delay);
+        return () => clearTimeout(id);
+    }, []);
+
+    const style = useAnimatedStyle(() => ({
+        opacity: twinkle.value,
+        transform: [{ scale: 0.6 + twinkle.value * 0.4 }],
+    }));
+
+    return (
+        <Animated.View pointerEvents="none" style={[{ position: 'absolute', left, top }, style]}>
+            <Ionicons name="sparkles" size={size} color="#FFF3C4" />
+        </Animated.View>
+    );
+}
 
 function Label({ index, premio, rotation }) {
     const mid = segmentMidAngle(index);
