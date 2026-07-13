@@ -282,33 +282,10 @@ export const ScreenHome = ({ navigation }) => {
         return [priority, ...rest].filter(Boolean);
     }, []);
 
-    const PROMO_LUNES_BUCKET_URL = 'https://bbavirgboqyvqhxvuarp.supabase.co/storage/v1/object/public/bucketFoodApp/img-trevi/promodia';
-
-    const promos = [
-        {
-            id: 'promo-lunes-2',
-            name: 'Milanesa de ternera con fideos a la parmesana',
-            price: '$12000',
-            basePrice: 12000,
-            category: 'promoDia',
-            calories: 790,
-            weight: 450,
-            descriptionText: 'Milanesa de ternera con fideos a la parmesana.',
-            imageKey: `${PROMO_LUNES_BUCKET_URL}/promo_lunes_1.webp`,
-        },
-        {
-            id: 'promo-lunes-1',
-            name: 'Pata y muslo al horno',
-            price: '$12000',
-            basePrice: 12000,
-            category: 'promoDia',
-            calories: 680,
-            weight: 400,
-            descriptionText: 'Guarnición a elección: puré de papa, zapallo o mixto; papas españolas o fritas; ensalada de hasta 3 ingredientes (tomate, lechuga, rúcula, zanahoria, cebolla, huevo).',
-            imageKey: `${PROMO_LUNES_BUCKET_URL}/promo_lunes_2.webp`,
-            imageScale: 0.65,
-        },
-    ];
+    const promos = useMemo(
+        () => menuItems.filter(item => item.category === 'promoDia'),
+        [menuItems]
+    );
 
     const searchItems = useCallback((query, items) => {
         if (!query.trim()) return items;
