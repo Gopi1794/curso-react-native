@@ -45,6 +45,9 @@ const CartScreen = ({ navigation }) => {
     const [couponApplied, setCouponApplied] = useState(false);
     const [couponDiscount, setCouponDiscount] = useState(10);
     const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
+    const [couponEsRuleta, setCouponEsRuleta] = useState(false);
+    const [couponHabilitado, setCouponHabilitado] = useState(true);
+    const [couponDisabledReason, setCouponDisabledReason] = useState(null);
     const [validatingCoupon, setValidatingCoupon] = useState(false);
     const [dialogVisible, setDialogVisible] = useState(false);
     const [dialogConfig, setDialogConfig] = useState({ title: '', message: '', onConfirm: null });
@@ -128,6 +131,9 @@ const CartScreen = ({ navigation }) => {
                     setCouponDiscountAmount(calculateSubtotal() * (res.cupon.discount_percent / 100));
                     setCouponDiscount(res.cupon.discount_percent);
                 }
+                setCouponEsRuleta(!!res.cupon.esRuleta);
+                setCouponHabilitado(true);
+                setCouponDisabledReason(null);
                 setCouponApplied(true);
                 showSuccessMessage('Cupon aplicado', res.cupon.esRuleta ? `$${res.cupon.monto_descuento.toFixed(2)} de descuento en tu pedido` : `${res.cupon.discount_percent}% de descuento en tu pedido`);
             } else {
@@ -139,6 +145,30 @@ const CartScreen = ({ navigation }) => {
             setValidatingCoupon(false);
         }
     };
+
+    useEffect(() => {
+        if (!couponApplied || !couponEsRuleta) return;
+
+        const revalidar = async () => {
+            try {
+                const items = cartItems.map(item => ({ menu_item_id: item.id, cantidad: item.quantity }));
+                const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items);
+                if (res.success) {
+                    setCouponDiscountAmount(res.cupon.monto_descuento);
+                    setCouponHabilitado(true);
+                    setCouponDisabledReason(null);
+                } else {
+                    setCouponHabilitado(false);
+                    setCouponDisabledReason(res.message || 'Este cupón ya no se puede aplicar');
+                    setCouponDiscountAmount(0);
+                }
+            } catch {
+                // Sin conexión: no tocamos el estado actual del cupón, se reintenta en el próximo cambio del carrito.
+            }
+        };
+
+        revalidar();
+    }, [cartItems, couponApplied, couponEsRuleta]);
 
     const handleViewProductDetail = (item) => {
         const imageKey = Object.keys(imageMap).find(key =>
@@ -251,7 +281,7 @@ const CartScreen = ({ navigation }) => {
                 selectedAddress ? `${selectedAddress.direccion}, ${selectedAddress.ciudad}` : 'Dirección registrada',
                 '',
                 undefined,
-                couponApplied ? couponCode : null
+                couponApplied && couponHabilitado ? couponCode : null
             );
 
             if (!orderRes.success) {
@@ -357,7 +387,7 @@ const CartScreen = ({ navigation }) => {
                 selectedAddress ? `${selectedAddress.direccion}, ${selectedAddress.ciudad}` : 'Dirección registrada',
                 '',
                 'efectivo',
-                couponApplied ? couponCode : null
+                couponApplied && couponHabilitado ? couponCode : null
             );
 
             if (!orderRes.success) {
@@ -536,8 +566,10 @@ const CartScreen = ({ navigation }) => {
                             />
                             {couponApplied ? (
                                 <View style={styles.couponApplied}>
-                                    <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
-                                    <Text style={styles.couponAppliedText}>-{couponDiscount}%</Text>
+                                    <Ionicons name={couponHabilitado ? 'checkmark-circle' : 'alert-circle'} size={18} color={couponHabilitado ? '#4CAF50' : '#E53935'} />
+                                    <Text style={styles.couponAppliedText}>
+                                        {couponHabilitado ? `-$${couponDiscountAmount.toFixed(2)}` : 'Pausado'}
+                                    </Text>
                                 </View>
                             ) : (
                                 <TouchableOpacity
@@ -552,6 +584,9 @@ const CartScreen = ({ navigation }) => {
                                 </TouchableOpacity>
                             )}
                         </View>
+                        {couponApplied && !couponHabilitado && couponDisabledReason && (
+                            <Text style={styles.couponDisabledText}>{couponDisabledReason}</Text>
+                        )}
 
                         {/* --- Resumen del pedido --- */}
                         <View style={styles.summaryContainer}>
@@ -564,9 +599,9 @@ const CartScreen = ({ navigation }) => {
                                 <Text style={styles.summaryValue}>${calculateSubtotal().toFixed(2)}</Text>
                             </View>
 
-                            {couponApplied && (
+                            {couponApplied && couponHabilitado && (
                                 <View style={styles.summaryRow}>
-                                    <Text style={[styles.summaryLabel, styles.discountLabel]}>Descuento ({couponDiscount}%)</Text>
+                                    <Text style={[styles.summaryLabel, styles.discountLabel]}>Descuento</Text>
                                     <Text style={styles.discountValue}>-${calculateDiscount().toFixed(2)}</Text>
                                 </View>
                             )}
@@ -1050,6 +1085,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontFamily: 'Poppins-Bold',
         fontSize: 14,
+    },
+    couponDisabledText: {
+        color: '#E53935', fontSize: 12, marginTop: -12, marginBottom: 16,
+        paddingHorizontal: 4,
     },
 
     /* Resumen */
