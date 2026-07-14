@@ -275,8 +275,8 @@ exports.getMenuItem = async (req, res) => {
 // ── Estado de giros de un usuario para un restaurante ─────
 // Cuenta solo lo que pasó desde la ultima vez que el restaurante
 // reactivo la ruleta (ruleta_activada_en) — reactivarla resetea a todos.
-async function getEstadoGiros(usuarioId, restauranteId) {
-    const result = await db.query(
+async function getEstadoGiros(usuarioId, restauranteId, queryable = db) {
+    const result = await queryable.query(
         `SELECT
             r.ruleta_giros_maximos,
             r.ruleta_activada_en,
@@ -376,22 +376,31 @@ function generarCodigoCupon() {
 }
 
 exports.girarRuleta = async (req, res) => {
+    const { id } = req.params;
+
+    if (isNaN(id)) {
+        return res.status(400).json({
+            success: false,
+            message: 'ID de restaurante inválido'
+        });
+    }
+
+    // Transacción + advisory lock por (usuario, restaurante): serializa giros
+    // concurrentes del mismo usuario para que el chequeo de "ya ganó"/"máximo
+    // de giros" y los INSERT que lo determinan no puedan correr en paralelo
+    // (evita generar más de un cupón real via requests simultáneos).
+    const client = await db.getClient();
     try {
-        const { id } = req.params;
+        await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`${req.user.userId}:${id}`]);
 
-        if (isNaN(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de restaurante inválido'
-            });
-        }
-
-        const restResult = await db.query(
+        const restResult = await client.query(
             'SELECT ruleta_activa FROM restaurantes WHERE id = $1',
             [id]
         );
 
         if (restResult.rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({
                 success: false,
                 message: 'Restaurante no encontrado'
@@ -399,15 +408,17 @@ exports.girarRuleta = async (req, res) => {
         }
 
         if (!restResult.rows[0].ruleta_activa) {
+            await client.query('ROLLBACK');
             return res.status(400).json({
                 success: false,
                 message: 'La ruleta no está activa para este restaurante'
             });
         }
 
-        const estado = await getEstadoGiros(req.user.userId, id);
+        const estado = await getEstadoGiros(req.user.userId, id, client);
 
         if (estado.yaGanoReal) {
+            await client.query('ROLLBACK');
             return res.status(403).json({
                 success: false,
                 message: 'Ya ganaste un premio, no podés seguir girando'
@@ -415,13 +426,14 @@ exports.girarRuleta = async (req, res) => {
         }
 
         if (estado.girosMaximos != null && estado.girosUsados >= estado.girosMaximos) {
+            await client.query('ROLLBACK');
             return res.status(403).json({
                 success: false,
                 message: 'Ya usaste tus giros disponibles'
             });
         }
 
-        const premiosResult = await db.query(
+        const premiosResult = await client.query(
             'SELECT posicion, label, icon, tipo, valor FROM ruleta_premios WHERE restaurante_id = $1',
             [id]
         );
@@ -435,10 +447,11 @@ exports.girarRuleta = async (req, res) => {
         const premioRaw = premiosPorPosicion[posicionGanadora] || null;
 
         if (!premioRaw || !premioRaw.label) {
-            await db.query(
+            await client.query(
                 'INSERT INTO ruleta_giros (usuario_id, restaurante_id, gano_premio_real) VALUES ($1, $2, FALSE)',
                 [req.user.userId, id]
             );
+            await client.query('COMMIT');
             return res.json({
                 success: true,
                 posicionGanadora,
@@ -448,10 +461,11 @@ exports.girarRuleta = async (req, res) => {
         }
 
         if (!premioRaw.tipo) {
-            await db.query(
+            await client.query(
                 'INSERT INTO ruleta_giros (usuario_id, restaurante_id, gano_premio_real) VALUES ($1, $2, FALSE)',
                 [req.user.userId, id]
             );
+            await client.query('COMMIT');
             return res.json({
                 success: true,
                 posicionGanadora,
@@ -464,7 +478,7 @@ exports.girarRuleta = async (req, res) => {
         let intentos = 0;
         while (true) {
             codigo = generarCodigoCupon();
-            const existe = await db.query('SELECT id FROM ruleta_cupones WHERE codigo = $1', [codigo]);
+            const existe = await client.query('SELECT id FROM ruleta_cupones WHERE codigo = $1', [codigo]);
             if (existe.rows.length === 0) break;
             intentos++;
             if (intentos > 10) {
@@ -472,16 +486,18 @@ exports.girarRuleta = async (req, res) => {
             }
         }
 
-        await db.query(
+        await client.query(
             `INSERT INTO ruleta_cupones (codigo, restaurante_id, tipo, valor, usuario_id, fecha_expiracion)
              VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '7 days')`,
             [codigo, id, premioRaw.tipo, premioRaw.valor, req.user.userId]
         );
 
-        await db.query(
+        await client.query(
             'INSERT INTO ruleta_giros (usuario_id, restaurante_id, gano_premio_real) VALUES ($1, $2, TRUE)',
             [req.user.userId, id]
         );
+
+        await client.query('COMMIT');
 
         res.json({
             success: true,
@@ -491,10 +507,13 @@ exports.girarRuleta = async (req, res) => {
         });
 
     } catch (error) {
+        await client.query('ROLLBACK').catch(() => {});
         console.error('Error en girarRuleta:', error);
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'
         });
+    } finally {
+        client.release();
     }
 };
