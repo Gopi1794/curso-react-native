@@ -60,12 +60,13 @@ exports.validateByCode = async (req, res) => {
             });
         }
 
-        // 2. Buscar en ruleta_cupones
+        // 2. Buscar en ruleta_cupones — solo del usuario logueado, no vencido
         const cuponRuleta = await db.query(
             `SELECT id, tipo, valor, restaurante_id
              FROM ruleta_cupones
-             WHERE UPPER(codigo) = UPPER($1) AND usado = FALSE`,
-            [codigo.trim()]
+             WHERE UPPER(codigo) = UPPER($1) AND usado = FALSE
+               AND usuario_id = $2 AND fecha_expiracion > NOW()`,
+            [codigo.trim(), req.user.userId]
         );
 
         if (cuponRuleta.rows.length === 0) {

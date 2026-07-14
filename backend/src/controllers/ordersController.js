@@ -125,8 +125,9 @@ exports.createOrder = async (req, res) => {
             } else {
                 const cuponRuleta = await client.query(
                     `SELECT id, tipo, valor FROM ruleta_cupones
-                     WHERE UPPER(codigo) = UPPER($1) AND restaurante_id = $2 AND usado = FALSE`,
-                    [cupon_codigo.trim(), restaurante_id]
+                     WHERE UPPER(codigo) = UPPER($1) AND restaurante_id = $2 AND usado = FALSE
+                       AND usuario_id = $3 AND fecha_expiracion > NOW()`,
+                    [cupon_codigo.trim(), restaurante_id, req.user.userId]
                 );
                 if (cuponRuleta.rows[0]) {
                     const cupon = cuponRuleta.rows[0];
