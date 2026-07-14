@@ -272,6 +272,37 @@ exports.getMenuItem = async (req, res) => {
     }
 };
 
+// ── Estado de giros de un usuario para un restaurante ─────
+// Cuenta solo lo que pasó desde la ultima vez que el restaurante
+// reactivo la ruleta (ruleta_activada_en) — reactivarla resetea a todos.
+async function getEstadoGiros(usuarioId, restauranteId) {
+    const result = await db.query(
+        `SELECT
+            r.ruleta_giros_maximos,
+            r.ruleta_activada_en,
+            COUNT(g.id) AS giros_usados,
+            COUNT(g.id) FILTER (WHERE g.gano_premio_real = TRUE) AS gano_real
+         FROM restaurantes r
+         LEFT JOIN ruleta_giros g
+            ON g.usuario_id = $1 AND g.restaurante_id = r.id
+            AND g.fecha_creacion >= COALESCE(r.ruleta_activada_en, '-infinity'::timestamp)
+         WHERE r.id = $2
+         GROUP BY r.id, r.ruleta_giros_maximos, r.ruleta_activada_en`,
+        [usuarioId, restauranteId]
+    );
+
+    if (result.rows.length === 0) return null;
+
+    const row = result.rows[0];
+    const girosMaximos = row.ruleta_giros_maximos;
+    const girosUsados = parseInt(row.giros_usados, 10);
+    const yaGanoReal = parseInt(row.gano_real, 10) > 0;
+    const girosRestantes = girosMaximos == null ? null : Math.max(0, girosMaximos - girosUsados);
+    const puedeGirar = !yaGanoReal && (girosMaximos == null || girosUsados < girosMaximos);
+
+    return { girosMaximos, girosUsados, yaGanoReal, girosRestantes, puedeGirar };
+}
+
 // ── GET RULETA (público) ──────────────────────────────────
 // GET /api/restaurants/:id/ruleta
 exports.getRuleta = async (req, res) => {
@@ -312,10 +343,14 @@ exports.getRuleta = async (req, res) => {
             premios.push(premiosPorPosicion[i] || { posicion: i, label: null, icon: null });
         }
 
+        const estado = await getEstadoGiros(req.user.userId, id);
+
         res.json({
             success: true,
             activa: restResult.rows[0].ruleta_activa,
-            premios
+            premios,
+            girosRestantes: estado.girosRestantes,
+            puedeGirar: restResult.rows[0].ruleta_activa && estado.puedeGirar
         });
 
     } catch (error) {
@@ -370,6 +405,22 @@ exports.girarRuleta = async (req, res) => {
             });
         }
 
+        const estado = await getEstadoGiros(req.user.userId, id);
+
+        if (estado.yaGanoReal) {
+            return res.status(403).json({
+                success: false,
+                message: 'Ya ganaste un premio, no podés seguir girando'
+            });
+        }
+
+        if (estado.girosMaximos != null && estado.girosUsados >= estado.girosMaximos) {
+            return res.status(403).json({
+                success: false,
+                message: 'Ya usaste tus giros disponibles'
+            });
+        }
+
         const premiosResult = await db.query(
             'SELECT posicion, label, icon, tipo, valor FROM ruleta_premios WHERE restaurante_id = $1',
             [id]
@@ -384,6 +435,10 @@ exports.girarRuleta = async (req, res) => {
         const premioRaw = premiosPorPosicion[posicionGanadora] || null;
 
         if (!premioRaw || !premioRaw.label) {
+            await db.query(
+                'INSERT INTO ruleta_giros (usuario_id, restaurante_id, gano_premio_real) VALUES ($1, $2, FALSE)',
+                [req.user.userId, id]
+            );
             return res.json({
                 success: true,
                 posicionGanadora,
@@ -393,6 +448,10 @@ exports.girarRuleta = async (req, res) => {
         }
 
         if (!premioRaw.tipo) {
+            await db.query(
+                'INSERT INTO ruleta_giros (usuario_id, restaurante_id, gano_premio_real) VALUES ($1, $2, FALSE)',
+                [req.user.userId, id]
+            );
             return res.json({
                 success: true,
                 posicionGanadora,
@@ -414,9 +473,14 @@ exports.girarRuleta = async (req, res) => {
         }
 
         await db.query(
-            `INSERT INTO ruleta_cupones (codigo, restaurante_id, tipo, valor)
-             VALUES ($1, $2, $3, $4)`,
-            [codigo, id, premioRaw.tipo, premioRaw.valor]
+            `INSERT INTO ruleta_cupones (codigo, restaurante_id, tipo, valor, usuario_id, fecha_expiracion)
+             VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '7 days')`,
+            [codigo, id, premioRaw.tipo, premioRaw.valor, req.user.userId]
+        );
+
+        await db.query(
+            'INSERT INTO ruleta_giros (usuario_id, restaurante_id, gano_premio_real) VALUES ($1, $2, TRUE)',
+            [req.user.userId, id]
         );
 
         res.json({

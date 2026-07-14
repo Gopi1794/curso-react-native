@@ -5,7 +5,7 @@ exports.getInfo = async (req, res) => {
     const { restauranteId } = req.params;
     try {
         const restResult = await db.query(
-            'SELECT ruleta_activa FROM restaurantes WHERE id = $1',
+            'SELECT ruleta_activa, ruleta_giros_maximos FROM restaurantes WHERE id = $1',
             [restauranteId]
         );
 
@@ -28,7 +28,7 @@ exports.getInfo = async (req, res) => {
             premios.push(premiosPorPosicion[i] || { posicion: i, label: null, icon: null, tipo: null, valor: null });
         }
 
-        res.json({ success: true, activa: restResult.rows[0].ruleta_activa, premios });
+        res.json({ success: true, activa: restResult.rows[0].ruleta_activa, girosMaximos: restResult.rows[0].ruleta_giros_maximos, premios });
     } catch (error) {
         console.error('getInfo ruleta:', error);
         res.status(500).json({ success: false, message: 'Error al obtener configuración de la ruleta' });
@@ -38,13 +38,16 @@ exports.getInfo = async (req, res) => {
 // ── PUT /api/admin/ruleta/:restauranteId ──────────────────
 exports.updateInfo = async (req, res) => {
     const { restauranteId } = req.params;
-    const { activa, premios } = req.body;
+    const { activa, premios, girosMaximos } = req.body;
 
     if (typeof activa !== 'boolean') {
         return res.status(400).json({ success: false, message: 'activa debe ser boolean' });
     }
     if (!Array.isArray(premios)) {
         return res.status(400).json({ success: false, message: 'premios debe ser un array' });
+    }
+    if (girosMaximos !== undefined && girosMaximos !== null && (typeof girosMaximos !== 'number' || girosMaximos < 1)) {
+        return res.status(400).json({ success: false, message: 'girosMaximos debe ser un número mayor a 0, o null' });
     }
     for (const p of premios) {
         if (typeof p.posicion !== 'number' || p.posicion < 0 || p.posicion > 7) {
@@ -56,10 +59,20 @@ exports.updateInfo = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        await client.query(
-            'UPDATE restaurantes SET ruleta_activa = $1 WHERE id = $2',
-            [activa, restauranteId]
-        );
+        const actualResult = await client.query('SELECT ruleta_activa FROM restaurantes WHERE id = $1', [restauranteId]);
+        const reactivando = actualResult.rows[0] && actualResult.rows[0].ruleta_activa === false && activa === true;
+
+        if (reactivando) {
+            await client.query(
+                'UPDATE restaurantes SET ruleta_activa = $1, ruleta_giros_maximos = $2, ruleta_activada_en = NOW() WHERE id = $3',
+                [activa, girosMaximos ?? null, restauranteId]
+            );
+        } else {
+            await client.query(
+                'UPDATE restaurantes SET ruleta_activa = $1, ruleta_giros_maximos = $2 WHERE id = $3',
+                [activa, girosMaximos ?? null, restauranteId]
+            );
+        }
 
         for (const p of premios) {
             await client.query(
@@ -86,7 +99,7 @@ exports.updateInfo = async (req, res) => {
             premiosFinal.push(premiosPorPosicion[i] || { posicion: i, label: null, icon: null, tipo: null, valor: null });
         }
 
-        res.json({ success: true, data: { activa, premios: premiosFinal } });
+        res.json({ success: true, data: { activa, premios: premiosFinal, girosMaximos: girosMaximos ?? null } });
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
         console.error('updateInfo ruleta:', error);
