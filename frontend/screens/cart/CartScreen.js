@@ -1,5 +1,5 @@
 // screens/cart/CartScreen.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -48,6 +48,8 @@ const CartScreen = ({ navigation }) => {
     const [couponEsRuleta, setCouponEsRuleta] = useState(false);
     const [couponHabilitado, setCouponHabilitado] = useState(true);
     const [couponDisabledReason, setCouponDisabledReason] = useState(null);
+    const skipNextRevalidation = useRef(false);
+    const revalidationSeq = useRef(0);
     const [validatingCoupon, setValidatingCoupon] = useState(false);
     const [dialogVisible, setDialogVisible] = useState(false);
     const [dialogConfig, setDialogConfig] = useState({ title: '', message: '', onConfirm: null });
@@ -134,6 +136,10 @@ const CartScreen = ({ navigation }) => {
                 setCouponEsRuleta(!!res.cupon.esRuleta);
                 setCouponHabilitado(true);
                 setCouponDisabledReason(null);
+                // El useEffect de re-validacion se dispara igual apenas couponApplied/couponEsRuleta
+                // pasan a true (son sus propias dependencias) — ya validamos arriba con el mismo
+                // carrito, evitamos pegarle una segunda vez al servidor por nada.
+                skipNextRevalidation.current = true;
                 setCouponApplied(true);
                 showSuccessMessage('Cupon aplicado', res.cupon.esRuleta ? `$${res.cupon.monto_descuento.toFixed(2)} de descuento en tu pedido` : `${res.cupon.discount_percent}% de descuento en tu pedido`);
             } else {
@@ -149,10 +155,21 @@ const CartScreen = ({ navigation }) => {
     useEffect(() => {
         if (!couponApplied || !couponEsRuleta) return;
 
+        if (skipNextRevalidation.current) {
+            skipNextRevalidation.current = false;
+            return;
+        }
+
+        const seq = ++revalidationSeq.current;
+
         const revalidar = async () => {
             try {
                 const items = cartItems.map(item => ({ menu_item_id: item.id, cantidad: item.quantity }));
                 const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items);
+                // Si mientras esperabamos la respuesta el carrito volvio a cambiar (y disparo
+                // otra re-validacion mas nueva), esta respuesta quedo vieja — se descarta para
+                // no pisar un estado mas reciente con uno desactualizado.
+                if (seq !== revalidationSeq.current) return;
                 if (res.success) {
                     setCouponDiscountAmount(res.cupon.monto_descuento);
                     setCouponHabilitado(true);
