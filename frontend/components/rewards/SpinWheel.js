@@ -244,16 +244,19 @@ export default function SpinWheel({
                                 <Ionicons name={premioGanado.icon || 'gift-outline'} size={48} color="#FF8800" />
                                 <Text style={styles.modalTitle}>¡Ganaste {premioGanado.label}!</Text>
                                 {codigoGanado && (
-                                    <TouchableOpacity
-                                        style={styles.codigoBox}
-                                        onPress={async () => {
-                                            await Clipboard.setStringAsync(codigoGanado);
-                                            setCopiado(true);
-                                        }}
-                                    >
-                                        <Text style={styles.codigoText}>{codigoGanado}</Text>
-                                        <Ionicons name={copiado ? 'checkmark' : 'copy-outline'} size={18} color="#FF8800" />
-                                    </TouchableOpacity>
+                                    <>
+                                        <TouchableOpacity
+                                            style={styles.codigoBox}
+                                            onPress={async () => {
+                                                await Clipboard.setStringAsync(codigoGanado);
+                                                setCopiado(true);
+                                            }}
+                                        >
+                                            <Text style={styles.codigoText}>{codigoGanado}</Text>
+                                            <Ionicons name={copiado ? 'checkmark' : 'copy-outline'} size={18} color="#FF8800" />
+                                        </TouchableOpacity>
+                                        <Text style={styles.codigoVence}>Vence en 7 días</Text>
+                                    </>
                                 )}
                             </>
                         )}
@@ -363,6 +366,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16, paddingVertical: 10, marginBottom: 20,
     },
     codigoText: { fontSize: 18, fontFamily: 'Poppins-Bold', color: '#1A1A2E', letterSpacing: 1 },
+    codigoVence: {
+        fontSize: 11, color: '#9A9AA5', marginTop: -12, marginBottom: 16,
+        fontFamily: 'Poppins-Regular',
+    },
     modalCloseBtn: {
         backgroundColor: '#FF8800', borderRadius: 20,
         paddingVertical: 10, paddingHorizontal: 32,

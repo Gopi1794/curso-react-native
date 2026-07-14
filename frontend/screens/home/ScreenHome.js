@@ -228,7 +228,7 @@ export const ScreenHome = ({ navigation }) => {
         if (!selectedRestaurant) return;
         try {
             const response = await API.restaurants.getRuleta(selectedRestaurant.id);
-            if (response.success && response.activa) {
+            if (response.success && response.activa && response.puedeGirar) {
                 setRuletaPremios(response.premios);
                 setShowSpinWheel(true);
             } else {

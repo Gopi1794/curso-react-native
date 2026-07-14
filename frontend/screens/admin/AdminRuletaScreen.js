@@ -32,6 +32,7 @@ export default function AdminRuletaScreen({ navigation }) {
     const insets = useSafeAreaInsets();
     const restaurante = useAppSelector(s => s.restaurant.selected);
     const [activa, setActiva] = useState(false);
+    const [girosMaximos, setGirosMaximos] = useState('');
     const [premios, setPremios] = useState(emptySlots());
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -43,6 +44,7 @@ export default function AdminRuletaScreen({ navigation }) {
             const res = await API.admin.ruleta.getInfo(restaurante.id);
             if (res.success) {
                 setActiva(res.activa);
+                setGirosMaximos(res.girosMaximos != null ? String(res.girosMaximos) : '');
                 setPremios(res.premios.map(p => ({ posicion: p.posicion, label: p.label || '', icon: p.icon || null, tipo: p.tipo || null, valor: p.valor != null ? String(p.valor) : '' })));
             }
         } catch {
@@ -67,6 +69,7 @@ export default function AdminRuletaScreen({ navigation }) {
         try {
             const res = await API.admin.ruleta.updateInfo(restaurante.id, {
                 activa,
+                girosMaximos: girosMaximos.trim() ? parseInt(girosMaximos, 10) : null,
                 premios: premios.map(p => ({
                     posicion: p.posicion,
                     label: p.label.trim() || null,
@@ -77,6 +80,7 @@ export default function AdminRuletaScreen({ navigation }) {
             });
             if (res.success) {
                 showSuccessMessage('Guardado', 'La configuración de la ruleta se actualizó');
+                setGirosMaximos(res.data.girosMaximos != null ? String(res.data.girosMaximos) : '');
                 setPremios(res.data.premios.map(p => ({ posicion: p.posicion, label: p.label || '', icon: p.icon || null, tipo: p.tipo || null, valor: p.valor != null ? String(p.valor) : '' })));
             } else {
                 showErrorMessage('Error', res.message || 'No se pudo guardar');
@@ -103,6 +107,18 @@ export default function AdminRuletaScreen({ navigation }) {
                 <View style={styles.switchRow}>
                     <Text style={styles.switchLabel}>Mostrar ruleta a los clientes</Text>
                     <Switch value={activa} onValueChange={setActiva} trackColor={{ false: '#ccc', true: '#FFD0A0' }} thumbColor={activa ? '#FF8700' : '#888'} />
+                </View>
+
+                <View style={styles.slotCard}>
+                    <Text style={styles.slotTitle}>Giros máximos por cliente (vacío = ilimitado)</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ej. 3"
+                        value={girosMaximos}
+                        onChangeText={(text) => setGirosMaximos(text.replace(/[^0-9]/g, ''))}
+                        keyboardType="numeric"
+                        maxLength={3}
+                    />
                 </View>
 
                 {premios.map((premio) => (
