@@ -4,8 +4,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Modal, Image } fr
 import Svg, { Path, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import Lottie from 'lottie-react-native';
 import * as Clipboard from 'expo-clipboard';
 import API from '../../services/api';
+import { showErrorMessage } from '../FlashMessageWrapper';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -25,7 +28,7 @@ import {
     targetRotationForIndex,
 } from './wheelMath';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const WHEEL_SIZE = Math.min(screenWidth - 60, 340);
 const RADIUS = WHEEL_SIZE / 2;
 const LABEL_RADIUS = RADIUS * 0.62;
@@ -71,6 +74,7 @@ export default function SpinWheel({
     const [copiado, setCopiado] = useState(false);
     const rotation = useSharedValue(0);
     const girandoRef = useRef(false);
+    const confettiAnim = useRef(null);
     const pulse = useSharedValue(1);
 
     useEffect(() => {
@@ -91,6 +95,12 @@ export default function SpinWheel({
     const pulseStyle = useAnimatedStyle(() => ({
         transform: [{ scale: pulse.value }],
     }));
+
+    useEffect(() => {
+        if (modalVisible && premioGanado && !esGajoVacio(premioGanado)) {
+            confettiAnim.current?.play();
+        }
+    }, [modalVisible, premioGanado]);
 
     const mostrarResultado = (premio) => {
         setPremioGanado(premio);
@@ -119,6 +129,7 @@ export default function SpinWheel({
                 if (!res.success) {
                     girandoRef.current = false;
                     setGirando(false);
+                    showErrorMessage('No se pudo girar', res.message || 'Intentá de nuevo más tarde');
                     return;
                 }
 
@@ -147,6 +158,7 @@ export default function SpinWheel({
             .catch(() => {
                 girandoRef.current = false;
                 setGirando(false);
+                showErrorMessage('Sin conexión', 'No se pudo conectar con el servidor');
             });
     };
 
@@ -238,6 +250,16 @@ export default function SpinWheel({
 
             <Modal visible={modalVisible} transparent animationType="fade">
                 <View style={styles.modalBackdrop}>
+                    {premioGanado && !esGajoVacio(premioGanado) && (
+                        <Lottie
+                            ref={confettiAnim}
+                            source={require('../../assets/animations/conffeti.json')}
+                            autoPlay={false}
+                            loop={false}
+                            style={styles.confettiAnimation}
+                            resizeMode="cover"
+                        />
+                    )}
                     <View style={styles.modalCard}>
                         {premioGanado && !esGajoVacio(premioGanado) && (
                             <>
@@ -348,13 +370,20 @@ const styles = StyleSheet.create({
         marginTop: 14,
     },
     modalBackdrop: {
-        flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.35)',
         justifyContent: 'center', alignItems: 'center',
     },
     modalCard: {
         backgroundColor: '#1A1A2E', borderRadius: 24,
         paddingVertical: 32, paddingHorizontal: 28,
         alignItems: 'center', width: '80%',
+    },
+    confettiAnimation: {
+        position: 'absolute',
+        width: screenWidth * 1.2,
+        height: screenHeight * 0.6,
+        top: -screenHeight * 0.15,
+        left: -screenWidth * 0.1,
     },
     modalTitle: {
         color: '#fff', fontSize: 20, fontFamily: 'Poppins-Bold',

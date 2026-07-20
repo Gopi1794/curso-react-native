@@ -12,6 +12,7 @@ import {
     Animated
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -61,13 +62,14 @@ const OnboardingScreen = ({ onFinish: onGetStarted }) => {
 
     const renderItem = ({ item }) => (
         <View style={[styles.slide, { backgroundColor: item.backgroundColor }]}>
+            <Image source={item.image} style={styles.image} resizeMode="contain" />
+
             <LinearGradient
-                colors={['#ebebeb34', '#000000ac']}
+                colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.85)', '#ffffff']}
+                locations={[0, 0.45, 0.75]}
                 style={styles.backgroundGradient}
             />
 
-            <Image source={item.image} style={styles.image} resizeMode="contain" />
-            <Image source={require("../../assets/img/logoApp.png")} style={styles.logo}></Image>
             <View style={styles.textContainer}>
                 <Text style={styles.title}>{item.title}</Text>
                 <Text style={styles.description}>{item.description}</Text>
@@ -130,6 +132,16 @@ const OnboardingScreen = ({ onFinish: onGetStarted }) => {
                 scrollEventThrottle={32}
             />
 
+            <View style={styles.logoBadge}>
+                <BlurView
+                    intensity={50}
+                    tint="dark"
+                    experimentalBlurMethod="dimezisBlurView"
+                    style={styles.logoBadgeBlur}
+                />
+                <Image source={require("../../assets/img/logoApp.png")} style={styles.logo}></Image>
+            </View>
+
             <View style={styles.footer}>
                 <View style={styles.dotsContainer}>
                     {slides.map((_, index) => renderDot(_, index))}
@@ -157,19 +169,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffffff',
     },
     backgroundGradient: {
-        ...StyleSheet.absoluteFillObject,
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: '65%',
         zIndex: 1,
     },
     slide: {
         width: screenWidth,
         height: screenHeight,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    logo: {
-        width: 100,
-        height: 100,
-        zIndex: 2,
+        justifyContent: 'flex-end',
     },
     image: {
         position: 'absolute',
@@ -177,25 +187,49 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '150%',
     },
-    textContainer: {
-        zIndex: 1,
-        paddingTop: 200,
+    logoBadge: {
+        position: 'absolute',
+        top: 50,
+        alignSelf: 'center',
+        width: 130,
+        height: 90,
+        borderRadius: 20,
+        justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        zIndex: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    logoBadgeBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    logo: {
+        width: 70,
+        height: 70,
+    },
+    textContainer: {
+        zIndex: 2,
+        paddingBottom: 124,
+        paddingHorizontal: 24,
     },
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#fff',
-        textAlign: 'center',
-        marginBottom: 16,
+        color: '#191919',
+        textAlign: 'left',
+        marginBottom: 12,
         fontFamily: 'Inter-Bold',
     },
     description: {
-        fontSize: 16,
-        color: 'rgba(255,255,255,0.8)',
-        textAlign: 'center',
-        lineHeight: 24,
+        fontSize: 15,
+        color: '#666',
+        textAlign: 'left',
+        lineHeight: 22,
         fontFamily: 'Inter-Regular',
     },
     footer: {

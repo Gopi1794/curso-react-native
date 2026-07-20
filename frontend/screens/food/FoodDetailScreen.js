@@ -19,6 +19,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useNavigation } from '@react-navigation/native';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -532,34 +533,62 @@ const FoodDetailScreen = ({ route }) => {
                         style={styles.carousel}
                     />
 
-                    {/* Fila superior: Back | Counter | Share */}
-                    <View style={[styles.carouselTopBar, { paddingTop: insets.top + 8 }]}>
-                        <BackButton />
-                        <View style={styles.imageCounter}>
-                            <Text style={styles.imageCounterText}>
-                                {currentImageIndex + 1} / {carouselImages.length}
-                            </Text>
-                        </View>
-                        <ShareButton
-                            shareOptions={{
-                                message: `¡Mira este delicioso ${foodItem.name}!\n\n${foodItem.descriptionText}\n\nPrecio: ${foodItem.price}`,
-                                title: `Compartir ${foodItem.name}`,
-                                url: 'https://tu-app.com'
-                            }}
-                        />
-                    </View>
-
                     {/* Flechas de navegación centradas */}
                     {currentImageIndex > 0 && (
                         <TouchableOpacity style={[styles.carouselButton, styles.prevButton]} onPress={handlePrevImage}>
+                            <BlurView
+                                intensity={50}
+                                tint="dark"
+                                experimentalBlurMethod="dimezisBlurView"
+                                style={styles.carouselButtonBlur}
+                            />
                             <Ionicons name="chevron-back" size={24} color="white" />
                         </TouchableOpacity>
                     )}
                     {currentImageIndex < carouselImages.length - 1 && (
                         <TouchableOpacity style={[styles.carouselButton, styles.nextButton]} onPress={handleNextImage}>
+                            <BlurView
+                                intensity={50}
+                                tint="dark"
+                                experimentalBlurMethod="dimezisBlurView"
+                                style={styles.carouselButtonBlur}
+                            />
                             <Ionicons name="chevron-forward" size={24} color="white" />
                         </TouchableOpacity>
                     )}
+
+                    {/* Contador — arriba, se mueve con el carrusel */}
+                    <View style={[styles.imageCounterCarouselWrap, { top: insets.top + 8 }]} pointerEvents="none">
+                        <View style={styles.imageCounter}>
+                            <BlurView
+                                intensity={50}
+                                tint="dark"
+                                experimentalBlurMethod="dimezisBlurView"
+                                style={styles.imageCounterBlur}
+                            />
+                            <Text style={styles.imageCounterText}>
+                                {currentImageIndex + 1} / {carouselImages.length}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Título y Precio — flotan sobre el carrusel */}
+                    <View style={styles.titleBadgeWrap}>
+                        <BlurView
+                            intensity={50}
+                            tint="dark"
+                            experimentalBlurMethod="dimezisBlurView"
+                            style={styles.titleBadgeBlur}
+                        />
+                        <Text style={styles.foodTitleOverlay} numberOfLines={1}>{foodItem.name}</Text>
+                        <View style={styles.foodPricePill}>
+                            <Text style={styles.foodPriceOverlay}>
+                                ${selectedOption
+                                    ? selectedOption.price.toFixed(2)
+                                    : parseFloat(foodItem.price.replace('$', '')).toFixed(2)}
+                            </Text>
+                        </View>
+                    </View>
 
                 </View>
 
@@ -573,16 +602,6 @@ const FoodDetailScreen = ({ route }) => {
                         }
                     ]}
                 >
-                    {/* Título y Precio */}
-                    <View style={styles.titleSection}>
-                        <Text style={styles.foodTitle}>{foodItem.name}</Text>
-                        <Text style={styles.foodPrice}>
-                            ${selectedOption
-                                ? selectedOption.price.toFixed(2)
-                                : parseFloat(foodItem.price.replace('$', '')).toFixed(2)}
-                        </Text>
-                    </View>
-
                     {ingredientesSinStock.length > 0 && (
                         <View style={styles.stockWarningBanner}>
                             <Text style={styles.stockWarningText}>
@@ -774,6 +793,18 @@ const FoodDetailScreen = ({ route }) => {
                 </Animated.View>
             </Animated.ScrollView>
 
+            {/* Fila superior: Back | Share — fija, no scrollea con la pantalla */}
+            <View style={[styles.carouselTopBar, { paddingTop: insets.top + 8 }]}>
+                <BackButton />
+                <ShareButton
+                    shareOptions={{
+                        message: `¡Mira este delicioso ${foodItem.name}!\n\n${foodItem.descriptionText}\n\nPrecio: ${foodItem.price}`,
+                        title: `Compartir ${foodItem.name}`,
+                        url: 'https://tu-app.com'
+                    }}
+                />
+            </View>
+
             {/* Bottom Sheet — Personalizar ingredientes */}
             <Modal
                 visible={showIngredientSheet}
@@ -912,7 +943,7 @@ const styles = StyleSheet.create({
     },
     // Carrusel Principal
     carouselSection: {
-        height: 350,
+        height: 430,
         position: 'relative',
     },
     carousel: {
@@ -920,7 +951,7 @@ const styles = StyleSheet.create({
     },
     carouselItem: {
         width: screenWidth,
-        height: 350,
+        height: 430,
         position: 'relative',
     },
     carouselPlaceholder: {
@@ -935,6 +966,15 @@ const styles = StyleSheet.create({
         height: '100%',
     },
 
+    // Contador, arriba del carrusel (se mueve con las fotos)
+    imageCounterCarouselWrap: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 100,
+    },
+
     // Botones de navegación del carrusel
     carouselButton: {
         position: 'absolute',
@@ -943,10 +983,15 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#ff80009f',
+        backgroundColor: 'rgba(255,128,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 100,
+    },
+    carouselButtonBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 20,
+        overflow: 'hidden',
     },
     prevButton: {
         left: 16,
@@ -956,10 +1001,15 @@ const styles = StyleSheet.create({
     },
     // Contador de imágenes (ahora dentro del topBar, no absoluto)
     imageCounter: {
-        backgroundColor: '#ff80009f',
+        backgroundColor: 'rgba(255,128,0,0.5)',
         paddingHorizontal: 12,
         paddingVertical: 5,
         borderRadius: 20,
+    },
+    imageCounterBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 20,
+        overflow: 'hidden',
     },
     imageCounterText: {
         color: 'white',
@@ -988,26 +1038,49 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        marginTop: -40,
+        marginTop: 0,
     },
-    titleSection: {
+    titleBadgeWrap: {
+        position: 'absolute',
+        left: 10,
+        right: 10,
+        bottom: 24,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        borderRadius: 25,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        zIndex: 50,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 8,
     },
-    foodTitle: {
-        fontSize: 20,
+    titleBadgeBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 25,
+        overflow: 'hidden',
+    },
+    foodTitleOverlay: {
+        fontSize: 18,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#fff',
         flex: 1,
         marginRight: 10,
         fontFamily: 'Poppins-Bold',
     },
-    foodPrice: {
-        fontSize: 28,
+    foodPricePill: {
+        backgroundColor: '#FF8000',
+        borderRadius: 25,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+    },
+    foodPriceOverlay: {
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#FF8000',
+        color: '#fff',
         fontFamily: 'Poppins-Bold',
     },
     stockWarningBanner: {

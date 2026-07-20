@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    Linking, ActivityIndicator, Platform, Alert, ScrollView,
+    Linking, ActivityIndicator, Platform, Alert, ScrollView, Animated,
 } from 'react-native';
 import MapView, { Marker, Circle, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
@@ -57,7 +59,7 @@ const ESTADO_LABEL = {
     pendiente:      'Pendiente',
 };
 
-export default function RepartidorMapaScreen() {
+export default function RepartidorMapaScreen({ route }) {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const mapRef = useRef(null);
@@ -71,6 +73,18 @@ export default function RepartidorMapaScreen() {
     const [geocoding, setGeocoding] = useState(false);
     const [topBlockHeight, setTopBlockHeight] = useState(0);
     const [navegando, setNavegando] = useState(false);
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        const loop = Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, { toValue: 0.3, duration: 700, useNativeDriver: true }),
+                Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+            ])
+        );
+        loop.start();
+        return () => loop.stop();
+    }, []);
 
     // ── Ocultar el navbar flotante mientras se navega ─────
     useEffect(() => {
@@ -139,6 +153,21 @@ export default function RepartidorMapaScreen() {
             setGeocoding(false);
         })();
     }, [pedidos]);
+
+    // ── Seleccionar automáticamente el pedido que llegó por navegación ──
+    useEffect(() => {
+        const pedidoId = route?.params?.pedidoId;
+        if (!pedidoId) return;
+        if (selected?.id === pedidoId) {
+            navigation.setParams({ pedidoId: undefined });
+            return;
+        }
+        const match = pedidos.find(p => p.id === pedidoId && coords[p.id]);
+        if (match) {
+            setSelected(match);
+            navigation.setParams({ pedidoId: undefined });
+        }
+    }, [route?.params?.pedidoId, pedidos, coords, selected]);
 
     // ── Centrar mapa en marcador seleccionado ─────────────
     useEffect(() => {
@@ -299,18 +328,28 @@ export default function RepartidorMapaScreen() {
                                 style={[styles.miniCard, selected?.id === p.id && styles.miniCardSelected]}
                                 onPress={() => setSelected(selected?.id === p.id ? null : p)}
                             >
-                                <View style={[styles.miniDot, { backgroundColor: ESTADO_COLOR[p.estado] ?? '#888' }]} />
+                                {p.estado === 'en_camino' ? (
+                                    <Animated.View style={[styles.miniDot, { backgroundColor: ESTADO_COLOR[p.estado], opacity: pulseAnim }]} />
+                                ) : (
+                                    <View style={[styles.miniDot, { backgroundColor: ESTADO_COLOR[p.estado] ?? '#888' }]} />
+                                )}
                                 <View>
                                     <Text style={styles.miniNum}>Pedido #{p.id}</Text>
                                     <Text style={styles.miniCliente} numberOfLines={1}>
                                         {p.cliente_nombre} {p.cliente_apellido}
                                     </Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={16} color="#ccc" />
+                                <Ionicons name="chevron-down" size={16} color="#ccc" style={{ marginLeft: 'auto' }} />
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
                 )}
+
+                <LinearGradient
+                    colors={['rgba(255,255,255,0.96)', 'rgba(255,255,255,0)']}
+                    style={styles.topBlockFade}
+                    pointerEvents="none"
+                />
             </View>
 
             {/* ── Botón centrar ── */}
@@ -321,6 +360,12 @@ export default function RepartidorMapaScreen() {
             {/* ── Card del pedido seleccionado ── */}
             {selected && (
                 <View style={[styles.card, { top: topBlockHeight }]}>
+                    <BlurView
+                        intensity={55}
+                        tint="light"
+                        experimentalBlurMethod="dimezisBlurView"
+                        style={styles.cardBlur}
+                    />
                     <View style={styles.cardHeader}>
                         <View style={[styles.estadoBadge, { backgroundColor: `${ESTADO_COLOR[selected.estado]}20` }]}>
                             <View style={[styles.estadoDot, { backgroundColor: ESTADO_COLOR[selected.estado] }]} />
@@ -392,6 +437,12 @@ export default function RepartidorMapaScreen() {
                             </TouchableOpacity>
                         </View>
                     )}
+
+                    <LinearGradient
+                        colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0)']}
+                        style={styles.cardBottomShadow}
+                        pointerEvents="none"
+                    />
                 </View>
             )}
 
@@ -435,6 +486,11 @@ const styles = StyleSheet.create({
         paddingBottom: 12,
         shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08, shadowRadius: 6, elevation: 4,
+    },
+    topBlockFade: {
+        position: 'absolute',
+        bottom: -28, left: 0, right: 0,
+        height: 28,
     },
     headerRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -490,11 +546,21 @@ const styles = StyleSheet.create({
     /* Card del pedido */
     card: {
         position: 'absolute', left: 0, right: 0,
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(255,255,255,0.55)',
         borderBottomLeftRadius: 24, borderBottomRightRadius: 24,
         paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1, shadowRadius: 12, elevation: 12,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15, shadowRadius: 6,
+    },
+    cardBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderBottomLeftRadius: 24, borderBottomRightRadius: 24,
+        overflow: 'hidden',
+    },
+    cardBottomShadow: {
+        position: 'absolute',
+        bottom: -12, left: 0, right: 0,
+        height: 12,
     },
     cardClose: {
         width: 32, height: 32, borderRadius: 16,

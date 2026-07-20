@@ -12,6 +12,7 @@ import {
     ScrollView,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
 import * as Google from 'expo-auth-session/providers/google';
@@ -217,10 +218,16 @@ export const ComponenteLogin = ({ onShowRegister, onLoginSuccess, onVerifyEmail,
                 >
                     <View style={styles.container}>
                         <View style={styles.blurContainer}>
+                            <BlurView
+                                intensity={55}
+                                tint="light"
+                                experimentalBlurMethod="dimezisBlurView"
+                                style={StyleSheet.absoluteFill}
+                            />
                             <View style={styles.formContainer}>
                                 <View style={styles.heroSection}>
                                     <Image
-                                        source={require('../assets/img/logoApp.png')}
+                                        source={require('../assets/adaptive-icon.png')}
                                         style={styles.logo}
                                     />
                                     <Text style={styles.welcomeTitle}>¡Bienvenido!</Text>
@@ -423,12 +430,16 @@ const styles = StyleSheet.create({
         maxWidth: 400,
         alignSelf: 'center',
         borderRadius: 30,
-        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 10,
     },
     blurContainer: {
         borderRadius: 30,
         overflow: 'hidden',
-        backgroundColor: 'rgba(0, 0, 0, 0.40)',
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
     },
     formContainer: {
         padding: 28,
@@ -443,15 +454,12 @@ const styles = StyleSheet.create({
     welcomeTitle: {
         fontFamily: "Poppins-Bold",
         fontSize: 22,
-        color: "white",
-        textShadowColor: 'rgba(0,0,0,0.4)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 4,
+        color: "#1a1a1a",
     },
     welcomeSubtitle: {
         fontFamily: "Poppins-Regular",
         fontSize: 13,
-        color: "rgba(255,255,255,0.75)",
+        color: "#666",
     },
     inputGroup: {
         width: "100%",
@@ -464,15 +472,12 @@ const styles = StyleSheet.create({
     },
     label: {
         fontFamily: "Poppins-SemiBold",
-        color: "white",
+        color: "#1a1a1a",
         fontSize: 13,
-        textShadowColor: 'rgba(0, 0, 0, 0.3)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
     },
     forgotLink: {
         fontFamily: "Poppins-Regular",
-        color: "rgba(255,255,255,0.7)",
+        color: "#888",
         fontSize: 12,
         textDecorationLine: 'underline',
     },
@@ -567,7 +572,7 @@ const styles = StyleSheet.create({
     },
     quickAccessTitle: {
         fontFamily: "Poppins-Regular",
-        color: "rgba(255, 255, 255, 0.7)",
+        color: "#888",
         fontSize: 12,
         textAlign: 'center',
         marginBottom: 8,
@@ -578,16 +583,16 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     quickAccessButton: {
-        backgroundColor: "rgba(255, 255, 255, 0.15)",
+        backgroundColor: "rgba(0, 0, 0, 0.05)",
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.2)",
+        borderColor: "rgba(0, 0, 0, 0.1)",
     },
     quickAccessText: {
         fontFamily: "Poppins-Regular",
-        color: "white",
+        color: "#333",
         fontSize: 10,
     },
     separator: {
@@ -599,11 +604,11 @@ const styles = StyleSheet.create({
     separatorLine: {
         flex: 1,
         height: 1,
-        backgroundColor: "rgba(255, 255, 255, 0.3)",
+        backgroundColor: "rgba(0, 0, 0, 0.12)",
     },
     separatorText: {
         marginHorizontal: 15,
-        color: "rgba(255, 255, 255, 0.7)",
+        color: "#888",
         fontFamily: "Poppins-Regular",
         fontSize: 12,
     },
@@ -635,7 +640,7 @@ const styles = StyleSheet.create({
     },
     registerText: {
         fontFamily: "Poppins-Regular",
-        color: "rgba(255, 255, 255, 0.8)",
+        color: "#555",
         fontSize: 14,
     },
     registerLink: {

@@ -14,6 +14,7 @@ import {
     AccessibilityInfo,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useNavigation } from '@react-navigation/native';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -288,46 +289,60 @@ const PromoFoodDetailScreen = ({ route }) => {
                     {/* Botones de navegación del carrusel */}
                     {currentImageIndex > 0 && (
                         <TouchableOpacity style={[styles.carouselButton, styles.prevButton]} onPress={handlePrevImage}>
+                            <BlurView
+                                intensity={50}
+                                tint="dark"
+                                experimentalBlurMethod="dimezisBlurView"
+                                style={styles.carouselButtonBlur}
+                            />
                             <Ionicons name="chevron-back" size={24} color="white" />
                         </TouchableOpacity>
                     )}
 
                     {currentImageIndex < carouselImages.length - 1 && (
                         <TouchableOpacity style={[styles.carouselButton, styles.nextButton]} onPress={handleNextImage}>
+                            <BlurView
+                                intensity={50}
+                                tint="dark"
+                                experimentalBlurMethod="dimezisBlurView"
+                                style={styles.carouselButtonBlur}
+                            />
                             <Ionicons name="chevron-forward" size={24} color="white" />
                         </TouchableOpacity>
                     )}
 
-                    {/* Badge de PROMO */}
-                    <View style={styles.promoBadge}>
-                        <Lottie
-                            source={discountAnimation}
-                            colorFilters={[{ keypath: '*', color: '#ffffff' }]}
-                            autoPlay={!reduceMotion}
-                            loop={!reduceMotion}
-                            style={styles.discountAnimation}
-                        />
-                        <Text style={styles.promoBadgeText}>PROMO</Text>
-                    </View>
-
                     {/* Contador de imágenes */}
                     <View style={styles.imageCounter}>
-                        <Text style={styles.imageCounterText}>
-                            {currentImageIndex + 1} / {carouselImages.length}
-                        </Text>
+                        <View style={styles.imageCounterPill}>
+                            <BlurView
+                                intensity={50}
+                                tint="dark"
+                                experimentalBlurMethod="dimezisBlurView"
+                                style={styles.imageCounterBlur}
+                            />
+                            <Text style={styles.imageCounterText}>
+                                {currentImageIndex + 1} / {carouselImages.length}
+                            </Text>
+                        </View>
                     </View>
 
-                    {/* Indicadores */}
-                    <View style={styles.indicatorsContainer}>
-                        {carouselImages.map((_, index) => (
-                            <View
-                                key={index}
-                                style={[
-                                    styles.indicator,
-                                    index === currentImageIndex && styles.activeIndicator
-                                ]}
-                            />
-                        ))}
+                    {/* Título y Precio — flotan sobre el carrusel */}
+                    <View style={styles.titleBadgeWrap}>
+                        <BlurView
+                            intensity={50}
+                            tint="dark"
+                            experimentalBlurMethod="dimezisBlurView"
+                            style={styles.titleBadgeBlur}
+                        />
+                        <Text style={styles.foodTitleOverlay} numberOfLines={1}>{foodItem.name}</Text>
+                        <View style={styles.priceOverlayRight}>
+                            {foodItem.originalPrice && (
+                                <Text style={styles.originalPriceOverlay}>{foodItem.originalPrice}</Text>
+                            )}
+                            <View style={styles.foodPricePill}>
+                                <Text style={styles.foodPriceOverlay}>{foodItem.price}</Text>
+                            </View>
+                        </View>
                     </View>
                 </View>
 
@@ -341,17 +356,10 @@ const PromoFoodDetailScreen = ({ route }) => {
                         }
                     ]}
                 >
-                    {/* Título y Precio */}
-                    <View style={styles.titleSection}>
-                        <View style={styles.titleLeft}>
-                            <Text style={styles.foodTitle}>{foodItem.name}</Text>
-                            {renderStars(4.7, 18)}
-                        </View>
-                        <View style={styles.priceContainer}>
-                            {foodItem.originalPrice && (
-                                <Text style={styles.originalPrice}>{foodItem.originalPrice}</Text>
-                            )}
-                            <Text style={styles.foodPrice}>{foodItem.price}</Text>
+                    {/* Rating y descuento */}
+                    <View style={styles.ratingRow}>
+                        {renderStars(4.7, 18)}
+                        <View style={styles.ratingRowRight}>
                             {foodItem.discountPercentage && (
                                 <View style={styles.discountBadge}>
                                     <Text style={styles.discountText}>
@@ -359,6 +367,16 @@ const PromoFoodDetailScreen = ({ route }) => {
                                     </Text>
                                 </View>
                             )}
+                            <View style={styles.promoBadge}>
+                                <Lottie
+                                    source={discountAnimation}
+                                    colorFilters={[{ keypath: '*', color: '#ffffff' }]}
+                                    autoPlay={!reduceMotion}
+                                    loop={!reduceMotion}
+                                    style={styles.discountAnimation}
+                                />
+                                <Text style={styles.promoBadgeText}>PROMO</Text>
+                            </View>
                         </View>
                     </View>
 
@@ -517,10 +535,15 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(255, 107, 53, 0.9)',
+        backgroundColor: 'rgba(255, 107, 53, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 100,
+    },
+    carouselButtonBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 20,
+        overflow: 'hidden',
     },
     prevButton: {
         left: 16,
@@ -530,16 +553,12 @@ const styles = StyleSheet.create({
     },
     // Badge de PROMO
     promoBadge: {
-        position: 'absolute',
-        top: 300,
-        left: 20,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FF8000',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
-        zIndex: 100,
     },
     discountAnimation: {
         width: 24,
@@ -552,7 +571,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontFamily: 'Poppins-Bold',
     },
-    // Contador e indicadores
+    // Contador
     imageCounter: {
         position: 'absolute',
         top: 50,
@@ -561,80 +580,98 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 100,
     },
+    imageCounterPill: {
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        backgroundColor: 'rgba(255,128,0,0.5)',
+    },
+    imageCounterBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
     imageCounterText: {
         color: 'white',
         fontSize: 12,
         fontWeight: '600',
         fontFamily: 'Poppins-SemiBold',
-        backgroundColor: '#ff80009f',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
+    },
+    // Título y precio flotantes sobre el carrusel
+    titleBadgeWrap: {
+        position: 'absolute',
+        left: 10,
+        right: 10,
+        bottom: 4,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderRadius: 25,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        zIndex: 50,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 8,
+    },
+    titleBadgeBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 25,
         overflow: 'hidden',
     },
-    indicatorsContainer: {
-        position: 'absolute',
-        bottom: 10,
-        left: 0,
-        right: 0,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 8,
-        zIndex: 100,
+    foodTitleOverlay: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#fff',
+        flex: 1,
+        marginRight: 10,
+        fontFamily: 'Poppins-Bold',
     },
-    indicator: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: 'rgba(104, 104, 104, 0.5)',
+    priceOverlayRight: {
+        alignItems: 'flex-end',
     },
-    activeIndicator: {
-        backgroundColor: '#FF6B35',
-        width: 20,
+    originalPriceOverlay: {
+        fontSize: 13,
+        color: 'rgba(255,255,255,0.7)',
+        textDecorationLine: 'line-through',
+        marginBottom: 2,
+        fontFamily: 'Poppins-Regular',
+    },
+    foodPricePill: {
+        backgroundColor: '#FF8000',
+        borderRadius: 25,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+    },
+    foodPriceOverlay: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#fff',
+        fontFamily: 'Poppins-Bold',
     },
     // Contenido principal
     mainContent: {
         backgroundColor: 'white',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        marginTop: -30,
+        marginTop: 0,
         padding: 25,
     },
-    titleSection: {
+    ratingRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         marginBottom: 20,
-    },
-    titleLeft: {
-        flex: 1,
-        marginRight: 16,
-    },
-    foodTitle: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 8,
-        fontFamily: 'Poppins-Bold',
     },
     starsContainer: {
         flexDirection: 'row',
     },
-    priceContainer: {
-        alignItems: 'flex-end',
-    },
-    originalPrice: {
-        fontSize: 16,
-        color: '#FF6B6B',
-        textDecorationLine: 'line-through',
-        marginBottom: 4,
-        fontFamily: 'Poppins-Regular',
-    },
-    foodPrice: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#FF6B35',
-        fontFamily: 'Poppins-Bold',
+    ratingRowRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     discountBadge: {
         backgroundColor: '#4CD964',

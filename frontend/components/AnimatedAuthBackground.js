@@ -1,6 +1,20 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
+
+const BlurredBlob = ({ size, color, opacity, id }) => (
+    <Svg width={size} height={size}>
+        <Defs>
+            <RadialGradient id={id} cx="50%" cy="50%" r="50%">
+                <Stop offset="0%" stopColor={color} stopOpacity={opacity} />
+                <Stop offset="60%" stopColor={color} stopOpacity={opacity * 0.5} />
+                <Stop offset="100%" stopColor={color} stopOpacity={0} />
+            </RadialGradient>
+        </Defs>
+        <Circle cx={size / 2} cy={size / 2} r={size / 2} fill={`url(#${id})`} />
+    </Svg>
+);
 
 export default function AnimatedAuthBackground({ children, style }) {
     const b1x = useRef(new Animated.Value(0)).current;
@@ -47,14 +61,20 @@ export default function AnimatedAuthBackground({ children, style }) {
 
     return (
         <LinearGradient
-            colors={['#C2410C', '#EA580C', '#F97316']}
+            colors={['#ffffff', '#fff8f0', '#ffffff']}
             start={{ x: 0.2, y: 0 }}
             end={{ x: 0.8, y: 1 }}
             style={[styles.background, style]}
         >
-            <Animated.View style={[styles.blob1, { transform: [{ translateX: b1x }, { translateY: b1y }] }]} />
-            <Animated.View style={[styles.blob2, { transform: [{ translateX: b2x }, { translateY: b2y }] }]} />
-            <Animated.View style={[styles.blob3, { transform: [{ translateX: b3x }, { translateY: b3y }] }]} />
+            <Animated.View style={[styles.blob1, { transform: [{ translateX: b1x }, { translateY: b1y }] }]}>
+                <BlurredBlob id="blob1Grad" size={300} color="#FF8000" opacity={0.5} />
+            </Animated.View>
+            <Animated.View style={[styles.blob2, { transform: [{ translateX: b2x }, { translateY: b2y }] }]}>
+                <BlurredBlob id="blob2Grad" size={240} color="#F97316" opacity={0.45} />
+            </Animated.View>
+            <Animated.View style={[styles.blob3, { transform: [{ translateX: b3x }, { translateY: b3y }] }]}>
+                <BlurredBlob id="blob3Grad" size={190} color="#EA580C" opacity={0.4} />
+            </Animated.View>
             {children}
         </LinearGradient>
     );
@@ -64,31 +84,22 @@ const styles = StyleSheet.create({
     background: { flex: 1 },
     blob1: {
         position: 'absolute',
-        width: 260,
-        height: 260,
-        borderRadius: 130,
-        backgroundColor: '#fff',
-        opacity: 0.1,
+        width: 300,
+        height: 300,
         top: -60,
         right: -60,
     },
     blob2: {
         position: 'absolute',
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        backgroundColor: '#fff',
-        opacity: 0.07,
+        width: 240,
+        height: 240,
         bottom: 80,
         left: -50,
     },
     blob3: {
         position: 'absolute',
-        width: 150,
-        height: 150,
-        borderRadius: 75,
-        backgroundColor: '#fff',
-        opacity: 0.06,
+        width: 190,
+        height: 190,
         top: '40%',
         left: '30%',
     },

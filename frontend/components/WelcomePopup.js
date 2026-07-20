@@ -7,20 +7,11 @@ import {
     Modal,
     StyleSheet,
     Animated,
-    Dimensions
 } from 'react-native';
-import Lottie from 'lottie-react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width, height } = Dimensions.get('window');
-
-const lottie = {
-    conffeti: require('../assets/animations/conffeti.json'),
-}
 
 const WelcomePopup = ({ showWelcomePopup, setShowWelcomePopup }) => {
     const scaleAnim = useRef(new Animated.Value(0)).current;
-    const confettiAnim = useRef(null);
 
     useEffect(() => {
         if (showWelcomePopup) {
@@ -30,10 +21,6 @@ const WelcomePopup = ({ showWelcomePopup, setShowWelcomePopup }) => {
                 tension: 40,
                 useNativeDriver: true,
             }).start();
-
-            if (confettiAnim.current) {
-                confettiAnim.current.play();
-            }
 
             const timer = setTimeout(() => {
                 handleClose();
@@ -66,15 +53,6 @@ const WelcomePopup = ({ showWelcomePopup, setShowWelcomePopup }) => {
             hardwareAccelerated={true}
         >
             <View style={styles.modalContainer}>
-                {/* SOLO confetti.json - que SÍ existe */}
-                <Lottie
-                    ref={confettiAnim}
-                    source={lottie.conffeti}
-                    autoPlay={true}
-                    loop={false}
-                    style={styles.confettiAnimation}
-                    resizeMode="cover"
-                />
                 {/* ELIMINADO: stars.json porque no existe */}
                 {/* <Lottie
                     source={require('../assets/animationrrs/stars.json')}
@@ -137,14 +115,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.67)',
-    },
-    confettiAnimation: {
-        position: 'absolute',
-        width: width * 1.2,
-        height: height * 1.2,
-        top: -height * 0.1,
-        left: -width * 0.1,
-        zIndex: 9,
     },
     contentContainer: {
         alignItems: 'center',

@@ -13,6 +13,7 @@ import {
     Image,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 // ✅ TU NUEVA API (reemplaza Firebase)
 import API from '../services/api';
@@ -337,6 +338,12 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
                 >
                 <View style={styles.container}>
                     <View style={styles.blurContainer}>
+                        <BlurView
+                            intensity={55}
+                            tint="light"
+                            experimentalBlurMethod="dimezisBlurView"
+                            style={StyleSheet.absoluteFill}
+                        />
                         <View style={styles.formContainer}>
                             {/* Back button */}
                             <TouchableOpacity
@@ -344,13 +351,13 @@ export const ModernRegisterForm = ({ onBackToLogin, onVerifyEmail }) => {
                                 onPress={onBackToLogin}
                                 disabled={loading}
                             >
-                                <Ionicons name="arrow-back" size={24} color="white" />
+                                <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
                             </TouchableOpacity>
 
                             {/* Logo */}
                             <View style={styles.heroSection}>
                                 <Image
-                                    source={require('../assets/img/logoApp.png')}
+                                    source={require('../assets/adaptive-icon.png')}
                                     style={styles.logo}
                                 />
                                 <Text style={styles.welcomeTitle}>Crear Cuenta</Text>
@@ -447,12 +454,16 @@ const styles = StyleSheet.create({
         maxWidth: 400,
         alignSelf: 'center',
         borderRadius: 30,
-        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 10,
     },
     blurContainer: {
         borderRadius: 30,
         overflow: 'hidden',
-        backgroundColor: 'rgba(0, 0, 0, 0.40)',
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
     },
     formContainer: {
         padding: 28,
@@ -471,15 +482,12 @@ const styles = StyleSheet.create({
     welcomeTitle: {
         fontFamily: "Poppins-Bold",
         fontSize: 22,
-        color: "white",
-        textShadowColor: 'rgba(0,0,0,0.4)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 4,
+        color: "#1a1a1a",
     },
     welcomeSubtitle: {
         fontFamily: "Poppins-Regular",
         fontSize: 13,
-        color: "rgba(255,255,255,0.75)",
+        color: "#666",
     },
     backButton: {
         position: 'absolute',
@@ -494,7 +502,7 @@ const styles = StyleSheet.create({
     },
     progressBackground: {
         height: 5,
-        backgroundColor: 'rgba(255, 255, 255, 0.18)',
+        backgroundColor: 'rgba(0, 0, 0, 0.08)',
         borderRadius: 3,
         overflow: 'hidden',
         marginBottom: 6,
@@ -507,7 +515,7 @@ const styles = StyleSheet.create({
     progressText: {
         fontFamily: "Poppins-Regular",
         fontSize: 11,
-        color: "rgba(255, 255, 255, 0.65)",
+        color: "#888",
         textAlign: 'center',
     },
     inputGroup: {
@@ -515,12 +523,9 @@ const styles = StyleSheet.create({
     },
     label: {
         fontFamily: "Poppins-SemiBold",
-        color: "white",
+        color: "#1a1a1a",
         fontSize: 13,
         marginBottom: 8,
-        textShadowColor: 'rgba(0, 0, 0, 0.3)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
     },
     inputContainer: {
         flexDirection: 'row',
@@ -587,7 +592,7 @@ const styles = StyleSheet.create({
     termsText: {
         fontFamily: "Poppins-Regular",
         fontSize: 12,
-        color: "rgba(255, 255, 255, 0.7)",
+        color: "#888",
         textAlign: 'center',
         lineHeight: 16,
     },
@@ -603,7 +608,7 @@ const styles = StyleSheet.create({
     },
     loginText: {
         fontFamily: "Poppins-Regular",
-        color: "rgba(255, 255, 255, 0.8)",
+        color: "#555",
         fontSize: 14,
     },
     loginLink: {

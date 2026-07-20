@@ -1,5 +1,6 @@
 import { View, StyleSheet, Dimensions, Animated, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useRef, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -48,6 +49,12 @@ export default function FloatingTabBar({ state, navigation, tabConfig }) {
 
     return (
         <View style={[styles.tabBar, { width: TAB_BAR_WIDTH, marginHorizontal: (screenWidth - TAB_BAR_WIDTH) / 2, bottom: 16 + bottomInset }]}>
+            <BlurView
+                intensity={45}
+                tint="light"
+                experimentalBlurMethod="dimezisBlurView"
+                style={StyleSheet.absoluteFill}
+            />
             <Animated.View
                 style={[styles.activeCircle, { transform: [{ translateX: slideX }], top: (72 - CIRCLE_SIZE) / 2 }]}
             />
@@ -92,7 +99,7 @@ const styles = StyleSheet.create({
     tabBar: {
         position: 'absolute',
         height: 74,
-        backgroundColor: 'rgba(255, 255, 255, 0.97)',
+        backgroundColor: 'rgba(255, 255, 255, 0.55)',
         borderColor: '#ff8000',
         borderWidth: 2,
         borderRadius: 40,

@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     // ── Badges — siempre dentro de la zona de imagen (derecha) ──
     badgeCal: {
         position: 'absolute',
-        left: '30%',
+        left: '38%',
         top: '14%',
         flexDirection: 'row',
         alignItems: 'center',
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     },
     badgeWeight: {
         position: 'absolute',
-        left: '28%',
+        left: '36%',
         top: '48%',
         flexDirection: 'row',
         alignItems: 'center',

@@ -184,7 +184,11 @@ export default function RepartidorScreen({ navigation }) {
                 {/* Card */}
                 <View style={styles.card}>
                     {/* Header de la card */}
-                    <View style={styles.cardHeader}>
+                    <TouchableOpacity
+                        style={styles.cardHeader}
+                        onPress={() => navigation.navigate('Mapa', { pedidoId: item.id })}
+                        activeOpacity={0.7}
+                    >
                         <View style={styles.cardIconWrap}>
                             <Ionicons name="clipboard-outline" size={22} color="#FF8700" />
                         </View>
@@ -205,7 +209,7 @@ export default function RepartidorScreen({ navigation }) {
                             )}
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
-                    </View>
+                    </TouchableOpacity>
 
                     {/* Productos */}
                     <View style={styles.productosBox}>
@@ -616,6 +620,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
+        borderBottomLeftRadius: 25, borderBottomRightRadius: 25,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15, shadowRadius: 8, elevation: 6,
     },
     headerTitle: { fontFamily: 'Poppins-Bold', fontSize: 28, color: '#fff' },
     headerSub: { fontFamily: 'Poppins-Regular', fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
@@ -624,6 +631,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         justifyContent: 'center', alignItems: 'center',
         position: 'relative',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1, shadowRadius: 5, elevation: 3,
     },
     notifBadge: {
         position: 'absolute', top: 6, right: 6,

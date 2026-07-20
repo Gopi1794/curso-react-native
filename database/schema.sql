@@ -22,8 +22,8 @@ CREATE TABLE public.usuarios (
   locked_until timestamp without time zone,
   last_logout_at timestamp without time zone,
   restaurante_id bigint,
-  ubicacion_lat numeric(10,7),
-  ubicacion_lng numeric(10,7),
+  ubicacion_lat numeric,
+  ubicacion_lng numeric,
   ubicacion_actualizada_en timestamp without time zone,
   CONSTRAINT usuarios_pkey PRIMARY KEY (id),
   CONSTRAINT usuarios_restaurante_id_fkey FOREIGN KEY (restaurante_id) REFERENCES public.restaurantes(id)
@@ -39,8 +39,9 @@ CREATE TABLE public.restaurantes (
   estado character varying NOT NULL DEFAULT 'activo'::character varying CHECK (estado::text = ANY (ARRAY['activo'::character varying, 'inactivo'::character varying]::text[])),
   fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
   admin_id bigint,
-  lat numeric(10,7),
-  lng numeric(10,7),
+  lat numeric,
+  lng numeric,
+  ruleta_activa boolean NOT NULL DEFAULT false,
   CONSTRAINT restaurantes_pkey PRIMARY KEY (id),
   CONSTRAINT restaurantes_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.usuarios(id)
 );
@@ -233,4 +234,13 @@ CREATE TABLE public.pedido_estados_historial (
   CONSTRAINT pedido_estados_historial_pkey PRIMARY KEY (id),
   CONSTRAINT pedido_estados_historial_pedido_id_fkey FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id),
   CONSTRAINT pedido_estados_historial_triggered_by_id_fkey FOREIGN KEY (triggered_by_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.ruleta_premios (
+  id bigint NOT NULL DEFAULT nextval('ruleta_premios_id_seq'::regclass),
+  restaurante_id bigint NOT NULL,
+  posicion smallint NOT NULL CHECK (posicion >= 0 AND posicion < 8),
+  label character varying,
+  icon character varying,
+  CONSTRAINT ruleta_premios_pkey PRIMARY KEY (id),
+  CONSTRAINT ruleta_premios_restaurante_id_fkey FOREIGN KEY (restaurante_id) REFERENCES public.restaurantes(id)
 );
