@@ -9,6 +9,7 @@ import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import { showSuccessMessage, showErrorMessage } from '../../components/FlashMessageWrapper';
 import API from '../../services/api';
+import { useAppSelector } from '../../store/hooks';
 
 const ESTADO_COLOR = {
     pendiente:      '#FB8C00',
@@ -41,6 +42,7 @@ const ESTADO_BTN_COLOR = {
 
 export default function AdminPedidosScreen({ navigation }) {
     const insets = useSafeAreaInsets();
+    const restaurante = useAppSelector(s => s.restaurant.selected);
     const [pedidos, setPedidos] = useState([]);
     const [repartidores, setRepartidores] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -54,13 +56,14 @@ export default function AdminPedidosScreen({ navigation }) {
     const [updatingEstado, setUpdatingEstado] = useState(false);
 
     const load = useCallback(async (isRefresh = false) => {
+        if (!restaurante) return;
         if (!isRefresh) setLoading(true);
         try {
             const [pedRes, repRes] = await Promise.all([
-                API.admin.pedidos.getAll(),
-                API.admin.pedidos.getRepartidores(),
+                API.admin.pedidos.getAll(restaurante.id),
+                API.admin.pedidos.getRepartidores(restaurante.id),
             ]);
-if (pedRes.success) setPedidos(pedRes.pedidos);
+            if (pedRes.success) setPedidos(pedRes.pedidos);
             if (repRes.success) setRepartidores(repRes.repartidores);
         } catch {
             showErrorMessage('Error', 'No se pudieron cargar los pedidos');
@@ -68,7 +71,7 @@ if (pedRes.success) setPedidos(pedRes.pedidos);
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [restaurante]);
 
     useEffect(() => { load(); }, [load]);
 

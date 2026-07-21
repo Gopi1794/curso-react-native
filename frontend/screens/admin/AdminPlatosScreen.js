@@ -62,7 +62,14 @@ export default function AdminPlatosScreen({ navigation }) {
         try {
             const res = await API.admin.platos.toggle(item.id);
             if (res.success) {
-                setPlatos(prev => prev.map(p => p.id === item.id ? { ...p, disponible: !p.disponible } : p));
+                const nuevoDisponible = !item.disponible;
+                setPlatos(prev => prev.map(p => p.id === item.id ? { ...p, disponible: nuevoDisponible } : p));
+                showSuccessMessage(
+                    nuevoDisponible ? 'Plato habilitado' : 'Plato deshabilitado',
+                    `${item.nombre} ahora ${nuevoDisponible ? 'aparece' : 'no aparece'} en el menú`
+                );
+            } else {
+                showErrorMessage('Error', 'No se pudo cambiar el estado');
             }
         } catch {
             showErrorMessage('Error', 'No se pudo cambiar el estado');

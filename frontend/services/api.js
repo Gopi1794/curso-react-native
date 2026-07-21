@@ -267,6 +267,7 @@ const repartidor = {
     getHistorial: () => request('/api/repartidor/historial'),
     updateEstado: (id, estado) => request(`/api/repartidor/pedidos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
     cobrarEfectivo: (id, monto_recibido) => request(`/api/repartidor/pedidos/${id}/cobrar`, { method: 'PUT', body: JSON.stringify({ monto_recibido }) }),
+    avisarLlegada: (id) => request(`/api/repartidor/pedidos/${id}/avisar-llegada`, { method: 'PUT' }),
     getResumenDia: () => request('/api/repartidor/resumen-dia'),
     getRuta: (pedidoId, destino) => request('/api/repartidor/ruta', {
         method: 'POST',
@@ -309,9 +310,9 @@ const admin = {
     },
     pedidos: {
         getNotificaciones: () => request('/api/admin/notificaciones'),
-        getAll: () => request('/api/admin/pedidos'),
-        getRepartidores: () => request('/api/admin/repartidores'),
-        getResumenRepartidoresDia: () => request('/api/admin/repartidores/resumen-dia'),
+        getAll: (restauranteId) => request(`/api/admin/pedidos/${restauranteId}`),
+        getRepartidores: (restauranteId) => request(`/api/admin/repartidores/${restauranteId}`),
+        getResumenRepartidoresDia: (restauranteId) => request(`/api/admin/repartidores/resumen-dia/${restauranteId}`),
         updateEstado: (id, estado) => request(`/api/admin/pedidos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
         preparar: (id) => request(`/api/admin/pedidos/${id}/preparar`, { method: 'PUT' }),
         asignar: (id, repartidor_id) => request(`/api/admin/pedidos/${id}/asignar`, { method: 'PUT', body: JSON.stringify({ repartidor_id }) }),

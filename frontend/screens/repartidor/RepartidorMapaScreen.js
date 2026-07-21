@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    Linking, ActivityIndicator, Platform, Alert, ScrollView, Animated,
+    Linking, ActivityIndicator, Platform, Alert, ScrollView, Animated, Modal, TextInput, Keyboard,
 } from 'react-native';
 import MapView, { Marker, Circle, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -14,6 +14,8 @@ import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import API from '../../services/api';
 import { useRepartidorRoute } from '../../hooks/useRepartidorRoute';
 import NavigationOverlay from '../../components/repartidor/NavigationOverlay';
+import SlideToConfirm from '../../components/common/SlideToConfirm';
+import { showErrorMessage, showSuccessMessage } from '../../components/FlashMessageWrapper';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 
@@ -73,6 +75,14 @@ export default function RepartidorMapaScreen({ route }) {
     const [geocoding, setGeocoding] = useState(false);
     const [topBlockHeight, setTopBlockHeight] = useState(0);
     const [navegando, setNavegando] = useState(false);
+    const [showIrModal, setShowIrModal] = useState(false);
+    const [iniciandoEntrega, setIniciandoEntrega] = useState(false);
+    const [showLlegadaModal, setShowLlegadaModal] = useState(false);
+    const [avisando, setAvisando] = useState(false);
+    const [showCobroSheet, setShowCobroSheet] = useState(false);
+    const [montoRecibido, setMontoRecibido] = useState('');
+    const [cobrando, setCobrando] = useState(false);
+    const [resetToken, setResetToken] = useState(0);
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
@@ -198,6 +208,111 @@ export default function RepartidorMapaScreen({ route }) {
     };
 
     const pedidosConCoords = pedidos.filter(p => coords[p.id]);
+
+    const handleIrPress = () => {
+        if (!selected) return;
+        if (selected.estado === 'en_camino') {
+            setNavegando(true);
+        } else {
+            setShowIrModal(true);
+        }
+    };
+
+    const handleVerRecorrido = () => {
+        setShowIrModal(false);
+        setNavegando(true);
+    };
+
+    const handleArrive = () => {
+        setNavegando(false);
+        setShowLlegadaModal(true);
+    };
+
+    const handleLlamarCliente = () => {
+        if (selected?.cliente_telefono) Linking.openURL(`tel:${selected.cliente_telefono}`);
+    };
+
+    const handleWhatsappCliente = () => {
+        if (selected?.cliente_telefono) Linking.openURL(`whatsapp://send?phone=${selected.cliente_telefono}`);
+    };
+
+    const handleAvisarLlegada = async () => {
+        if (!selected) return;
+        setAvisando(true);
+        try {
+            const res = await API.repartidor.avisarLlegada(selected.id);
+            if (!res.success) showErrorMessage('Error', res.message || 'No se pudo avisar al cliente');
+        } catch {
+            showErrorMessage('Error', 'No se pudo avisar al cliente');
+        } finally {
+            setAvisando(false);
+        }
+    };
+
+    const handleIrACobrar = () => {
+        setShowLlegadaModal(false);
+        setMontoRecibido('');
+        setShowCobroSheet(true);
+    };
+
+    const handleConfirmarCobro = async () => {
+        if (!selected) return;
+        const esEfectivo = selected.metodo_pago === 'efectivo';
+
+        if (esEfectivo) {
+            const monto = parseFloat(montoRecibido.replace(',', '.'));
+            if (isNaN(monto) || monto < parseFloat(selected.total)) {
+                showErrorMessage('Monto inválido', 'Ingresá un monto mayor o igual al total del pedido');
+                setResetToken(t => t + 1);
+                return;
+            }
+        }
+
+        setCobrando(true);
+        try {
+            const res = esEfectivo
+                ? await API.repartidor.cobrarEfectivo(selected.id, parseFloat(montoRecibido.replace(',', '.')))
+                : await API.repartidor.updateEstado(selected.id, 'entregado');
+
+            if (res.success) {
+                setPedidos(prev => prev.filter(p => p.id !== selected.id));
+                setSelected(null);
+                setShowCobroSheet(false);
+                showSuccessMessage(
+                    '¡Entregado!',
+                    esEfectivo ? `Vuelto: $${res.vuelto}` : 'Pedido marcado como entregado'
+                );
+            } else {
+                showErrorMessage('Error', res.message || 'No se pudo confirmar la entrega');
+                setResetToken(t => t + 1);
+            }
+        } catch {
+            showErrorMessage('Error', 'No se pudo confirmar la entrega');
+            setResetToken(t => t + 1);
+        } finally {
+            setCobrando(false);
+        }
+    };
+
+    const handleComenzarEntrega = async () => {
+        if (!selected) return;
+        setIniciandoEntrega(true);
+        try {
+            const res = await API.repartidor.updateEstado(selected.id, 'en_camino');
+            if (res.success) {
+                setPedidos(prev => prev.map(p => p.id === selected.id ? { ...p, estado: 'en_camino' } : p));
+                setSelected(prev => prev ? { ...prev, estado: 'en_camino' } : prev);
+                setShowIrModal(false);
+                setNavegando(true);
+            } else {
+                showErrorMessage('Error', res.message || 'No se pudo iniciar la entrega');
+            }
+        } catch {
+            showErrorMessage('Error', 'No se pudo iniciar la entrega');
+        } finally {
+            setIniciandoEntrega(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -412,7 +527,7 @@ export default function RepartidorMapaScreen({ route }) {
                     {routePoints && (
                         <TouchableOpacity
                             style={styles.irBtn}
-                            onPress={() => setNavegando(true)}
+                            onPress={handleIrPress}
                         >
                             <Ionicons name="navigate-circle" size={20} color="#fff" />
                             <Text style={styles.irBtnText}>Ir</Text>
@@ -446,6 +561,45 @@ export default function RepartidorMapaScreen({ route }) {
                 </View>
             )}
 
+            <Modal
+                visible={showIrModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowIrModal(false)}
+            >
+                <View style={styles.irModalOverlay}>
+                    <View style={styles.irModalSheet}>
+                        <View style={styles.irModalIconWrap}>
+                            <Ionicons name="bicycle-outline" size={64} color="#1976D2" />
+                        </View>
+                        <Text style={styles.irModalTitle}>¿Qué querés hacer?</Text>
+                        <Text style={styles.irModalSub}>
+                            Comenzar la entrega avisa al cliente que ya salís con su pedido
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+                            <TouchableOpacity
+                                style={[styles.irModalBtn, { backgroundColor: '#F0F0F0' }]}
+                                onPress={handleVerRecorrido}
+                                disabled={iniciandoEntrega}
+                            >
+                                <Text style={[styles.irModalBtnText, { color: '#555' }]}>Solo ver recorrido</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.irModalBtn, { backgroundColor: '#1976D2' }]}
+                                onPress={handleComenzarEntrega}
+                                disabled={iniciandoEntrega}
+                            >
+                                {iniciandoEntrega ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.irModalBtnText}>Comenzar entrega</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             <NavigationOverlay
                 visible={navegando}
                 pedido={selected}
@@ -457,7 +611,148 @@ export default function RepartidorMapaScreen({ route }) {
                 destino={destinoNav}
                 routePoints={routePoints}
                 onExit={() => setNavegando(false)}
+                onArrive={handleArrive}
             />
+
+            <Modal
+                visible={showLlegadaModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowLlegadaModal(false)}
+            >
+                <View style={styles.irModalOverlay}>
+                    <View style={styles.irModalSheet}>
+                        <View style={[styles.irModalIconWrap, { backgroundColor: '#E8F5E9' }]}>
+                            <Ionicons name="checkmark-done-circle-outline" size={64} color="#43A047" />
+                        </View>
+                        <Text style={styles.irModalTitle}>¡Llegaste!</Text>
+                        <Text style={styles.irModalSub}>
+                            Pedido #{selected?.id} — {selected?.cliente_nombre} {selected?.cliente_apellido}
+                        </Text>
+
+                        <View style={{ flexDirection: 'row', gap: 12, width: '100%', marginBottom: 12 }}>
+                            <TouchableOpacity
+                                style={[styles.irModalBtn, { backgroundColor: '#E8F5E9' }]}
+                                onPress={handleLlamarCliente}
+                            >
+                                <Ionicons name="call-outline" size={18} color="#43A047" />
+                                <Text style={[styles.irModalBtnText, { color: '#43A047' }]}>Llamar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.irModalBtn, { backgroundColor: '#E8F5E9' }]}
+                                onPress={handleWhatsappCliente}
+                            >
+                                <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+                                <Text style={[styles.irModalBtnText, { color: '#25D366' }]}>WhatsApp</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.irModalFullBtn, { backgroundColor: '#F0F0F0', marginBottom: 12 }]}
+                            onPress={handleAvisarLlegada}
+                            disabled={avisando}
+                        >
+                            {avisando ? (
+                                <ActivityIndicator size="small" color="#555" />
+                            ) : (
+                                <>
+                                    <Ionicons name="notifications-outline" size={18} color="#555" />
+                                    <Text style={[styles.irModalBtnText, { color: '#555' }]}>Avisar que estoy afuera</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.irModalFullBtn, { backgroundColor: selected?.metodo_pago === 'efectivo' ? '#2E7D32' : '#43A047' }]}
+                            onPress={handleIrACobrar}
+                        >
+                            <Ionicons name={selected?.metodo_pago === 'efectivo' ? 'cash-outline' : 'checkmark-circle-outline'} size={18} color="#fff" />
+                            <Text style={styles.irModalBtnText}>
+                                {selected?.metodo_pago === 'efectivo' ? 'Cobrar efectivo' : 'Marcar como entregado'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showCobroSheet}
+                transparent
+                animationType="slide"
+                onRequestClose={() => !cobrando && setShowCobroSheet(false)}
+            >
+                <View style={styles.cobroOverlay}>
+                    <TouchableOpacity
+                        style={StyleSheet.absoluteFill}
+                        activeOpacity={1}
+                        disabled={cobrando}
+                        onPress={() => setShowCobroSheet(false)}
+                    />
+                    <View style={[styles.cobroSheet, { paddingBottom: insets.bottom + 20 }]}>
+                        <View style={styles.cobroHandle} />
+
+                        <View style={styles.cobroHeader}>
+                            <Text style={styles.cobroTitle}>Pedido #{selected?.id}</Text>
+                            <Text style={styles.cobroSub}>
+                                {selected?.cliente_nombre} {selected?.cliente_apellido}
+                            </Text>
+                        </View>
+
+                        <View style={styles.cobroTotalRow}>
+                            <Text style={styles.cobroTotalLabel}>Total del pedido</Text>
+                            <Text style={styles.cobroTotalValue}>${parseFloat(selected?.total || 0).toFixed(2)}</Text>
+                        </View>
+
+                        {selected?.metodo_pago === 'efectivo' ? (
+                            <>
+                                <Text style={styles.cobroInputLabel}>Monto recibido</Text>
+                                <TextInput
+                                    style={styles.cobroInput}
+                                    placeholder="$0.00"
+                                    placeholderTextColor="#bbb"
+                                    keyboardType="decimal-pad"
+                                    value={montoRecibido}
+                                    onChangeText={setMontoRecibido}
+                                    editable={!cobrando}
+                                    returnKeyType="done"
+                                    onSubmitEditing={Keyboard.dismiss}
+                                />
+                                {montoRecibido.trim() !== '' && !isNaN(parseFloat(montoRecibido.replace(',', '.'))) && (
+                                    <Text style={styles.cobroVuelto}>
+                                        Vuelto: ${Math.max(0, parseFloat(montoRecibido.replace(',', '.')) - parseFloat(selected?.total || 0)).toFixed(2)}
+                                    </Text>
+                                )}
+                                <View style={{ marginTop: 20 }}>
+                                    <SlideToConfirm
+                                        key={resetToken}
+                                        label="Deslizá para cobrar →"
+                                        color="#2E7D32"
+                                        loading={cobrando}
+                                        onConfirm={handleConfirmarCobro}
+                                    />
+                                </View>
+                            </>
+                        ) : (
+                            <View style={styles.cobroPagadoBadge}>
+                                <Ionicons name="card-outline" size={16} color="#1976D2" />
+                                <Text style={styles.cobroPagadoText}>Ya pagado — solo falta confirmar la entrega</Text>
+                            </View>
+                        )}
+
+                        {selected?.metodo_pago !== 'efectivo' && (
+                            <View style={{ marginTop: 20 }}>
+                                <SlideToConfirm
+                                    key={resetToken}
+                                    label="Deslizá para marcar entregado →"
+                                    color="#43A047"
+                                    loading={cobrando}
+                                    onConfirm={handleConfirmarCobro}
+                                />
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -465,6 +760,75 @@ export default function RepartidorMapaScreen({ route }) {
 const styles = StyleSheet.create({
     root: { flex: 1 },
     map: { ...StyleSheet.absoluteFillObject },
+
+    irModalOverlay: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center', alignItems: 'center', padding: 24,
+    },
+    irModalSheet: {
+        backgroundColor: '#fff', borderRadius: 28,
+        padding: 28, width: '100%', alignItems: 'center',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2, shadowRadius: 20, elevation: 12,
+    },
+    irModalIconWrap: {
+        width: 100, height: 100, borderRadius: 50,
+        backgroundColor: '#E3F2FD',
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 16,
+    },
+    irModalTitle: {
+        fontSize: 22, fontFamily: 'Poppins-Bold',
+        color: '#1a1a1a', marginBottom: 4, textAlign: 'center',
+    },
+    irModalSub: {
+        fontSize: 13, fontFamily: 'Poppins-Regular',
+        color: '#888', marginBottom: 24, textAlign: 'center',
+    },
+    irModalBtn: {
+        flex: 1, flexDirection: 'row', gap: 6, paddingVertical: 14, borderRadius: 16,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    irModalFullBtn: {
+        flexDirection: 'row', gap: 6, width: '100%', paddingVertical: 16, borderRadius: 16,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    irModalBtnText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins-Bold' },
+
+    cobroOverlay: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
+    },
+    cobroSheet: {
+        backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        paddingHorizontal: 24, paddingTop: 12,
+    },
+    cobroHandle: {
+        width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E0E0',
+        alignSelf: 'center', marginBottom: 16,
+    },
+    cobroHeader: { marginBottom: 16 },
+    cobroTitle: { fontSize: 20, fontFamily: 'Poppins-Bold', color: '#1a1a1a' },
+    cobroSub: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#888', marginTop: 2 },
+    cobroTotalRow: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        backgroundColor: '#F9F9F9', borderRadius: 16, padding: 16, marginBottom: 20,
+    },
+    cobroTotalLabel: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#666' },
+    cobroTotalValue: { fontSize: 20, fontFamily: 'Poppins-Bold', color: '#1a1a1a' },
+    cobroInputLabel: { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#555', marginBottom: 8 },
+    cobroInput: {
+        borderWidth: 1.5, borderColor: '#E0E0E0', borderRadius: 16,
+        paddingHorizontal: 16, paddingVertical: 14, fontSize: 22,
+        fontFamily: 'Poppins-Bold', color: '#1a1a1a',
+    },
+    cobroVuelto: {
+        fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#2E7D32', marginTop: 10,
+    },
+    cobroPagadoBadge: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: '#E3F2FD', borderRadius: 16, padding: 16,
+    },
+    cobroPagadoText: { flex: 1, fontSize: 13, fontFamily: 'Poppins-Regular', color: '#1976D2' },
 
     centered: {
         flex: 1, backgroundColor: '#F5F5F5',

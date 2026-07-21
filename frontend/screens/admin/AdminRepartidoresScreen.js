@@ -8,22 +8,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
 import AppHeader from '../../components/common/AppHeader';
 import API from '../../services/api';
+import { useAppSelector } from '../../store/hooks';
 
 export default function AdminRepartidoresScreen({ navigation }) {
     const insets = useSafeAreaInsets();
+    const restaurante = useAppSelector(s => s.restaurant.selected);
     const [repartidores, setRepartidores] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const load = useCallback(async (isRefresh = false) => {
+        if (!restaurante) return;
         try {
-            const res = await API.admin.pedidos.getResumenRepartidoresDia();
+            const res = await API.admin.pedidos.getResumenRepartidoresDia(restaurante.id);
             if (res.success) setRepartidores(res.repartidores);
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [restaurante]);
 
     React.useEffect(() => { load(); }, [load]);
     const onRefresh = () => { setRefreshing(true); load(true); };

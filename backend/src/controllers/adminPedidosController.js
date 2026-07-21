@@ -2,18 +2,9 @@ const db = require('../config/database');
 const { sendPushNotification } = require('../services/notificationService');
 const { transicionarPedido } = require('../utils/pedidoTransitions');
 
-const getAdminRestauranteId = async (req) => {
-    if (req.user.restauranteId) return req.user.restauranteId;
-    const row = await db.query('SELECT restaurante_id FROM usuarios WHERE id = $1', [req.user.userId]);
-    return row.rows[0]?.restaurante_id || null;
-};
-
 exports.getAll = async (req, res) => {
     try {
-        const restauranteId = await getAdminRestauranteId(req);
-        if (!restauranteId) {
-            return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
-        }
+        const { restauranteId } = req.params;
 
         const result = await db.query(
             `SELECT p.id, p.estado, p.total, p.direccion_entrega, p.notas, p.fecha_creacion,
@@ -72,10 +63,7 @@ exports.getNotificaciones = async (req, res) => {
 
 exports.getResumenRepartidoresDia = async (req, res) => {
     try {
-        const restauranteId = await getAdminRestauranteId(req);
-        if (!restauranteId) {
-            return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
-        }
+        const { restauranteId } = req.params;
 
         const result = await db.query(
             `SELECT
@@ -105,10 +93,7 @@ exports.getResumenRepartidoresDia = async (req, res) => {
 
 exports.getRepartidores = async (req, res) => {
     try {
-        const restauranteId = await getAdminRestauranteId(req);
-        if (!restauranteId) {
-            return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
-        }
+        const { restauranteId } = req.params;
 
         const result = await db.query(
             `SELECT id, nombre, apellido, telefono, estado
@@ -222,10 +207,17 @@ exports.asignarRepartidor = async (req, res) => {
         return res.status(400).json({ success: false, message: 'repartidor_id requerido' });
     }
 
-    const restauranteId = await getAdminRestauranteId(req);
-    if (!restauranteId) {
-        return res.status(403).json({ success: false, message: 'Admin sin restaurante asignado' });
+    const pedidoCheck = await db.query(
+        `SELECT p.id, p.restaurante_id
+         FROM pedidos p
+         JOIN restaurantes r ON r.id = p.restaurante_id
+         WHERE p.id = $1 AND r.admin_id = $2`,
+        [id, req.user.userId]
+    );
+    if (pedidoCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Pedido no encontrado o no pertenece a este restaurante' });
     }
+    const restauranteId = pedidoCheck.rows[0].restaurante_id;
 
     const repartidorCheck = await db.query(
         `SELECT id FROM usuarios WHERE id = $1 AND rol = 'repartidor' AND restaurante_id = $2`,
@@ -235,26 +227,16 @@ exports.asignarRepartidor = async (req, res) => {
         return res.status(404).json({ success: false, message: 'Repartidor no encontrado o no pertenece a este restaurante' });
     }
 
-    const pedidoCheck = await db.query(
-        `SELECT id FROM pedidos WHERE id = $1 AND restaurante_id = $2`,
-        [id, restauranteId]
-    );
-    if (pedidoCheck.rows.length === 0) {
-        return res.status(404).json({ success: false, message: 'Pedido no encontrado o no pertenece a este restaurante' });
-    }
-
     const client = await db.getClient();
     try {
         await client.query('BEGIN');
 
-        // Asignar repartidor
+        // Asignar repartidor — el pedido queda en su estado actual (en_preparacion)
+        // hasta que el repartidor confirme "Comenzar entrega" desde su app
         await client.query(
             'UPDATE pedidos SET repartidor_id = $1 WHERE id = $2',
             [repartidor_id, id]
         );
-
-        // Transición validada: en_preparacion → en_camino
-        await transicionarPedido(client, id, 'en_camino', 'admin', req.user.userId);
 
         const pedido = (await client.query(
             'SELECT id, estado, repartidor_id, direccion_entrega, total, usuario_id FROM pedidos WHERE id = $1',
@@ -274,20 +256,6 @@ exports.asignarRepartidor = async (req, res) => {
                 '¡Nuevo reparto asignado!',
                 `Pedido #${id} — ${pedido.direccion_entrega || 'Ver dirección en la app'}`,
                 { type: 'nuevo_reparto', pedido_id: id }
-            );
-        }
-
-        // Push al cliente
-        const cliente = await db.query(
-            'SELECT push_token FROM usuarios WHERE id = $1',
-            [pedido.usuario_id]
-        );
-        if (cliente.rows[0]?.push_token) {
-            await sendPushNotification(
-                cliente.rows[0].push_token,
-                '¡Tu pedido está en camino!',
-                'El repartidor ya salió con tu pedido.',
-                { type: 'estado_pedido', pedido_id: id, estado: 'en_camino' }
             );
         }
 

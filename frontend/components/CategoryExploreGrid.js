@@ -1,6 +1,7 @@
 import React, { memo, useRef } from 'react';
 import { View, Text, Image, Animated, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
 
 const SIZE_HEIGHTS = { sm: 55, msm: 75, md: 90, lg: 140 };
 const CONTAINER_PADDING = 20;
@@ -77,7 +78,21 @@ export const CategoryExploreGrid = memo(({ categories, selectedCategory, onCateg
                                 />
                             ))}
                         </View>
-                        {rowHasSelected && renderExpanded && renderExpanded()}
+                        {rowHasSelected && renderExpanded && (
+                            <View>
+                                {selectedCategory !== 'todos' && (
+                                    <Pressable
+                                        onPress={() => onCategoryPress('todos')}
+                                        style={styles.expandedCloseBtn}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Cerrar filtro de categoría"
+                                    >
+                                        <Ionicons name="close-circle" size={22} color="#aaa" />
+                                    </Pressable>
+                                )}
+                                {renderExpanded()}
+                            </View>
+                        )}
                     </View>
                 );
             })}
@@ -123,6 +138,11 @@ const styles = StyleSheet.create({
     },
     tileLabelActive: {
         color: '#FF8700',
+    },
+    expandedCloseBtn: {
+        alignSelf: 'flex-end',
+        marginBottom: 4,
+        padding: 4,
     },
 });
 

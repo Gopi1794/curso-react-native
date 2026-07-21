@@ -19,6 +19,7 @@ router.get('/resumen-dia',          ctrl.getResumenDia);
 router.get('/historial',            ctrl.getHistorial);
 router.put('/pedidos/:id/estado',   ctrl.updateEstado);
 router.put('/pedidos/:id/cobrar',   ctrl.cobrarEfectivo);
+router.put('/pedidos/:id/avisar-llegada', ctrl.avisarLlegada);
 router.put('/ubicacion',            ctrl.actualizarUbicacion);
 router.post('/ruta',                rutaCtrl.calcularRuta);
 

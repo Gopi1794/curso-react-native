@@ -172,6 +172,35 @@ exports.updateEstado = async (req, res) => {
     }
 };
 
+exports.avisarLlegada = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const pedido = await db.query(
+            `SELECT usuario_id FROM pedidos WHERE id = $1 AND repartidor_id = $2 AND estado = 'en_camino'`,
+            [id, req.user.userId]
+        );
+        if (pedido.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pedido no encontrado o no está en camino' });
+        }
+
+        const cliente = await db.query('SELECT push_token FROM usuarios WHERE id = $1', [pedido.rows[0].usuario_id]);
+        if (cliente.rows[0]?.push_token) {
+            await sendPushNotification(
+                cliente.rows[0].push_token,
+                '¡Tu repartidor llegó!',
+                'Te está esperando afuera con tu pedido.',
+                { type: 'repartidor_llego', pedido_id: id }
+            );
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error en avisarLlegada:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+};
+
 exports.actualizarUbicacion = async (req, res) => {
     const { lat, lng } = req.body;
 

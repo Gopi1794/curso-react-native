@@ -27,6 +27,7 @@ const ACCORDION_LAYOUT_ANIM = {
 };
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // Componentes reutilizables
 import { HeaderSection } from '../../components/HeaderSection';
 import { FLOATING_TAB_BAR_HEIGHT } from '../../navigation/FloatingTabBar';
@@ -180,6 +181,7 @@ const mapMenuItem = (item) => ({
 });
 
 export const ScreenHome = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const dispatch = useAppDispatch();
     const justRegistered = useAppSelector((state) => state.user.justRegistered);
     const selectedRestaurant = useAppSelector((state) => state.restaurant.selected);
@@ -633,7 +635,7 @@ export const ScreenHome = ({ navigation }) => {
             >
                 <View style={styles.spinWheelBackdrop}>
                     <TouchableOpacity
-                        style={styles.spinWheelCloseBtn}
+                        style={[styles.spinWheelCloseBtn, { top: insets.top + 12 }]}
                         onPress={() => setShowSpinWheel(false)}
                         activeOpacity={0.8}
                     >
@@ -658,7 +660,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     spinWheelCloseBtn: {
-        position: 'absolute', top: 20, right: 20, zIndex: 20, elevation: 20,
+        position: 'absolute', right: 20, zIndex: 20, elevation: 20,
         width: 40, height: 40, borderRadius: 20,
         backgroundColor: '#ff880000',
         borderColor: '#FF8700',

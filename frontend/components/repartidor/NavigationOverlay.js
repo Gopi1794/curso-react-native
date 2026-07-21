@@ -21,6 +21,7 @@ export default function NavigationOverlay({
     destino,
     routePoints,
     onExit,
+    onArrive,
 }) {
     const insets = useSafeAreaInsets();
     const mapRef = useRef(null);
@@ -85,9 +86,9 @@ export default function NavigationOverlay({
         const distancia = haversineMeters({ lat: location.latitude, lng: location.longitude }, destino);
         if (distancia < DISTANCIA_LLEGADA_METROS) {
             Speech.stop();
-            onExit();
+            onArrive();
         }
-    }, [visible, location, destino, onExit]);
+    }, [visible, location, destino, onArrive]);
 
     if (!visible) return null;
 

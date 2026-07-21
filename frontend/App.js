@@ -1,4 +1,5 @@
 import 'react-native-gesture-handler';
+import * as Sentry from '@sentry/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from './navigation/navigationRef';
 import { StatusBar } from 'expo-status-bar';
@@ -40,6 +41,12 @@ import API from './services/api';
 import { registerForPushNotifications, registerNotificationCategories } from './services/pushNotifications';
 import VerifyEmailScreen from './screens/auth/VerifyEmailScreen';
 import { useTheme } from './contexts/ThemeContext';
+
+Sentry.init({
+  dsn: 'https://46ad8dbe8ddde1ba5e32fc28d0aa47fb@o4511673073336320.ingest.us.sentry.io/4511768807473152',
+  enabled: !__DEV__,
+  tracesSampleRate: 1.0,
+});
 
 // Pantalla de Login
 function LoginScreen() {
@@ -407,7 +414,7 @@ function MainApp() {
   );
 }
 
-export default function App() {
+function App() {
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
       if (response.actionIdentifier === 'PREPARAR') {
@@ -434,6 +441,8 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(App);
 
 const styles = StyleSheet.create({
   container: {
