@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { geocodeAddress } = require('../utils/geocoding');
 
 exports.updateInfo = async (req, res) => {
     const { restauranteId } = req.params;
@@ -9,10 +10,22 @@ exports.updateInfo = async (req, res) => {
         const fields = [];
         const values = [];
         let idx = 1;
+        let geocoded = true;
 
         if (nombre      !== undefined) { fields.push(`nombre = $${idx++}`);      values.push(nombre); }
         if (descripcion !== undefined) { fields.push(`descripcion = $${idx++}`); values.push(descripcion); }
-        if (direccion   !== undefined) { fields.push(`direccion = $${idx++}`);   values.push(direccion); }
+        if (direccion   !== undefined) {
+            fields.push(`direccion = $${idx++}`);
+            values.push(direccion);
+
+            const coords = await geocodeAddress(direccion);
+            if (coords) {
+                fields.push(`lat = $${idx++}`); values.push(coords.lat);
+                fields.push(`lng = $${idx++}`); values.push(coords.lng);
+            } else {
+                geocoded = false;
+            }
+        }
         if (telefono    !== undefined) { fields.push(`telefono = $${idx++}`);    values.push(telefono); }
         if (horario     !== undefined) { fields.push(`horario = $${idx++}`);     values.push(JSON.stringify(horario)); }
         if (logo_url    !== undefined) { fields.push(`logo_url = $${idx++}`);    values.push(logo_url); }
@@ -31,7 +44,7 @@ exports.updateInfo = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Restaurante no encontrado' });
         }
 
-        res.json({ success: true, data: result.rows[0] });
+        res.json({ success: true, data: result.rows[0], geocoded });
     } catch (error) {
         console.error('updateRestauranteInfo:', error);
         res.status(500).json({ success: false, message: 'Error al actualizar restaurante' });
