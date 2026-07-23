@@ -5,22 +5,23 @@ const CATEGORIAS_POR_TIPO = {
     '2x1_pizzas':  ['pizzas'],
 };
 
-const SHIPPING_FEE = 2.99;
-
 // items: [{ menu_item_id, cantidad }]
 // menuItemsInfo: Map<string, { precio, categoria }> — las claves DEBEN ser String(id),
 // tanto al construir el Map como al buscar acá adentro, porque Postgres devuelve las
 // columnas BIGINT como string en node-pg y el JSON del cliente puede mandar el id como
 // number — comparar sin normalizar hace que Map.get() falle silenciosamente.
+// costoEnvio: el costo de envío de la zona ya matcheada — SOLO se usa (y es
+// obligatorio) para tipo 'porcentaje' y 'envio_gratis'; el resto de los tipos
+// lo ignoran, pasar 0 ahí es inofensivo.
 // Devuelve { valido, mensaje, montoDescuento }
-function evaluarCupon(tipo, valorPremio, subtotal, items, menuItemsInfo) {
+function evaluarCupon(tipo, valorPremio, subtotal, items, menuItemsInfo, costoEnvio) {
     if (tipo === 'porcentaje') {
-        const base = subtotal + SHIPPING_FEE;
+        const base = subtotal + costoEnvio;
         return { valido: true, montoDescuento: parseFloat((base * (valorPremio / 100)).toFixed(2)) };
     }
 
     if (tipo === 'envio_gratis') {
-        return { valido: true, montoDescuento: SHIPPING_FEE };
+        return { valido: true, montoDescuento: costoEnvio };
     }
 
     if (tipo === 'plato_gratis' || tipo === 'postre_gratis') {
@@ -59,4 +60,4 @@ function evaluarCupon(tipo, valorPremio, subtotal, items, menuItemsInfo) {
     return { valido: false, mensaje: 'Tipo de cupón desconocido' };
 }
 
-module.exports = { evaluarCupon, SHIPPING_FEE, CATEGORIAS_POR_TIPO };
+module.exports = { evaluarCupon, CATEGORIAS_POR_TIPO };

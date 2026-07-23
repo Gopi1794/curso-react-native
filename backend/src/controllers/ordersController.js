@@ -1,11 +1,12 @@
 const db = require('../config/database');
 const { sendPushNotification } = require('../services/notificationService');
-const { evaluarCupon, SHIPPING_FEE } = require('../utils/ruletaCuponHelper');
+const { evaluarCupon } = require('../utils/ruletaCuponHelper');
+const { matchZona } = require('../utils/zonaEnvioHelper');
 
 // ── CREATE ORDER ──────────────────────────────────────────
 // POST /api/orders
 exports.createOrder = async (req, res) => {
-    const { restaurante_id, items, direccion_entrega, notas, metodo_pago, cupon_codigo } = req.body;
+    const { restaurante_id, items, direccion_id, notas, metodo_pago, cupon_codigo } = req.body;
 
     // 1. Validar estructura del body
     if (!restaurante_id || !items || !Array.isArray(items) || items.length === 0) {
@@ -79,6 +80,50 @@ exports.createOrder = async (req, res) => {
             });
         }
 
+        // Resolver la dirección de entrega y matchear la zona de envío
+        if (!direccion_id) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: 'Se requiere direccion_id'
+            });
+        }
+
+        const direccionResult = await client.query(
+            'SELECT direccion, ciudad, latitud, longitud FROM direcciones_usuarios WHERE id = $1 AND usuario_id = $2',
+            [direccion_id, req.user.userId]
+        );
+        const direccionRow = direccionResult.rows[0];
+        if (!direccionRow) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                success: false,
+                message: 'Dirección no encontrada'
+            });
+        }
+        if (direccionRow.latitud == null || direccionRow.longitud == null) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: 'Esa dirección no tiene ubicación en el mapa. Volvé a cargarla desde el mapa.'
+            });
+        }
+
+        const zona = await matchZona(
+            restaurante_id,
+            { lat: parseFloat(direccionRow.latitud), lng: parseFloat(direccionRow.longitud) },
+            client
+        );
+        if (!zona) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: 'No entregamos en tu dirección'
+            });
+        }
+        const costoEnvio = parseFloat(zona.costo_envio);
+        let costoEnvioFinal = costoEnvio;
+
         // 4. Construir mapa de precios y calcular total
         const priceMap = {};
         menuResult.rows.forEach(m => { priceMap[m.id] = m; });
@@ -105,7 +150,7 @@ exports.createOrder = async (req, res) => {
 
         // 5. Agregar costo de envío al total antes de aplicar descuentos
         const subtotalSinEnvioOriginal = total;
-        total = parseFloat((total + SHIPPING_FEE).toFixed(2));
+        total = parseFloat((total + costoEnvio).toFixed(2));
 
         // 6. Aplicar cupón si viene (validación server-side)
         let descuento = 0;
@@ -131,17 +176,18 @@ exports.createOrder = async (req, res) => {
                 );
                 if (cuponRuleta.rows[0]) {
                     const cupon = cuponRuleta.rows[0];
-                    const subtotalSinEnvio = parseFloat((total - SHIPPING_FEE).toFixed(2));
+                    const subtotalSinEnvio = parseFloat((total - costoEnvio).toFixed(2));
                     const menuItemsInfo = new Map();
                     for (const [menuId, m] of Object.entries(priceMap)) {
                         menuItemsInfo.set(String(menuId), { precio: parseFloat(m.precio), categoria: m.categoria });
                     }
                     const cartItemsParaEval = items.map(i => ({ menu_item_id: i.menu_item_id, cantidad: i.cantidad }));
-                    const evaluacion = evaluarCupon(cupon.tipo, parseFloat(cupon.valor) || 0, subtotalSinEnvio, cartItemsParaEval, menuItemsInfo);
+                    const evaluacion = evaluarCupon(cupon.tipo, parseFloat(cupon.valor) || 0, subtotalSinEnvio, cartItemsParaEval, menuItemsInfo, costoEnvio);
                     if (evaluacion.valido) {
                         descuento = evaluacion.montoDescuento;
                         total     = parseFloat((total - descuento).toFixed(2));
                         ruletaCuponId = cupon.id;
+                        if (cupon.tipo === 'envio_gratis') costoEnvioFinal = 0;
                     }
                 }
             }
@@ -149,11 +195,12 @@ exports.createOrder = async (req, res) => {
 
         // 6. Insertar el pedido
         const esEfectivo = metodo_pago === 'efectivo';
+        const direccionEntregaTexto = `${direccionRow.direccion}, ${direccionRow.ciudad}`;
         const pedidoResult = await client.query(
-            `INSERT INTO pedidos (usuario_id, restaurante_id, estado, total, descuento, direccion_entrega, notas, metodo_pago)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             RETURNING id, usuario_id, restaurante_id, estado, total, descuento, direccion_entrega, notas, metodo_pago, fecha_creacion`,
-            [req.user.userId, restaurante_id, esEfectivo ? 'en_preparacion' : 'pendiente', total.toFixed(2), descuento.toFixed(2), direccion_entrega || null, notas || null, metodo_pago || 'mercadopago']
+            `INSERT INTO pedidos (usuario_id, restaurante_id, estado, total, descuento, direccion_entrega, notas, metodo_pago, zona_envio_id, costo_envio, costo_envio_tarifa_vigente)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+             RETURNING id, usuario_id, restaurante_id, estado, total, descuento, direccion_entrega, notas, metodo_pago, zona_envio_id, costo_envio, costo_envio_tarifa_vigente, fecha_creacion`,
+            [req.user.userId, restaurante_id, esEfectivo ? 'en_preparacion' : 'pendiente', total.toFixed(2), descuento.toFixed(2), direccionEntregaTexto, notas || null, metodo_pago || 'mercadopago', zona.id, costoEnvioFinal.toFixed(2), costoEnvio.toFixed(2)]
         );
 
         const pedido = pedidoResult.rows[0];
