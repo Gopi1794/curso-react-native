@@ -45,6 +45,17 @@ CREATE TABLE public.restaurantes (
   CONSTRAINT restaurantes_pkey PRIMARY KEY (id),
   CONSTRAINT restaurantes_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.usuarios(id)
 );
+CREATE TABLE public.zonas_envio (
+  id bigint NOT NULL DEFAULT nextval('zonas_envio_id_seq'::regclass),
+  restaurante_id bigint NOT NULL,
+  nombre character varying NOT NULL,
+  radio_km numeric NOT NULL CHECK (radio_km > 0::numeric),
+  costo_envio numeric NOT NULL CHECK (costo_envio >= 0::numeric),
+  activa boolean NOT NULL DEFAULT true,
+  fecha_creacion timestamp without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT zonas_envio_pkey PRIMARY KEY (id),
+  CONSTRAINT zonas_envio_restaurante_id_fkey FOREIGN KEY (restaurante_id) REFERENCES public.restaurantes(id)
+);
 CREATE TABLE public.menu_items (
   id bigint NOT NULL DEFAULT nextval('menu_items_id_seq'::regclass),
   restaurante_id bigint NOT NULL,
@@ -82,10 +93,14 @@ CREATE TABLE public.pedidos (
   distancia_metros integer,
   duracion_segundos integer,
   eta_calculado_en timestamp without time zone,
+  zona_envio_id bigint,
+  costo_envio numeric NOT NULL DEFAULT 0,
+  costo_envio_tarifa_vigente numeric,
   CONSTRAINT pedidos_pkey PRIMARY KEY (id),
   CONSTRAINT pedidos_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
   CONSTRAINT pedidos_restaurante_id_fkey FOREIGN KEY (restaurante_id) REFERENCES public.restaurantes(id),
-  CONSTRAINT pedidos_repartidor_id_fkey FOREIGN KEY (repartidor_id) REFERENCES public.usuarios(id)
+  CONSTRAINT pedidos_repartidor_id_fkey FOREIGN KEY (repartidor_id) REFERENCES public.usuarios(id),
+  CONSTRAINT pedidos_zona_envio_id_fkey FOREIGN KEY (zona_envio_id) REFERENCES public.zonas_envio(id)
 );
 CREATE TABLE public.pedido_items (
   id bigint NOT NULL DEFAULT nextval('pedido_items_id_seq'::regclass),
