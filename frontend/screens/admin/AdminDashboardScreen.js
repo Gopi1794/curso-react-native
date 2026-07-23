@@ -56,6 +56,14 @@ const CARDS = [
         colors: ['#00838F', '#00ACC1'],
     },
     {
+        key: 'consumo-insights',
+        screen: 'AdminConsumoInsights',
+        title: 'Insights de consumo',
+        subtitle: 'Patrones de venta por producto y día',
+        icon: 'trending-up-outline',
+        colors: ['#7B2FF7', '#FF8700'],
+    },
+    {
         key: 'ingredientes',
         screen: 'AdminIngredients',
         title: 'Catálogo de ingredientes',
@@ -99,7 +107,7 @@ const CARDS = [
 
 function CardItem({ card, navigation }) {
     const shineAnim = useRef(new Animated.Value(0)).current;
-    const isAI = card.key === 'reviews';
+    const isAI = card.key === 'reviews' || card.key === 'consumo-insights';
 
     useEffect(() => {
         if (!isAI) return;

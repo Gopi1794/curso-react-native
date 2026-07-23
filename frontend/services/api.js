@@ -329,6 +329,8 @@ const admin = {
     stats: {
         get: (restauranteId) => request(`/api/admin/stats/${restauranteId}`),
         getReviewsInsights: (restauranteId) => request(restauranteId ? `/api/admin/reviews/insights?restauranteId=${restauranteId}` : '/api/admin/reviews/insights'),
+        getConsumoInsights: (restauranteId) => request(`/api/admin/stats/consumo-insights/${restauranteId}`),
+        generarConsumoInsights: (restauranteId) => request(`/api/admin/stats/consumo-insights/${restauranteId}`, { method: 'POST' }),
     },
     restaurante: {
         getInfo: (restauranteId) => request(`/api/admin/restaurante/${restauranteId}`),
