@@ -96,7 +96,7 @@ exports.getResumenDia = async (req, res) => {
         const result = await db.query(
             `SELECT
                 COUNT(*)                                                                        AS pedidos_entregados,
-                COUNT(*) * 2.99                                                                 AS ganancia,
+                COALESCE(SUM(costo_envio), 0)                                                   AS ganancia,
                 COALESCE(SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto_recibido ELSE 0 END), 0) AS efectivo_cobrado
              FROM pedidos
              WHERE repartidor_id = $1

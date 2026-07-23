@@ -72,7 +72,7 @@ exports.getResumenRepartidoresDia = async (req, res) => {
                 u.apellido,
                 u.telefono,
                 COUNT(p.id)                                                                         AS pedidos_entregados,
-                COUNT(p.id) * 2.99                                                                  AS ganancia,
+                COALESCE(SUM(p.costo_envio), 0)                                                     AS ganancia,
                 COALESCE(SUM(CASE WHEN p.metodo_pago = 'efectivo' THEN p.monto_recibido ELSE 0 END), 0) AS efectivo_cobrado
              FROM usuarios u
              LEFT JOIN pedidos p
