@@ -71,6 +71,17 @@ exports.update = async (req, res) => {
     }
 
     try {
+        const zonaCheck = await db.query(
+            `SELECT z.id
+             FROM zonas_envio z
+             JOIN restaurantes r ON r.id = z.restaurante_id
+             WHERE z.id = $1 AND r.admin_id = $2`,
+            [id, req.user.userId]
+        );
+        if (zonaCheck.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Zona no encontrada' });
+        }
+
         const result = await db.query(
             `UPDATE zonas_envio
              SET nombre = COALESCE($1, nombre),
