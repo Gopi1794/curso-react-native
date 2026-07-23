@@ -48,6 +48,14 @@ const CARDS = [
         colors: ['#D84315', '#FF7043'],
     },
     {
+        key: 'zonas-envio',
+        screen: 'AdminZonasEnvio',
+        title: 'Zonas de envío',
+        subtitle: 'Costo de envío según distancia',
+        icon: 'map-outline',
+        colors: ['#00838F', '#00ACC1'],
+    },
+    {
         key: 'ingredientes',
         screen: 'AdminIngredients',
         title: 'Catálogo de ingredientes',

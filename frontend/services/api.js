@@ -334,6 +334,11 @@ const admin = {
         getInfo: (restauranteId) => request(`/api/admin/ruleta/${restauranteId}`),
         updateInfo: (restauranteId, data) => request(`/api/admin/ruleta/${restauranteId}`, { method: 'PUT', body: JSON.stringify(data) }),
     },
+    zonasEnvio: {
+        getAll: (restauranteId) => request(`/api/admin/zonas-envio/${restauranteId}`),
+        create: (restauranteId, data) => request(`/api/admin/zonas-envio/${restauranteId}`, { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => request(`/api/admin/zonas-envio/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    },
     platos: {
         getAll: (restauranteId) => request(`/api/admin/platos/${restauranteId}`),
         create: (restauranteId, data) => request(`/api/admin/platos/${restauranteId}`, { method: 'POST', body: JSON.stringify(data) }),
