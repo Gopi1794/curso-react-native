@@ -5,7 +5,12 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const UMBRAL_MULTIPLICADOR = 1.5;
 const UMBRAL_MINIMO_PEDIDOS = 5;
-const COOLDOWN_MS = 10 * 60 * 1000;
+// Ventana de cooldown expresada UNICAMENTE en SQL (ver checkCooldown) para que
+// no pueda desincronizarse de un valor JS. No usar Date.now()/generado_en acá:
+// generado_en es TIMESTAMP WITHOUT TIME ZONE y pg lo decodifica en la zona
+// horaria local del proceso Node, que puede no coincidir con la del servidor
+// de Postgres. Toda la comparación de tiempo transcurrido vive en la DB.
+const COOLDOWN_INTERVALO_SQL = '10 minutes';
 
 const DIA_NOMBRE = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
@@ -91,25 +96,39 @@ async function generarSugerencias(patrones) {
     return parsed.sugerencias;
 }
 
+// Le pregunta a Postgres (no a Node) si el ultimo analisis sigue en cooldown.
+// Todo el calculo de tiempo transcurrido/restante ocurre con NOW() e INTERVAL
+// dentro de la query, así el resultado no depende de la zona horaria del
+// proceso Node ni de como pg parsee generado_en (TIMESTAMP WITHOUT TIME ZONE).
+async function checkCooldown(restauranteId) {
+    const result = await db.query(
+        `SELECT
+            (generado_en > NOW() - INTERVAL '${COOLDOWN_INTERVALO_SQL}') AS en_cooldown,
+            GREATEST(0, CEIL(EXTRACT(EPOCH FROM (generado_en + INTERVAL '${COOLDOWN_INTERVALO_SQL}' - NOW()))))::int AS segundos_restantes
+         FROM consumo_insights
+         WHERE restaurante_id = $1`,
+        [restauranteId]
+    );
+
+    const row = result.rows[0];
+    if (!row || !row.en_cooldown) return;
+
+    const segundos = row.segundos_restantes;
+    const min = Math.floor(segundos / 60);
+    const seg = segundos % 60;
+    const tiempo = min > 0
+        ? `${min} minuto${min === 1 ? '' : 's'}`
+        : `${seg} segundo${seg === 1 ? '' : 's'}`;
+
+    const err = new Error(`Ya generaste un análisis hace poco. Esperá ${tiempo} antes de generar otro.`);
+    err.status = 429;
+    throw err;
+}
+
 // Dispara todo el analisis (SQL + IA si corresponde) y persiste el resultado.
 // Es la unica funcion de este archivo que gasta tokens de IA.
 async function generarInsights(restauranteId) {
-    const anterior = await getUltimoInsight(restauranteId);
-    if (anterior) {
-        const transcurrido = Date.now() - new Date(anterior.generado_en).getTime();
-        if (transcurrido < COOLDOWN_MS) {
-            const restanteMs = COOLDOWN_MS - transcurrido;
-            const restanteMin = Math.floor(restanteMs / 60000);
-            const restanteSeg = Math.ceil((restanteMs % 60000) / 1000);
-            const tiempo = restanteMin > 0
-                ? `${restanteMin} minuto${restanteMin === 1 ? '' : 's'}`
-                : `${restanteSeg} segundo${restanteSeg === 1 ? '' : 's'}`;
-
-            const err = new Error(`Ya generaste un análisis hace poco. Esperá ${tiempo} antes de generar otro.`);
-            err.status = 429;
-            throw err;
-        }
-    }
+    await checkCooldown(restauranteId);
 
     const patrones = await detectarPatrones(restauranteId);
     const sugerencias = await generarSugerencias(patrones);
