@@ -5,6 +5,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const UMBRAL_MULTIPLICADOR = 1.5;
 const UMBRAL_MINIMO_PEDIDOS = 5;
+const COOLDOWN_MS = 10 * 60 * 1000;
 
 const DIA_NOMBRE = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
@@ -93,6 +94,23 @@ async function generarSugerencias(patrones) {
 // Dispara todo el analisis (SQL + IA si corresponde) y persiste el resultado.
 // Es la unica funcion de este archivo que gasta tokens de IA.
 async function generarInsights(restauranteId) {
+    const anterior = await getUltimoInsight(restauranteId);
+    if (anterior) {
+        const transcurrido = Date.now() - new Date(anterior.generado_en).getTime();
+        if (transcurrido < COOLDOWN_MS) {
+            const restanteMs = COOLDOWN_MS - transcurrido;
+            const restanteMin = Math.floor(restanteMs / 60000);
+            const restanteSeg = Math.ceil((restanteMs % 60000) / 1000);
+            const tiempo = restanteMin > 0
+                ? `${restanteMin} minuto${restanteMin === 1 ? '' : 's'}`
+                : `${restanteSeg} segundo${restanteSeg === 1 ? '' : 's'}`;
+
+            const err = new Error(`Ya generaste un análisis hace poco. Esperá ${tiempo} antes de generar otro.`);
+            err.status = 429;
+            throw err;
+        }
+    }
+
     const patrones = await detectarPatrones(restauranteId);
     const sugerencias = await generarSugerencias(patrones);
 
