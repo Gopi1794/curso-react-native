@@ -11,6 +11,7 @@ const recetasCtrl  = require('../controllers/adminRecetasController');
 const pedidosCtrl  = require('../controllers/adminPedidosController');
 const restCtrl     = require('../controllers/adminRestauranteController');
 const ruletaCtrl   = require('../controllers/adminRuletaController');
+const zonasEnvioCtrl = require('../controllers/adminZonasEnvioController');
 const statsCtrl    = require('../controllers/adminStatsController');
 const reviewsCtrl  = require('../controllers/adminReviewsInsightsController');
 
@@ -45,6 +46,11 @@ router.post('/repartidores',               restCtrl.createRepartidor);
 // ── Ruleta ────────────────────────────────────────────────
 router.get('/ruleta/:restauranteId', requireAdminOwnership, ruletaCtrl.getInfo);
 router.put('/ruleta/:restauranteId', requireAdminOwnership, ruletaCtrl.updateInfo);
+
+// ── Zonas de envío ────────────────────────────────────────
+router.get('/zonas-envio/:restauranteId',  requireAdminOwnership, zonasEnvioCtrl.getAll);
+router.post('/zonas-envio/:restauranteId', requireAdminOwnership, zonasEnvioCtrl.create);
+router.put('/zonas-envio/:id',             zonasEnvioCtrl.update);
 
 // ── Upload ────────────────────────────────────────────────
 router.post('/upload', upload.single('image'), uploadCtrl.uploadImage);
