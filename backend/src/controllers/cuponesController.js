@@ -1,6 +1,5 @@
 const db = require('../config/database');
 const { evaluarCupon } = require('../utils/ruletaCuponHelper');
-const { matchZona } = require('../utils/zonaEnvioHelper');
 
 // ── GET ALL CUPONES ────────────────────────────────────────
 // GET /api/cupones
@@ -35,7 +34,7 @@ exports.getAll = async (req, res) => {
 // Body: { codigo, restaurante_id, items }
 exports.validateByCode = async (req, res) => {
     try {
-        const { codigo, restaurante_id, items, direccion_id } = req.body;
+        const { codigo, restaurante_id, items, costo_envio } = req.body;
 
         if (!codigo || typeof codigo !== 'string' || codigo.trim().length === 0) {
             return res.status(400).json({ success: false, message: 'Código requerido' });
@@ -81,25 +80,18 @@ exports.validateByCode = async (req, res) => {
         }
 
         // 'porcentaje' y 'envio_gratis' necesitan saber el costo de envío real
-        // para calcular el descuento — sin dirección todavía no se puede.
+        // para calcular el descuento. El carrito ya lo cotizó (matchZona vía Google
+        // Routes) momentos antes al resolver envioInfo — reusamos ese valor en vez
+        // de volver a pegarle a la API de rutas en cada revalidación del cupón.
+        // Esto es solo para la preview del descuento: el monto final y la zona real
+        // se recalculan de forma independiente y confiable en POST /api/orders.
         let costoEnvio = 0;
         if (cupon.tipo === 'porcentaje' || cupon.tipo === 'envio_gratis') {
-            if (!direccion_id) {
+            const costoEnvioNum = parseFloat(costo_envio);
+            if (costo_envio == null || isNaN(costoEnvioNum) || costoEnvioNum <= 0) {
                 return res.status(400).json({ success: false, message: 'Seleccioná una dirección de entrega antes de aplicar este cupón' });
             }
-            const direccionResult = await db.query(
-                'SELECT latitud, longitud FROM direcciones_usuarios WHERE id = $1 AND usuario_id = $2',
-                [direccion_id, req.user.userId]
-            );
-            const direccionRow = direccionResult.rows[0];
-            if (!direccionRow || direccionRow.latitud == null || direccionRow.longitud == null) {
-                return res.status(400).json({ success: false, message: 'No pudimos ubicar tu dirección. Volvé a seleccionarla.' });
-            }
-            const zona = await matchZona(restaurante_id, { lat: parseFloat(direccionRow.latitud), lng: parseFloat(direccionRow.longitud) });
-            if (!zona) {
-                return res.status(400).json({ success: false, message: 'No entregamos en tu dirección' });
-            }
-            costoEnvio = parseFloat(zona.costo_envio);
+            costoEnvio = costoEnvioNum;
         }
 
         const cartItems = Array.isArray(items) ? items : [];

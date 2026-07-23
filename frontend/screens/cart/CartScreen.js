@@ -147,7 +147,8 @@ const CartScreen = ({ navigation }) => {
         setValidatingCoupon(true);
         try {
             const items = cartItems.map(item => ({ menu_item_id: item.id, cantidad: item.quantity }));
-            const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items, selectedAddress?.id);
+            const costoEnvio = envioInfo && !envioInfo.fueraDeZona ? envioInfo.costoEnvio : null;
+            const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items, costoEnvio);
             if (res.success) {
                 if (res.cupon.esRuleta) {
                     setCouponDiscountAmount(res.cupon.monto_descuento);
@@ -188,7 +189,8 @@ const CartScreen = ({ navigation }) => {
         const revalidar = async () => {
             try {
                 const items = cartItems.map(item => ({ menu_item_id: item.id, cantidad: item.quantity }));
-                const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items, selectedAddress?.id);
+                const costoEnvio = envioInfo && !envioInfo.fueraDeZona ? envioInfo.costoEnvio : null;
+                const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items, costoEnvio);
                 // Si mientras esperabamos la respuesta el carrito volvio a cambiar (y disparo
                 // otra re-validacion mas nueva), esta respuesta quedo vieja — se descarta para
                 // no pisar un estado mas reciente con uno desactualizado.
@@ -208,7 +210,11 @@ const CartScreen = ({ navigation }) => {
         };
 
         revalidar();
-    }, [cartItems, couponApplied, couponEsRuleta, selectedAddress?.id]);
+        // envioInfo?.costoEnvio (no selectedAddress?.id) es la dependencia correcta acá: el
+        // costo real ya resuelto por la cotización del carrito es lo que mandamos al backend,
+        // asi que re-validamos cuando ESE valor cambia (evita mandar un costo desactualizado
+        // mientras la cotización de la nueva dirección todavía está en vuelo).
+    }, [cartItems, couponApplied, couponEsRuleta, envioInfo?.costoEnvio]);
 
     const handleViewProductDetail = (item) => {
         const imageKey = Object.keys(imageMap).find(key =>

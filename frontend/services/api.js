@@ -244,9 +244,9 @@ const favorites = {
 const cupones = {
     getAll: () => request('/api/cupones'),
     getById: (id) => request(`/api/cupones/${id}`),
-    validate: (codigo, restauranteId, items, direccionId) => request('/api/cupones/validate', {
+    validate: (codigo, restauranteId, items, costoEnvio) => request('/api/cupones/validate', {
         method: 'POST',
-        body: JSON.stringify({ codigo, restaurante_id: restauranteId, items, direccion_id: direccionId }),
+        body: JSON.stringify({ codigo, restaurante_id: restauranteId, items, costo_envio: costoEnvio }),
     }),
 };
 
