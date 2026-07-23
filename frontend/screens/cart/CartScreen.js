@@ -55,6 +55,7 @@ const CartScreen = ({ navigation }) => {
     const [dialogConfig, setDialogConfig] = useState({ title: '', message: '', onConfirm: null });
     const [addresses, setAddresses] = useState([]);
     const [selectedAddress, setSelectedAddress] = useState(null);
+    const [envioInfo, setEnvioInfo] = useState(null); // { costoEnvio, zonaNombre } | { fueraDeZona: true } | null (cotizando)
     const [addressPickerVisible, setAddressPickerVisible] = useState(false);
     const [loadingAddresses, setLoadingAddresses] = useState(true);
     const [showAddSheet, setShowAddSheet] = useState(false);
@@ -99,6 +100,28 @@ const CartScreen = ({ navigation }) => {
         checkPendingOrder();
     }, []);
 
+    useEffect(() => {
+        if (!selectedAddress || !selectedRestaurant) {
+            setEnvioInfo(null);
+            return;
+        }
+        let cancelado = false;
+        (async () => {
+            try {
+                const res = await API.restaurants.cotizarEnvio(selectedRestaurant.id, selectedAddress.id);
+                if (cancelado) return;
+                if (res.success) {
+                    setEnvioInfo({ costoEnvio: res.zona.costo_envio, zonaNombre: res.zona.nombre });
+                } else {
+                    setEnvioInfo({ fueraDeZona: true });
+                }
+            } catch {
+                if (!cancelado) setEnvioInfo({ fueraDeZona: true });
+            }
+        })();
+        return () => { cancelado = true; };
+    }, [selectedAddress, selectedRestaurant]);
+
     const handleGoBack = () => {
         navigation.goBack();
     };
@@ -116,7 +139,7 @@ const CartScreen = ({ navigation }) => {
     };
 
     const calculateTotal = () => {
-        return calculateSubtotal() - calculateDiscount() + 2.99;
+        return calculateSubtotal() - calculateDiscount() + (envioInfo?.costoEnvio ?? 0);
     };
 
     const handleApplyCoupon = async () => {
@@ -124,7 +147,7 @@ const CartScreen = ({ navigation }) => {
         setValidatingCoupon(true);
         try {
             const items = cartItems.map(item => ({ menu_item_id: item.id, cantidad: item.quantity }));
-            const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items);
+            const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items, selectedAddress?.id);
             if (res.success) {
                 if (res.cupon.esRuleta) {
                     setCouponDiscountAmount(res.cupon.monto_descuento);
@@ -165,7 +188,7 @@ const CartScreen = ({ navigation }) => {
         const revalidar = async () => {
             try {
                 const items = cartItems.map(item => ({ menu_item_id: item.id, cantidad: item.quantity }));
-                const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items);
+                const res = await API.cupones.validate(couponCode.trim(), selectedRestaurant?.id, items, selectedAddress?.id);
                 // Si mientras esperabamos la respuesta el carrito volvio a cambiar (y disparo
                 // otra re-validacion mas nueva), esta respuesta quedo vieja — se descarta para
                 // no pisar un estado mas reciente con uno desactualizado.
@@ -185,7 +208,7 @@ const CartScreen = ({ navigation }) => {
         };
 
         revalidar();
-    }, [cartItems, couponApplied, couponEsRuleta]);
+    }, [cartItems, couponApplied, couponEsRuleta, selectedAddress?.id]);
 
     const handleViewProductDetail = (item) => {
         const imageKey = Object.keys(imageMap).find(key =>
@@ -295,7 +318,7 @@ const CartScreen = ({ navigation }) => {
             const orderRes = await API.orders.create(
                 selectedRestaurant.id,
                 orderItems,
-                selectedAddress ? `${selectedAddress.direccion}, ${selectedAddress.ciudad}` : 'Dirección registrada',
+                selectedAddress?.id,
                 '',
                 undefined,
                 couponApplied && couponHabilitado ? couponCode : null
@@ -401,7 +424,7 @@ const CartScreen = ({ navigation }) => {
             const orderRes = await API.orders.create(
                 selectedRestaurant.id,
                 orderItems,
-                selectedAddress ? `${selectedAddress.direccion}, ${selectedAddress.ciudad}` : 'Dirección registrada',
+                selectedAddress?.id,
                 '',
                 'efectivo',
                 couponApplied && couponHabilitado ? couponCode : null
@@ -625,8 +648,17 @@ const CartScreen = ({ navigation }) => {
 
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Envio</Text>
-                                <Text style={styles.summaryValue}>$2.99</Text>
+                                {envioInfo?.fueraDeZona ? (
+                                    <Text style={[styles.summaryValue, { color: '#E53935' }]}>No disponible</Text>
+                                ) : (
+                                    <Text style={styles.summaryValue}>
+                                        {envioInfo ? `$${envioInfo.costoEnvio.toFixed(2)}` : '—'}
+                                    </Text>
+                                )}
                             </View>
+                            {envioInfo?.fueraDeZona && (
+                                <Text style={styles.couponDisabledText}>No entregamos en esta dirección</Text>
+                            )}
 
                             <View style={[styles.summaryRow, styles.totalRow]}>
                                 <Text style={styles.summaryLabelTotal}>Total</Text>
@@ -689,9 +721,9 @@ const CartScreen = ({ navigation }) => {
 
                         {/* --- Boton efectivo --- */}
                         <TouchableOpacity
-                            style={[styles.efectivoButton, (loadingEfectivo || loadingMP || !selectedAddress || !!pendingOrderId) && styles.buttonDisabled]}
+                            style={[styles.efectivoButton, (loadingEfectivo || loadingMP || !selectedAddress || !!pendingOrderId || !envioInfo || envioInfo.fueraDeZona) && styles.buttonDisabled]}
                             onPress={handleEfectivoPayment}
-                            disabled={loadingEfectivo || loadingMP || !selectedAddress || !!pendingOrderId}
+                            disabled={loadingEfectivo || loadingMP || !selectedAddress || !!pendingOrderId || !envioInfo || envioInfo.fueraDeZona}
                         >
                             {loadingEfectivo ? (
                                 <ActivityIndicator color="#2E7D32" style={{ flex: 1 }} />
@@ -708,9 +740,9 @@ const CartScreen = ({ navigation }) => {
 
                         {/* --- Boton de pago --- */}
                         <TouchableOpacity
-                            style={[styles.payButton, (loadingMP || loadingEfectivo || !selectedAddress || !!pendingOrderId) && styles.buttonDisabled]}
+                            style={[styles.payButton, (loadingMP || loadingEfectivo || !selectedAddress || !!pendingOrderId || !envioInfo || envioInfo.fueraDeZona) && styles.buttonDisabled]}
                             onPress={handleMercadoPagoPayment}
-                            disabled={loadingMP || loadingEfectivo || !selectedAddress || !!pendingOrderId}
+                            disabled={loadingMP || loadingEfectivo || !selectedAddress || !!pendingOrderId || !envioInfo || envioInfo.fueraDeZona}
                             accessibilityLabel={`Pagar $${calculateTotal().toFixed(2)}`}
                             accessibilityRole="button"
                         >

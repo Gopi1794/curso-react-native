@@ -157,16 +157,21 @@ const restaurants = {
     getRuleta: (id) => request(`/api/restaurants/${id}/ruleta`),
 
     girarRuleta: (id) => request(`/api/restaurants/${id}/ruleta/girar`, { method: 'POST' }),
+
+    cotizarEnvio: (id, direccionId) => request(`/api/restaurants/${id}/cotizar-envio`, {
+        method: 'POST',
+        body: JSON.stringify({ direccion_id: direccionId }),
+    }),
 };
 
 // ── ORDERS ────────────────────────────────────────────────
 const orders = {
-    create: (restauranteId, items, direccionEntrega, notas, metodoPago, cuponCodigo) => request('/api/orders', {
+    create: (restauranteId, items, direccionId, notas, metodoPago, cuponCodigo) => request('/api/orders', {
         method: 'POST',
         body: JSON.stringify({
             restaurante_id: restauranteId,
             items,
-            direccion_entrega: direccionEntrega,
+            direccion_id: direccionId,
             notas,
             metodo_pago: metodoPago || 'mercadopago',
             ...(cuponCodigo ? { cupon_codigo: cuponCodigo } : {}),
@@ -239,9 +244,9 @@ const favorites = {
 const cupones = {
     getAll: () => request('/api/cupones'),
     getById: (id) => request(`/api/cupones/${id}`),
-    validate: (codigo, restauranteId, items) => request('/api/cupones/validate', {
+    validate: (codigo, restauranteId, items, direccionId) => request('/api/cupones/validate', {
         method: 'POST',
-        body: JSON.stringify({ codigo, restaurante_id: restauranteId, items }),
+        body: JSON.stringify({ codigo, restaurante_id: restauranteId, items, direccion_id: direccionId }),
     }),
 };
 
