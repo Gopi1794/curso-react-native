@@ -10,5 +10,6 @@ router.get('/:id/menu',              restaurantsController.getMenu);
 router.get('/:id/menu/:itemId',      restaurantsController.getMenuItem);
 router.get('/:id/ruleta',            authMiddleware, restaurantsController.getRuleta);
 router.post('/:id/ruleta/girar',      authMiddleware, restaurantsController.girarRuleta);
+router.post('/:id/cotizar-envio',     authMiddleware, restaurantsController.cotizarEnvio);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const cache = require('../utils/cache');
 const crypto = require('crypto');
+const { matchZona } = require('../utils/zonaEnvioHelper');
 
 const MENU_TTL = 5 * 60 * 1000; // 5 minutos
 
@@ -515,5 +516,41 @@ exports.girarRuleta = async (req, res) => {
         });
     } finally {
         client.release();
+    }
+};
+
+// ── COTIZAR ENVÍO ─────────────────────────────────────────
+// POST /api/restaurants/:id/cotizar-envio
+// Body: { direccion_id }
+exports.cotizarEnvio = async (req, res) => {
+    const { id } = req.params;
+    const { direccion_id } = req.body;
+
+    if (!direccion_id) {
+        return res.status(400).json({ success: false, message: 'direccion_id es requerido' });
+    }
+
+    try {
+        const direccionResult = await db.query(
+            'SELECT latitud, longitud FROM direcciones_usuarios WHERE id = $1 AND usuario_id = $2',
+            [direccion_id, req.user.userId]
+        );
+        const direccion = direccionResult.rows[0];
+        if (!direccion) {
+            return res.status(404).json({ success: false, message: 'Dirección no encontrada' });
+        }
+        if (direccion.latitud == null || direccion.longitud == null) {
+            return res.status(400).json({ success: false, message: 'Esa dirección no tiene ubicación en el mapa. Volvé a cargarla desde el mapa.' });
+        }
+
+        const zona = await matchZona(id, { lat: parseFloat(direccion.latitud), lng: parseFloat(direccion.longitud) });
+        if (!zona) {
+            return res.status(200).json({ success: false, message: 'No entregamos en tu dirección' });
+        }
+
+        res.json({ success: true, zona: { id: zona.id, nombre: zona.nombre, costo_envio: parseFloat(zona.costo_envio) } });
+    } catch (error) {
+        console.error('Error en cotizarEnvio:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
 };
