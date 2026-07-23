@@ -662,7 +662,13 @@ const CartScreen = ({ navigation }) => {
 
                             <View style={[styles.summaryRow, styles.totalRow]}>
                                 <Text style={styles.summaryLabelTotal}>Total</Text>
-                                <Text style={styles.summaryTotal}>${calculateTotal().toFixed(2)}</Text>
+                                {envioInfo?.fueraDeZona ? (
+                                    <Text style={[styles.summaryTotal, { color: '#E53935' }]}>No disponible</Text>
+                                ) : (
+                                    <Text style={styles.summaryTotal}>
+                                        {envioInfo ? `$${calculateTotal().toFixed(2)}` : '—'}
+                                    </Text>
+                                )}
                             </View>
                         </View>
 
@@ -733,7 +739,9 @@ const CartScreen = ({ navigation }) => {
                                         <Ionicons name="cash-outline" size={20} color="#2E7D32" />
                                         <Text style={[styles.payButtonText, { color: '#2E7D32' }]}>Pagar en efectivo</Text>
                                     </View>
-                                    <Text style={[styles.payButtonAmount, { color: '#2E7D32' }]}>${calculateTotal().toFixed(2)}</Text>
+                                    <Text style={[styles.payButtonAmount, { color: '#2E7D32' }]}>
+                                        {envioInfo && !envioInfo.fueraDeZona ? `$${calculateTotal().toFixed(2)}` : '—'}
+                                    </Text>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -743,7 +751,7 @@ const CartScreen = ({ navigation }) => {
                             style={[styles.payButton, (loadingMP || loadingEfectivo || !selectedAddress || !!pendingOrderId || !envioInfo || envioInfo.fueraDeZona) && styles.buttonDisabled]}
                             onPress={handleMercadoPagoPayment}
                             disabled={loadingMP || loadingEfectivo || !selectedAddress || !!pendingOrderId || !envioInfo || envioInfo.fueraDeZona}
-                            accessibilityLabel={`Pagar $${calculateTotal().toFixed(2)}`}
+                            accessibilityLabel={envioInfo && !envioInfo.fueraDeZona ? `Pagar $${calculateTotal().toFixed(2)}` : 'Pagar con Mercado Pago'}
                             accessibilityRole="button"
                         >
                             {loadingMP ? (
@@ -753,7 +761,9 @@ const CartScreen = ({ navigation }) => {
                                     <View style={[styles.payButtonLeft, { marginLeft: -24 }]}>
                                         <SvgXml xml={MP_LOGO_COLOR} width={200} height={52} />
                                     </View>
-                                    <Text style={[styles.payButtonAmount, { color: '#009EE3' }]}>${calculateTotal().toFixed(2)}</Text>
+                                    <Text style={[styles.payButtonAmount, { color: '#009EE3' }]}>
+                                        {envioInfo && !envioInfo.fueraDeZona ? `$${calculateTotal().toFixed(2)}` : '—'}
+                                    </Text>
                                 </>
                             )}
                         </TouchableOpacity>
