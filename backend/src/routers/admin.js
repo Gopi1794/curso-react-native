@@ -12,6 +12,7 @@ const pedidosCtrl  = require('../controllers/adminPedidosController');
 const restCtrl     = require('../controllers/adminRestauranteController');
 const ruletaCtrl   = require('../controllers/adminRuletaController');
 const zonasEnvioCtrl = require('../controllers/adminZonasEnvioController');
+const consumoInsightsCtrl = require('../controllers/adminConsumoInsightsController');
 const statsCtrl    = require('../controllers/adminStatsController');
 const reviewsCtrl  = require('../controllers/adminReviewsInsightsController');
 
@@ -34,6 +35,10 @@ router.use(authMiddleware, requireAdmin);
 
 // ── Stats ─────────────────────────────────────────────────
 router.get('/stats/:restauranteId', requireAdminOwnership, statsCtrl.getStats);
+
+// ── Consumo Insights ──────────────────────────────────────
+router.get('/stats/consumo-insights/:restauranteId',  requireAdminOwnership, consumoInsightsCtrl.getUltimo);
+router.post('/stats/consumo-insights/:restauranteId', requireAdminOwnership, consumoInsightsCtrl.generar);
 
 // ── Reviews AI Insights ───────────────────────────────────
 router.get('/reviews/insights', reviewsCtrl.getInsights);
